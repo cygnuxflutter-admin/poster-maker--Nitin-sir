@@ -340,6 +340,11 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     }
 
     public void loadPoster(String key, final int cat_id, final int pos_id) {
+        if (cat_id == 0) {
+            templateSelectionController.dismissMaterialDialog();
+            Leaflet_MaterialDialogUtils.getInstance().errorDialog2(Leaflet_TemplateSelectionActivity.this, "This liked poster is from an older version. Please re-like it from the Templates screen!");
+            return;
+        }
 
         String requestUrl = preferenceClass.getDataType("field_1") + preferenceClass.getDataType("field_34") + preferenceClass.getDataType("field_36");
         StringRequest stringRequest = new StringRequest(Request.Method.POST, requestUrl, response -> {

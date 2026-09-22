@@ -88,7 +88,10 @@ public class Leaflet_FavoritesActivity extends AppCompatActivity {
                 Leaflet_BackgroundChildAdapter adapter = new Leaflet_BackgroundChildAdapter(this, likedBackgrounds, cellWidth, cellWidth, (path, premium) -> {
                     android.content.Intent intent = new android.content.Intent(this, Leaflet_BackgroundSelectionActivity.class);
                     intent.putExtra("auto_load", true);
-                    intent.putExtra("bg_image", path);
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass preferenceClass = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
+                    String domain = preferenceClass.getDataType("field_1");
+                    String fullPath = path.startsWith("http") ? path : domain + "/" + path;
+                    intent.putExtra("bg_image", fullPath);
                     intent.putExtra("premium", premium);
                     intent.putExtra("mode", "bg");
                     startActivity(intent);
