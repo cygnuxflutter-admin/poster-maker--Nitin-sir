@@ -159,8 +159,17 @@ public class Leaflet_TemplateSelectionController {
     }
 
     public void dismissMaterialDialog() {
-        if (materialDialog != null && materialDialog.isShowing())
-            materialDialog.dismiss();
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            try {
+                if (activity != null && !activity.isFinishing()) {
+                    if (materialDialog != null && materialDialog.isShowing()) {
+                        materialDialog.dismiss();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }, 1500);
     }
 
 }

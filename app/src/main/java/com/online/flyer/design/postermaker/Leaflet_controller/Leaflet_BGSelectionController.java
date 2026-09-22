@@ -387,16 +387,17 @@ public class Leaflet_BGSelectionController {
     }
 
     public void dismissMaterialDialog() {
-        try {
-            if (activity instanceof Activity) {
-                if (!((Activity) activity).isFinishing())
-                    if (materialDialog != null && materialDialog.isShowing())
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            try {
+                if (activity != null && !activity.isFinishing()) {
+                    if (materialDialog != null && materialDialog.isShowing()) {
                         materialDialog.dismiss();
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        }, 1500);
     }
 
 }

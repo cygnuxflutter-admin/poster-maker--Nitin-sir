@@ -443,16 +443,18 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     }
 
     private void startIntent() {
-        Intent intent = new Intent(this, Leaflet_PosterEditActivity.class);
-        intent.putParcelableArrayListExtra("template", templateModels);
-        intent.putParcelableArrayListExtra("sticker", sticker_model);
-        intent.putParcelableArrayListExtra("text", text_model);
-        intent.putExtra("loadUserFrame", false);
-        intent.putExtra("Temp_Type", "MY_TEMP");
-        startActivity(intent);
-        templateSelectionController.dismissMaterialDialog();
-        if (getIntent().getBooleanExtra("auto_load", false)) {
-            finish();
-        }
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            Intent intent = new Intent(this, Leaflet_PosterEditActivity.class);
+            intent.putParcelableArrayListExtra("template", templateModels);
+            intent.putParcelableArrayListExtra("sticker", sticker_model);
+            intent.putParcelableArrayListExtra("text", text_model);
+            intent.putExtra("loadUserFrame", false);
+            intent.putExtra("Temp_Type", "MY_TEMP");
+            startActivity(intent);
+            templateSelectionController.dismissMaterialDialog();
+            if (getIntent().getBooleanExtra("auto_load", false)) {
+                finish();
+            }
+        }, 1500);
     }
 }
