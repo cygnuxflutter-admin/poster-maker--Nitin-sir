@@ -104,7 +104,9 @@ public class Leaflet_BGSelectionController {
                     new Leaflet_GetBgData(preferenceClass, jsonArray, new Leaflet_GetBgData.OnGetCatDataListener() {
                         @Override
                         public void onGetDataComplete(ArrayList<Leaflet_BgModel> posterDataLists) {
-                            setPagerAdapter(posterDataLists);
+                            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                setPagerAdapter(posterDataLists);
+                            }, 1200);
                         }
 
                         @Override
@@ -387,17 +389,15 @@ public class Leaflet_BGSelectionController {
     }
 
     public void dismissMaterialDialog() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            try {
-                if (activity != null && !activity.isFinishing()) {
-                    if (materialDialog != null && materialDialog.isShowing()) {
-                        materialDialog.dismiss();
-                    }
+        try {
+            if (activity != null && !activity.isFinishing()) {
+                if (materialDialog != null && materialDialog.isShowing()) {
+                    materialDialog.dismiss();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        }, 1500);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

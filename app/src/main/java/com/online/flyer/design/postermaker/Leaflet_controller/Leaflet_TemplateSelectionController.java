@@ -70,7 +70,9 @@ public class Leaflet_TemplateSelectionController {
                         new Leaflet_GetTemplateData(preferenceClass, jsonArray, new Leaflet_GetTemplateData.OnGetCatDataListener() {
                             @Override
                             public void onGetDataComplete(ArrayList<Leaflet_PosterModel> posterDataLists) {
-                                setPagerAdapter(posterDataLists);
+                                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                                    setPagerAdapter(posterDataLists);
+                                }, 1200);
                             }
 
                             @Override
@@ -159,17 +161,8 @@ public class Leaflet_TemplateSelectionController {
     }
 
     public void dismissMaterialDialog() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            try {
-                if (activity != null && !activity.isFinishing()) {
-                    if (materialDialog != null && materialDialog.isShowing()) {
-                        materialDialog.dismiss();
-                    }
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }, 1500);
+        if (materialDialog != null && materialDialog.isShowing())
+            materialDialog.dismiss();
     }
 
 }
