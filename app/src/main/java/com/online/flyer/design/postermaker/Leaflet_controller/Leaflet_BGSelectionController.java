@@ -252,6 +252,7 @@ public class Leaflet_BGSelectionController {
         int cellHeight = (700 * cellWidth) / 507;
 
         Leaflet_ColorPelleteAdapter colorListAdapter = new Leaflet_ColorPelleteAdapter(activity, cellWidth, cellHeight, (colorCode) -> {
+            dialogColor.dismiss();
             Bitmap bitmap = Bitmap.createBitmap(480, 800, Bitmap.Config.ARGB_8888);
             bitmap.eraseColor(Color.parseColor(colorCode));
             new Leaflet_SaveBitmapTask(bitmap, new File(/*Environment.getExternalStorageDirectory()*/activity.getCacheDir(), ".temp.jpg").getPath(), new Leaflet_SaveBitmapTask.OnColorBitmapListener() {
