@@ -149,7 +149,7 @@
                     android:id="@+id/iv_whatsapp"
                     android:layout_width="50.0dip"
                     android:layout_height="50.0dip"
-                    android:src="@drawable/leaflet_ic_whatsapp" app:tint="@color/selected" />
+                    android:src="@drawable/leaflet_ic_whatsapp" />
 
             </LinearLayout>
 
@@ -166,7 +166,7 @@
                     android:id="@+id/iv_facebook"
                     android:layout_width="50.0dip"
                     android:layout_height="50.0dip"
-                    android:src="@drawable/leaflet_ic_facebook" app:tint="@color/selected" />
+                    android:src="@drawable/leaflet_ic_facebook" />
 
             </LinearLayout>
 
@@ -183,7 +183,7 @@
                     android:id="@+id/iv_instagram"
                     android:layout_width="50.0dip"
                     android:layout_height="50.0dip"
-                    android:src="@drawable/leaflet_ic_instagram" app:tint="@color/selected" />
+                    android:src="@drawable/leaflet_ic_instagram" />
 
             </LinearLayout>
 
@@ -200,7 +200,7 @@
                     android:id="@+id/ic_twitter"
                     android:layout_width="50.0dip"
                     android:layout_height="50.0dip"
-                    android:src="@drawable/leaflet_ic_twitter" app:tint="@color/selected" />
+                    android:src="@drawable/leaflet_ic_twitter" />
 
             </LinearLayout>
 
@@ -217,7 +217,7 @@
                     android:id="@+id/iv_more"
                     android:layout_width="50.0dip"
                     android:layout_height="50.0dip"
-                    android:src="@drawable/leaflet_ic_download_share" app:tint="@color/selected" />
+                    android:src="@drawable/leaflet_ic_download_share" />
 
             </LinearLayout>
 
