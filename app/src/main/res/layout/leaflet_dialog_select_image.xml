@@ -50,7 +50,7 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:layout_marginBottom="15dp"
+            android:layout_marginBottom="25dp"
             android:gravity="center"
             android:orientation="horizontal">
 
@@ -153,21 +153,6 @@
                 android:layout_weight="0.4" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/btn_cancel"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginLeft="20dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginBottom="20dp"
-            android:background="@drawable/leaflet_btn_rounded_text_bg"
-            android:backgroundTint="#F3F4F6"
-            android:fontFamily="@font/leaflet_visbyroundcf_bold"
-            android:gravity="center"
-            android:text="Cancel"
-            android:textColor="#374151"
-            android:textSize="16sp"
-            android:textStyle="bold" />
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

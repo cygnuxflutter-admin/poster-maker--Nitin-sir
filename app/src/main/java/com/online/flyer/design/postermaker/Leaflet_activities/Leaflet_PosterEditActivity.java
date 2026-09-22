@@ -1243,6 +1243,8 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         options.setToolbarColor(ContextCompat.getColor(this, R.color.purple_700));
         options.setStatusBarColor(ContextCompat.getColor(this, R.color.purple_700));
         options.setRootViewBackgroundColor(ContextCompat.getColor(this, R.color.purple_200));
+        options.setActiveControlsWidgetColor(ContextCompat.getColor(this, R.color.selected));
+        options.setToolbarWidgetColor(ContextCompat.getColor(this, R.color.white));
         return uCrop.withOptions(options);
     }
 

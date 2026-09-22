@@ -370,6 +370,8 @@ public class Leaflet_BGSelectionController {
         options.setToolbarColor(ContextCompat.getColor(activity, R.color.purple_700));
         options.setStatusBarColor(ContextCompat.getColor(activity, R.color.purple_700));
         options.setRootViewBackgroundColor(ContextCompat.getColor(activity, R.color.purple_200));
+        options.setActiveControlsWidgetColor(ContextCompat.getColor(activity, R.color.selected));
+        options.setToolbarWidgetColor(ContextCompat.getColor(activity, R.color.white));
         options.setAspectRatioOptions(1,
                 new AspectRatio("1:1", 1, 1),
                 new AspectRatio("3:2", 3, 2),
