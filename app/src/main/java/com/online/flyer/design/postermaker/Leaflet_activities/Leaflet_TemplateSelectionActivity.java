@@ -443,7 +443,7 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     }
 
     private void startIntent() {
-        
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
             Intent intent = new Intent(this, Leaflet_PosterEditActivity.class);
             intent.putParcelableArrayListExtra("template", templateModels);
             intent.putParcelableArrayListExtra("sticker", sticker_model);
@@ -455,6 +455,6 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
             if (getIntent().getBooleanExtra("auto_load", false)) {
                 finish();
             }
-        
+        }, 1200);
     }
 }
