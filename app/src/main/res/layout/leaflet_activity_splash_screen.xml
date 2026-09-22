@@ -31,12 +31,15 @@
     <!--        android:layout_marginBottom="@dimen/_15sdp" />-->
 
 
-    <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_GradientLoaderView
+    <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/warn_animation"
         android:layout_width="60dp"
         android:layout_height="60dp"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="25dp" />
+        android:layout_marginBottom="25dp"
+        app:lottie_rawRes="@raw/loader"
+        app:lottie_autoPlay="true"
+        app:lottie_loop="true" />
 
 </RelativeLayout>

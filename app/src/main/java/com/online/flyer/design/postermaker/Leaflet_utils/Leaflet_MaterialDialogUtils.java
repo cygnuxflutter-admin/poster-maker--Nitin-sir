@@ -30,11 +30,16 @@ public class Leaflet_MaterialDialogUtils {
     }
 
     public MaterialDialog createAnimationDialog(Context activity) {
-        return new MaterialDialog.Builder(activity)
+        MaterialDialog dialog = new MaterialDialog.Builder(activity)
                 .customView(R.layout.leaflet_lottie_anim_dialog, false)
                 .contentColor(Color.TRANSPARENT)
                 .backgroundColor(Color.TRANSPARENT)
                 .build();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        return dialog;
     }
 
     private static class SingletonHolder {
