@@ -295,7 +295,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
             }
 
         } else {
-            startIntent();
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> startIntent(), 2000);
         }
 
     }
