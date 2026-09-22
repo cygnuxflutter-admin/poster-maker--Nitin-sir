@@ -18,6 +18,8 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
             android:background="#FFFFFF"
             android:backgroundTint="#FFFFFF">
 
@@ -46,7 +48,8 @@
                 <View
                     android:layout_width="fill_parent"
                     android:layout_height="1dp"
-                    android:background="#7F7F7F" />
+                    android:layout_marginBottom="12dp"
+                    android:background="#E5E7EB" />
 
                 <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_AutoResizeEditText
                     android:id="@+id/auto_fit_edit_text"
@@ -55,7 +58,10 @@
                     android:ems="10"
                     android:focusable="true"
                     android:focusableInTouchMode="true"
-                    android:gravity="fill|end|start"
+                    android:background="@drawable/leaflet_edit_text_bg"
+                    android:padding="12dp"
+                    android:layout_marginBottom="16dp"
+                    android:gravity="top|start"
                     android:hint="@string/add_text_here"
                     android:imeActionLabel="Done"
                     android:imeOptions="actionPrevious"
