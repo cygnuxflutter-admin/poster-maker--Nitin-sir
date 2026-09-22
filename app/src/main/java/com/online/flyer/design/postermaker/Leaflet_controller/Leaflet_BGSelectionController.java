@@ -140,7 +140,7 @@ public class Leaflet_BGSelectionController {
         ViewPager viewPager = activity.findViewById(R.id.viewPager);
         
         ArrayList<Leaflet_BgModel> tabList = new ArrayList<>();
-        int maxItems = Math.min(1, posterDataLists.size());
+        int maxItems = Math.min(4, posterDataLists.size());
         for (int i = 0; i < maxItems; i++) {
             tabList.add(posterDataLists.get(i));
         }

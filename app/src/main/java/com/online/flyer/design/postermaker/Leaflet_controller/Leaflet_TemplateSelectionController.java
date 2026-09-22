@@ -135,7 +135,7 @@ public class Leaflet_TemplateSelectionController {
         ViewPager viewPager = activity.findViewById(R.id.viewPager);
 
         ArrayList<Leaflet_PosterModel> tabList = new ArrayList<>();
-        int maxItems = Math.min(1, posterDataLists.size());
+        int maxItems = Math.min(4, posterDataLists.size());
         for (int i = 0; i < maxItems; i++) {
             tabList.add(posterDataLists.get(i));
         }
