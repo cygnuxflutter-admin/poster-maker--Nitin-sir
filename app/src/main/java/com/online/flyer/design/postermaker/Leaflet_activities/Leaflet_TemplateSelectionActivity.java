@@ -279,7 +279,7 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        // interstitialAdManager.showAdIfAvailable(super::onBackPressed);
+        overridePendingTransition(0, 0);
     }
 
     @Override

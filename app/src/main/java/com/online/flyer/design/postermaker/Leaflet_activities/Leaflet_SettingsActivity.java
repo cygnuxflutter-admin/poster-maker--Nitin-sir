@@ -14,6 +14,12 @@ import com.online.flyer.design.postermaker.R;
 public class Leaflet_SettingsActivity extends AppCompatActivity {
 
     @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        overridePendingTransition(0, 0);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.leaflet_activity_settings);

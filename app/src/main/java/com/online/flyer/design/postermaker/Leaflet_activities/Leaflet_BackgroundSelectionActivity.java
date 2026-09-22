@@ -224,7 +224,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 
         if (resultCode == RESULT_OK && requestCode == bgSelectionController.CAMERA_INTENT) {
             Uri selectedImage = Uri.fromFile(bgSelectionController.camera_file);
-            if (mode.equals("user")) {
+            if ("user".equals(mode)) {
                 Intent intent = new Intent();
                 intent.putExtra("local", true);
                 intent.putExtra("bg_image", selectedImage.toString());
@@ -237,7 +237,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         if (resultCode == RESULT_OK && requestCode == bgSelectionController.GALLERY_INTENT && data != null) {
             Uri selectedImage = data.getData();
             assert selectedImage != null;
-            if (mode.equals("user")) {
+            if ("user".equals(mode)) {
                 Intent intent = new Intent();
                 intent.putExtra("local", true);
                 intent.putExtra("bg_image", selectedImage.toString());
@@ -259,7 +259,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
                 path = resultUri.toString();
                 if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
                     if (isRewarded) {
-                        if (mode.equals("user")) {
+                        if ("user".equals(mode)) {
                             setPosterIntent();
                         } else {
                             startIntent();
@@ -300,7 +300,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     @Override
     public void onBackPressed() {
         super.onBackPressed();
-        //googleInterstitialAd.showAdIfAvailable(super::onBackPressed);
+        overridePendingTransition(0, 0);
     }
 
     @Override
@@ -358,7 +358,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
             @Override
             public void onDownloadComplete() {
                 bgSelectionController.dismissMaterialDialog();
-                if (mode.equals("user")) {
+                if ("user".equals(mode)) {
                     local = false;
                     path = Leaflet_FileUtils.getFile(Leaflet_BackgroundSelectionActivity.this, strings.get(0));
 
