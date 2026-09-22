@@ -73,6 +73,7 @@ public class Leaflet_NavUtils {
             Intent intent = new Intent(currentActivity, targetClass);
             intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             currentActivity.startActivity(intent);
+            currentActivity.overridePendingTransition(0, 0);
         });
     }
 }

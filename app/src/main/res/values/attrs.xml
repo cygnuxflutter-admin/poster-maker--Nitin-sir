@@ -28,14 +28,14 @@
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/appbg</item>
         <item name="colorPrimaryDark">@color/appbg</item>
-        <item name="titleTextColor">@color/white</item>
+        <item name="titleTextColor">@color/white</item>`n        <item name="android:windowBackground">@color/white</item>
 
     </style>
     <style name="AppTheme1" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/appbg</item>
         <item name="colorPrimaryDark">@color/appbg</item>
-        <item name="titleTextColor">@color/white</item>
+        <item name="titleTextColor">@color/white</item>`n        <item name="android:windowBackground">@color/white</item>
 
     </style>
     <style name="DialogAnimation_2">
