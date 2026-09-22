@@ -89,7 +89,7 @@ public class Leaflet_ItemAdapter extends DragItemAdapter<Pair<Long, View>, Leafl
             if (v instanceof Leaflet_AutofitTextRel) {
                 holder.textView.setText(((Leaflet_AutoResizeTextView) ((Leaflet_AutofitTextRel) v).getChildAt(2)).getText());
                 holder.textView.setTypeface(((Leaflet_AutoResizeTextView) ((Leaflet_AutofitTextRel) v).getChildAt(2)).getTypeface());
-                holder.textView.setTextColor(((Leaflet_AutoResizeTextView) ((Leaflet_AutofitTextRel) v).getChildAt(2)).getTextColors());
+                holder.textView.setTextColor(android.graphics.Color.parseColor("#111827"));
                 holder.textView.setTextSize(400.0f);
                 holder.textView.setGravity(17);
                 holder.textView.setMinTextSize(10.0f);

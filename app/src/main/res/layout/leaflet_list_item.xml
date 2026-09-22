@@ -40,6 +40,7 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="0.3"
+                        android:background="#F3F4F6"
                         android:padding="@dimen/_10sdp"
                         android:orientation="horizontal">
 
