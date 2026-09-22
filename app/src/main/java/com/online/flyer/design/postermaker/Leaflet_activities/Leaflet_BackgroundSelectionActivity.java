@@ -388,7 +388,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     }
 
     private void startIntent() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+        
             Intent intent = new Intent(this, Leaflet_PosterEditActivity.class);
             intent.putExtra("bg_path", path);
             intent.putExtra("loadUserFrame", true);
@@ -397,17 +397,17 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
             if (getIntent().getBooleanExtra("auto_load", false)) {
                 finish();
             }
-        }, 1500);
+        
     }
 
     private void setPosterIntent() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+        
             Intent intent = new Intent();
             intent.putExtra("local", local);
             intent.putExtra("bg_image", Leaflet_FileUtils.getFile(Leaflet_BackgroundSelectionActivity.this, path));
             setResult(RESULT_OK, intent);
             finish();
-        }, 1500);
+        
     }
 
 
