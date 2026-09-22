@@ -959,6 +959,9 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
     private void showUserDialog() {
         Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.leaflet_dialog_select_image);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
         dialog.setCancelable(true);
         LinearLayout img_camera = dialog.findViewById(R.id.img_camera);
         LinearLayout img_gallery = dialog.findViewById(R.id.img_gallery);
@@ -1035,6 +1038,11 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
             intent.setAction("android.intent.action.PICK");
             startActivityForResult(Intent.createChooser(intent, getResources().getString(R.string.select_picture)), SELECT_PICTURE_FROM_GALLERY);
         });
+
+        TextView btn_cancel = dialog.findViewById(R.id.btn_cancel);
+        if (btn_cancel != null) {
+            btn_cancel.setOnClickListener(v -> dialog.dismiss());
+        }
 
         dialog.show();
     }
@@ -1413,7 +1421,14 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         dialog.requestWindowFeature(1);
         dialog.setCancelable(false);
         dialog.setContentView(R.layout.leaflet_save_dialog);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
         TextView btn_ok = dialog.findViewById(R.id.btn_ok);
+        TextView btn_cancel = dialog.findViewById(R.id.btn_cancel);
+        if (btn_cancel != null) {
+            btn_cancel.setOnClickListener(v -> dialog.dismiss());
+        }
         btn_ok.setOnClickListener(v -> dialog.dismiss());
         dialog.show();
 
