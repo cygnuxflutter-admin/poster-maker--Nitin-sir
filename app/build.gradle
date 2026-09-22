@@ -1,0 +1,106 @@
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
+    id 'com.onesignal.androidsdk.onesignal-gradle-plugin'
+}
+
+android {
+    namespace 'com.online.flyer.design.postermaker'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.online.flyer.design.postermaker"
+        minSdk 21
+        targetSdk 35
+        versionCode 6
+        versionName "1.5"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    signingConfigs {
+        release {
+            storeFile file("postermakernitinsir.jks")
+            storePassword "postermakernitinsir"
+            keyAlias "postermakernitinsir"
+            keyPassword "postermakernitinsir"
+        }
+    }
+
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.4.1'
+    implementation 'com.google.android.material:material:1.9.0'
+
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
+//    implementation 'com.google.android.play:core:1.10.3'
+    testImplementation 'junit:junit:4.13.2'
+    implementation 'com.google.android.gms:play-services-ads:22.0.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.3'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
+
+    implementation 'com.facebook.android:audience-network-sdk:6.15.0'
+    implementation 'com.google.ads.mediation:facebook:6.15.0.0'
+
+    implementation 'com.google.firebase:firebase-core:20.1.2'
+    implementation 'com.google.firebase:firebase-messaging:23.0.3'
+    implementation 'com.google.firebase:firebase-analytics:20.1.2'
+    implementation 'com.google.firebase:firebase-crashlytics:18.2.9'
+
+    implementation 'com.google.firebase:firebase-database:20.0.4'
+    implementation 'com.google.firebase:firebase-storage:20.0.1'
+    implementation 'com.google.firebase:firebase-firestore:24.1.1'
+
+    implementation 'com.github.ybq:Android-SpinKit:1.4.0'
+    implementation 'com.intuit.sdp:sdp-android:1.0.6'
+
+    implementation 'com.afollestad.material-dialogs:core:0.9.6.0'
+
+    //Animation
+    implementation 'com.airbnb.android:lottie:5.2.0'
+
+    implementation 'org.apache.httpcomponents:httpcore:4.4.10'
+    implementation 'com.android.volley:volley:1.2.1'
+
+    implementation 'com.github.yukuku:ambilwarna:2.0.1'
+
+    //Glide Dependencies
+    implementation 'com.github.bumptech.glide:glide:4.15.1'
+    annotationProcessor 'com.github.bumptech.glide:compiler:4.13.0'
+
+    implementation 'com.github.woxthebox:draglistview:1.5.4'
+    implementation 'com.github.florent37:ViewAnimator:1.0.4'
+
+    implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
+    implementation "androidx.lifecycle:lifecycle-runtime:2.4.1"
+    annotationProcessor "androidx.lifecycle:lifecycle-compiler:2.4.1"
+
+    //OneSignal
+    implementation 'com.onesignal:OneSignal:[4.0.0, 4.99.99]'
+
+    //Gson
+    implementation 'com.google.code.gson:gson:2.9.0'
+
+    // Firebase
+    implementation 'com.google.firebase:firebase-config:21.3.0'
+    implementation 'com.google.firebase:firebase-auth:21.3.0'
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity:16.1.2'
+
+    //ImageView
+    implementation 'com.makeramen:roundedimageview:2.3.0'
+
+    implementation 'com.github.yalantis:ucrop:2.2.6'
+}

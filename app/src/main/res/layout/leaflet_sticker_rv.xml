@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSquareFrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:animateLayoutChanges="true"
+    android:layout_margin="5dp"
+    android:background="@android:color/transparent">
+
+    <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSquareImageView
+        android:id="@+id/thumbnail_image"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:padding="10dp"
+        android:layout_gravity="center"
+        android:background="#F3F4F6" />
+
+</com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSquareFrameLayout>

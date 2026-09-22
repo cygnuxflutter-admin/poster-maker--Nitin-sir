@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA">
+    <!--android:background="@color/purple_200"-->
+
+    <RelativeLayout
+        android:id="@+id/top_ly"
+        android:layout_width="match_parent"
+        android:layout_height="50dp">
+        <!--  @drawable/gradient_bg-->
+
+        <!-- Back Button -->
+        <FrameLayout
+            android:id="@+id/ic_back_container"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/bg_circle_light_blue">
+            <ImageView
+                android:id="@+id/ic_back"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/leaflet_ic_back"
+                app:tint="#0066FF" />
+        </FrameLayout>
+
+        <!-- Title and Subtitle -->
+        <LinearLayout
+            android:id="@+id/ly_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:text="Select "
+                    android:textColor="#1F2937"
+                    android:textSize="20sp" />
+                    
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:text="Background"
+                    android:textColor="#0066FF"
+                    android:textSize="20sp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Search Bar (Hidden by Default) -->
+        <LinearLayout
+            android:id="@+id/ly_search"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_toEndOf="@+id/ic_back_container"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_marginStart="8dp">
+
+            <EditText
+                android:id="@+id/et_search"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@null"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:hint="Search backgrounds..."
+                android:inputType="text"
+                android:maxLines="1"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:textColor="@color/white"
+                android:textColorHint="#9CA3AF"
+                android:textCursorDrawable="@drawable/color_cursor"
+                android:textSize="16sp" />
+
+            <ImageView
+                android:id="@+id/ic_search_close"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginEnd="16dp"
+                android:padding="12dp"
+                android:src="@drawable/leaflet_ic_close"
+                app:tint="#0066FF" />
+        </LinearLayout>
+
+        <!-- Search Button -->
+        <FrameLayout
+            android:id="@+id/ic_search_container"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_circle_light_blue">
+            <ImageView
+                android:id="@+id/ic_search"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_search_modern"
+                app:tint="#0066FF" />
+        </FrameLayout>
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/viewPagerLay"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="#F8F9FA"
+        android:layout_marginTop="15dp"
+        android:layout_marginBottom="5dp"
+        android:layout_below="@+id/top_ly">
+
+        <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip
+            android:id="@+id/pagerSlidingTabStrip"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:textColor="@color/tab_text_color"
+            app:pstsShouldExpand="false"
+            app:pstsTextAllCaps="false"
+            app:pstsDividerColor="@color/transparent"
+            app:pstsIndicatorColor="@color/transparent"
+            app:pstsIndicatorHeight="0dp"
+            app:pstsTabPaddingLeftRight="16dp"
+            app:pstsDividerPadding="10dp"
+            android:clipToPadding="true"
+            app:pstsUnderlineColor="@color/transparent" />
+    </RelativeLayout>
+
+    <androidx.viewpager.widget.ViewPager
+        android:id="@+id/viewPager"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@id/bottom_ly"
+        android:layout_below="@+id/viewPagerLay" />
+
+    <LinearLayout
+        android:id="@+id/bottom_ly"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/_50sdp"
+        android:layout_alignParentBottom="true"
+        android:background="#E6E6E6"
+        android:baselineAligned="false"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:weightSum="2">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="start">
+
+            <ImageView
+                android:id="@+id/ic_gallery"
+                android:layout_width="57dp"
+                android:layout_height="57dp"
+                android:layout_gravity="center"
+                android:padding="@dimen/_11sdp"
+                android:src="@drawable/leaflet_image_press" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="end">
+
+            <ImageView
+                android:id="@+id/ic_color"
+                android:layout_width="57dp"
+                android:layout_height="57dp"
+                android:layout_gravity="center"
+                android:padding="@dimen/_11sdp"
+                android:src="@drawable/leaflet_color_unpress"
+                app:tint="@color/new_selected" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <include 
+        android:id="@+id/bottom_nav_include"
+        layout="@layout/layout_bottom_nav" />
+
+</RelativeLayout>

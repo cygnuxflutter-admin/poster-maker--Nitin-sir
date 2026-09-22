@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "234426748186",
+    "project_id": "poster-maker-ed7c6",
+    "storage_bucket": "poster-maker-ed7c6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:234426748186:android:bfc43ab525e67d05b370a3",
+        "android_client_info": {
+          "package_name": "com.online.flyer.design.postermaker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "234426748186-i4ap60segl836hq4qleq41dbf73o5p5t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1dWGpu3uMfLW8gSgjzfLeRf_4CI6zluM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "234426748186-i4ap60segl836hq4qleq41dbf73o5p5t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

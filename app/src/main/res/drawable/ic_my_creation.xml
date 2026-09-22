@@ -1,0 +1,17 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="32dp"
+    android:height="32dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+  <!-- Lighter background layer (Folder Back) -->
+  <path
+      android:fillColor="#93C5FD"
+      android:pathData="M10,4H4C2.9,4 2,4.9 2,6v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V8c0,-1.1 -0.9,-2 -2,-2h-8L10,4z" />
+      
+  <!-- Darker foreground layer (Folder Front) -->
+  <path
+      android:fillColor="#2563EB"
+      android:pathData="M2,10h20v8c0,1.1 -0.9,2 -2,2H4c-1.1,0 -2,-0.9 -2,-2V10z" />
+      
+</vector>

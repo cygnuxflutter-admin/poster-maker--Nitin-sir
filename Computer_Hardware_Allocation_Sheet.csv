@@ -1,0 +1,11 @@
+﻿Sr No,Employee Name,Department / Desk No,CPU No,Monitor No,Keyboard No,Mouse No,Display Cable (HDMI/VGA),Monitor Power Cable,CPU Power Cable,Headphone No,Issue Date,Status,Remarks
+1,Rahul Patel,Design - Desk 1,CPU-001,MON-001,KB-001,MS-001,HDMI-001,Yes,Yes,HP-001,,Assigned,Working OK
+2,Sneha Shah,Video - Desk 2,CPU-002,MON-002,KB-002,MS-002,HDMI-002,Yes,Yes,HP-002,,Assigned,Working OK
+3,Aayush Sharma,Development - Desk 3,CPU-003,MON-003,KB-003,MS-003,DP-001,Yes,Yes,HP-003,,Assigned,Working OK
+4,,,,,,,,,,,,Available,
+5,,,,,,,,,,,,Available,
+6,,,,,,,,,,,,Available,
+7,,,,,,,,,,,,Available,
+8,,,,,,,,,,,,Available,
+9,,,,,,,,,,,,Available,
+10,,,,,,,,,,,,Available,

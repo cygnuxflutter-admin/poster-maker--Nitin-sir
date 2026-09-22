@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_centerInParent="true">
+
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_centerInParent="true"
+        android:scaleType="centerCrop"
+        android:src="@color/white" />
+
+    <com.makeramen.roundedimageview.RoundedImageView
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_centerInParent="true"
+        android:src="@drawable/leaflet_water_mark"
+        app:riv_corner_radius="25dp" />
+
+    <!--    <com.github.ybq.android.spinkit.SpinKitView-->
+    <!--        android:id="@+id/animation_view"-->
+    <!--        style="@style/SpinKitView.Circle"-->
+    <!--        android:layout_width="wrap_content"-->
+    <!--        app:SpinKit_Color="@color/white"-->
+    <!--        android:layout_height="wrap_content"-->
+    <!--        android:layout_alignParentBottom="true"-->
+    <!--        android:layout_centerHorizontal="true"-->
+    <!--        android:layout_gravity="center"-->
+    <!--        android:layout_marginBottom="@dimen/_15sdp" />-->
+
+
+    <com.github.ybq.android.spinkit.SpinKitView
+        android:id="@+id/warn_animation"
+        style="@style/SpinKitView.Large.ThreeBounce"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="25dp"
+        app:SpinKit_Color="#3B82F6" />
+
+</RelativeLayout>

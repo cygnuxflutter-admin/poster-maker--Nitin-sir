@@ -1,0 +1,163 @@
+﻿<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:FontName="Segoe UI" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1"/>
+   <Interior ss:Color="#1F4E79" ss:Pattern="Solid"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9D9D9"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9D9D9"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9D9D9"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#D9D9D9"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataCenter">
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#333333"/>
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="DataLeft">
+   <Font ss:FontName="Segoe UI" ss:Size="10" ss:Color="#333333"/>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E0E0E0"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="TitleStyle">
+   <Font ss:FontName="Segoe UI" ss:Size="16" ss:Color="#1F4E79" ss:Bold="1"/>
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Hardware Inventory">
+  <Table ss:DefaultRowHeight="22">
+   <Column ss:Width="50"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="120"/>
+   <Row ss:Height="30">
+    <Cell ss:MergeAcross="13" ss:StyleID="TitleStyle"><Data ss:Type="String">  IT HARDWARE &amp; COMPUTER ACCESSORIES ALLOCATION SHEET</Data></Cell>
+   </Row>
+   <Row ss:Height="10"/>
+   <Row ss:Height="26">
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Sr No.</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Employee Name</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Department / Desk No.</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">CPU No.</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Monitor No.</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Keyboard No.</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Mouse No.</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Display Cable (HDMI/VGA)</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Monitor Power Cable</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">CPU Power Cable</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Headphone No.</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Issue Date</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Status</Data></Cell>
+    <Cell ss:StyleID="Header"><Data ss:Type="String">Remarks</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">1</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">Rahul Patel</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Design - Desk 1</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">CPU-001</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">MON-001</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">KB-001</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">MS-001</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">HDMI-001</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Yes</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Yes</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">HP-001</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">02-09-2026</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Assigned</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">Working OK</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">2</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">Sneha Shah</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Video - Desk 2</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">CPU-002</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">MON-002</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">KB-002</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">MS-002</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">HDMI-002</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Yes</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Yes</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">HP-002</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">02-09-2026</Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Assigned</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String">Working OK</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">3</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Available</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String"></Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">4</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Available</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String"></Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="Number">5</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String"></Data></Cell>
+    <Cell ss:StyleID="DataCenter"><Data ss:Type="String">Available</Data></Cell>
+    <Cell ss:StyleID="DataLeft"><Data ss:Type="String"></Data></Cell>
+   </Row>
+  </Table>
+ </Worksheet>
+</Workbook>
