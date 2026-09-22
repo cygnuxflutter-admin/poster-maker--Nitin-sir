@@ -52,9 +52,8 @@ public class Leaflet_NativeAdUtil {
     }
 
     public static void loadNativeAd(RelativeLayout nativeAdContainer, Activity context) {
-        nativeAdContainer.setVisibility(View.VISIBLE);
-        Leaflet_NativeAdUtil nativeAdUtil = new Leaflet_NativeAdUtil(context);
-        nativeAdUtil.fillAdmobNativeAd(nativeAdContainer);
+        nativeAdContainer.setVisibility(View.GONE);
+        return;
     }
 
     public void fillAdmobNativeAd(final RelativeLayout nativeAdContainer) {

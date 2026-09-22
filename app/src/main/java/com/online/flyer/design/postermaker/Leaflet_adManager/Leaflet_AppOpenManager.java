@@ -128,7 +128,7 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
      * Utility method that checks if ad exists and can be shown.
      */
     public boolean isAdAvailable() {
-        return appOpenAd != null && wasLoadTimeLessThanNHoursAgo(4);
+        return false;
     }
 
     public void sendRequest() {
