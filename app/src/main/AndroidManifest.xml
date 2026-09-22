@@ -78,17 +78,21 @@
             android:theme="@style/AppTheme1" />
         <activity
             android:name=".Leaflet_activities.Leaflet_TemplateSelectionActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".Leaflet_activities.Leaflet_BackgroundSelectionActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme1" />
         <activity
             android:name=".Leaflet_activities.Leaflet_PosterMainActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
         <activity
             android:name=".Leaflet_activities.Leaflet_SettingsActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
         <activity

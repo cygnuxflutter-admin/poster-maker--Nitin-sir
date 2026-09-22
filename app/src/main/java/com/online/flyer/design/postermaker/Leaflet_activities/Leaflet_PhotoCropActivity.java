@@ -70,6 +70,7 @@ public class Leaflet_PhotoCropActivity extends AppCompatActivity implements Leaf
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        overridePendingTransition(0, 0);
     }
 
     @Override

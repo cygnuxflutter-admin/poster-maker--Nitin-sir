@@ -145,6 +145,7 @@ Boolean rateSubmit = false;
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        overridePendingTransition(0, 0);
     }
 
     @Override

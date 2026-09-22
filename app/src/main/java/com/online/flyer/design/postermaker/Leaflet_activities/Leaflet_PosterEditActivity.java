@@ -1272,6 +1272,7 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         btn_yes.setOnClickListener(v -> {
             dialog.dismiss();
             super.onBackPressed();
+        overridePendingTransition(0, 0);
         });
 
         TextView btn_no = dialog.findViewById(R.id.btn_no);
@@ -2589,3 +2590,4 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
     }
 
 }
+

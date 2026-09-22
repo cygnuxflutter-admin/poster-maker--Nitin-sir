@@ -80,6 +80,7 @@ public class Leaflet_MyCreationActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        overridePendingTransition(0, 0);
     }
 
     @Override
