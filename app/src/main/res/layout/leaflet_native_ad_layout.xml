@@ -54,7 +54,7 @@
                     android:paddingRight="5dp"
                     android:text="Take a Look at Our Free eBook"
                     android:textColor="@color/black"
-                    android:textSize="13sp"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
 
                 <TextView
@@ -72,18 +72,18 @@
                 <Button
                     android:id="@+id/ad_call_to_action"
                     android:layout_width="match_parent"
-                    android:layout_height="35dp"
+                    android:layout_height="30dp"
                     android:layout_gravity="center"
                     android:layout_marginLeft="8dp"
                     android:layout_marginRight="8dp"
-                    android:layout_marginBottom="5dp"
+                    android:layout_marginBottom="2dp"
                     android:background="@drawable/leaflet_rounded_bg"
                     android:backgroundTint="#127CB4"
                     android:gravity="center"
                     android:paddingLeft="10dp"
                     android:paddingRight="10dp"
                     android:textColor="@android:color/black"
-                    android:textSize="12sp"
+                    android:textSize="11sp"
                     android:textStyle="bold" />
 
             </LinearLayout>

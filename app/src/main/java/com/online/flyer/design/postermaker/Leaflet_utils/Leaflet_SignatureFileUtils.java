@@ -54,7 +54,6 @@ public class Leaflet_SignatureFileUtils {
     }
 
     public ArrayList<String> getFilePaths() {
-
         FILE_EXTN.add("png");
         FILE_EXTN.add("PNG");
         FILE_EXTN.add("jpg");
@@ -63,40 +62,21 @@ public class Leaflet_SignatureFileUtils {
         FILE_EXTN.add("JPEG");
 
         ArrayList<String> filePaths = new ArrayList<>();
-
-        //File file = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        //File directory = new File(file, context.getResources().getString(R.string.company_name) + "/" + context.getResources().getString(R.string.app_name));
         File directory = new File(Leaflet_MyApplication.getInstance().GetMainPath());
 
-        if (directory.isDirectory()) {
+        if (directory != null && directory.isDirectory()) {
             File[] listFiles = directory.listFiles();
-
-            Arrays.sort(listFiles, (file1, file2) -> {
-                long k = file1.lastModified() - file2.lastModified();
-                if (k > 0) {
-                    return 1;
-                } else if (k == 0) {
-                    return 0;
-                } else {
-                    return -1;
-                }
-            });
-
-            if (listFiles.length > 0) {
-
+            if (listFiles != null) {
+                Arrays.sort(listFiles, (file1, file2) -> {
+                    return Long.compare(file1.lastModified(), file2.lastModified());
+                });
                 for (File listFile : listFiles) {
-
-                    String filePath = listFile.getAbsolutePath();
-
-                    if (IsSupportedFile(filePath)) {
-                        filePaths.add(filePath);
+                    if (IsSupportedFile(listFile.getAbsolutePath())) {
+                        filePaths.add(listFile.getAbsolutePath());
                     }
                 }
-            } else {
-                Log.e("NullDirectory", "NullDirectory");
             }
         }
-
         return filePaths;
     }
 
@@ -109,3 +89,5 @@ public class Leaflet_SignatureFileUtils {
     }
 
 }
+
+

@@ -136,7 +136,7 @@
                     android:layout_height="fill_parent"
                     android:layout_weight="0.4"
                     android:orientation="vertical"
-                    android:weightSum="2.0">
+                    android:weightSum="3.0">
 
                     <RelativeLayout
                         android:layout_width="fill_parent"
@@ -188,6 +188,41 @@
                             </ImageView>
 
                         </RelativeLayout>
+                    </RelativeLayout>
+                    
+                    <RelativeLayout
+                        android:layout_width="fill_parent"
+                        android:layout_height="0.0dip"
+                        android:layout_weight="1.0">
+
+                        <LinearLayout
+                            android:id="@+id/lay_remove_bg"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:paddingLeft="12dp"
+                            android:paddingRight="12dp"
+                            android:paddingTop="8dp"
+                            android:paddingBottom="8dp"
+                            android:background="@drawable/leaflet_btn_rounded_text_bg"
+                            android:orientation="horizontal"
+                            android:gravity="center">
+                            
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:src="@drawable/leaflet_ic_magic_wand"
+                                app:tint="@color/white" />
+                                
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="6dp"
+                                android:text="Erase BG"
+                                android:textColor="@color/white"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
                     </RelativeLayout>
 
                 </LinearLayout>

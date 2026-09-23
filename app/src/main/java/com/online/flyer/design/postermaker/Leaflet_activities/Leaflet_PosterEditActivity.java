@@ -1008,7 +1008,7 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
                 }
             } else {
                 Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
-                camera_file = new File(Environment.getExternalStorageDirectory(), ".temp.jpg");
+                camera_file = new File(getCacheDir(), ".temp.jpg");
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", camera_file));
                 startActivityForResult(intent, SELECT_PICTURE_FROM_CAMERA);
                 dialog.dismiss();

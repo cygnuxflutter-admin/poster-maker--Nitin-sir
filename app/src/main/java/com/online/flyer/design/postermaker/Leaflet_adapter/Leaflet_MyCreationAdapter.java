@@ -55,65 +55,69 @@ public class Leaflet_MyCreationAdapter extends RecyclerView.Adapter<Leaflet_MyCr
     @NonNull
     @Override
     public MyViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
-        View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.leaflet_design_rv, viewGroup, false);
-        return new MyViewHolder(view);
+        try {
+            View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.leaflet_design_rv, viewGroup, false);
+            return new MyViewHolder(view);
+        } catch (Exception e) {
+            return new MyViewHolder(new View(viewGroup.getContext()));
+        }
     }
 
     public void onBindViewHolder(@NonNull final MyViewHolder holder, final int position) {
+        try {
+            if (holder.imageView == null) return;
+            
+            holder.imageView.getLayoutParams().width = cellWidth;
+            holder.imageView.getLayoutParams().height = cellHeight;
+            holder.imageView.invalidate();
 
-        holder.imageView.getLayoutParams().width = cellWidth;
-        holder.imageView.getLayoutParams().height = cellHeight;
-        holder.imageView.invalidate();
+            if (holder.btn_share != null) holder.btn_share.setVisibility(View.VISIBLE);
 
-        holder.btn_share.setVisibility(View.VISIBLE);
+            loadImage(holder.imageView, itemList.get(position));
 
-        loadImage(holder.imageView, itemList.get(position));
+            Glide.with(this.activity)
+                    .load(itemList.get(position))
+                    .thumbnail(0.1f).dontAnimate()
+                    .placeholder(R.drawable.leaflet_no_image)
+                    .error(R.drawable.leaflet_no_image)
+                    .into(holder.imageView);
 
-        Glide.with(this.activity)
-                .load(itemList.get(position))
-                .thumbnail(0.1f).dontAnimate()
-                .placeholder(R.drawable.leaflet_no_image)
-                .error(R.drawable.leaflet_no_image)
-                .into(holder.imageView);
+            holder.imageView.setOnClickListener(v -> {
+                Leaflet_MyApplication.showInterstitialAd(activity, () -> startActivity(position));
+            });
 
-        holder.imageView.setOnClickListener(v -> {
-            Leaflet_MyApplication.showInterstitialAd(activity, () -> startActivity(position));
-//            File file = new File(itemList.get(position));
-//            if (file.exists()) {
-//                fullscreenDialog(itemList.get(position));
-//            } else {
-//                Toast.makeText(activity, "Something went wrong!!", Toast.LENGTH_SHORT).show();
-//            }
-        });
-
-        holder.btn_del.setOnClickListener(view -> Leaflet_MaterialDialogUtils.getInstance().DeleteDialog(activity, dialog -> {
-
-            File file = new File(itemList.get(position));
-
-            if (file.exists()) {
-                boolean delete = file.delete();
-                if (delete) {
-                    itemList.remove(position);
-                    notifyDataSetChanged();
-                    if (itemList.size() == 0) {
-                        myCreationListener.onEmptyAdapter();
+            if (holder.btn_del != null) {
+                holder.btn_del.setOnClickListener(view -> Leaflet_MaterialDialogUtils.getInstance().DeleteDialog(activity, dialog -> {
+                    File file = new File(itemList.get(position));
+                    if (file.exists()) {
+                        boolean delete = file.delete();
+                        if (delete) {
+                            itemList.remove(position);
+                            notifyDataSetChanged();
+                            if (itemList.size() == 0) {
+                                myCreationListener.onEmptyAdapter();
+                            }
+                        }
                     }
-                }
+                    if (dialog != null && dialog.isShowing())
+                        dialog.dismiss();
+                }));
             }
 
-            if (dialog != null && dialog.isShowing())
-                dialog.dismiss();
-        }));
-
-        holder.btn_share.setOnClickListener(v -> {
-            String shareBody = "I'm using amazing Poster maker App, I just created a new poster within 2 min and it's completely free. I recommend you to try this app. \n\n" +
-                    "https://play.google.com/store/apps/details?id=" + activity.getApplicationContext().getPackageName();
-            Intent shareIntent = new Intent(Intent.ACTION_SEND);
-            shareIntent.setType("image/*");
-            shareIntent.putExtra(Intent.EXTRA_TEXT, shareBody);
-            shareIntent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(activity, BuildConfig.APPLICATION_ID + ".provider", new File(itemList.get(position))));
-            activity.startActivity(Intent.createChooser(shareIntent, "Share Image using"));
-        });
+            if (holder.btn_share != null) {
+                holder.btn_share.setOnClickListener(v -> {
+                    String shareBody = "I'm using amazing Poster maker App, I just created a new poster within 2 min and it's completely free. I recommend you to try this app. \n\n" +
+                            "https://play.google.com/store/apps/details?id=" + activity.getApplicationContext().getPackageName();
+                    Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                    shareIntent.setType("image/*");
+                    shareIntent.putExtra(Intent.EXTRA_TEXT, shareBody);
+                    shareIntent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(activity, BuildConfig.APPLICATION_ID + ".provider", new File(itemList.get(position))));
+                    activity.startActivity(Intent.createChooser(shareIntent, "Share Image using"));
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
     public void startActivity(int position) {
         File file = new File(itemList.get(position));

@@ -28,6 +28,14 @@ import java.util.Locale;
 import yuku.ambilwarna.AmbilWarnaDialog;
 
 import static com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterEditActivity.txt_stkr_rel;
+import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.segmentation.subject.SubjectSegmentation;
+import com.google.mlkit.vision.segmentation.subject.SubjectSegmenter;
+import com.google.mlkit.vision.segmentation.subject.SubjectSegmenterOptions;
+import com.google.mlkit.vision.segmentation.subject.SubjectSegmentationResult;
+import android.app.ProgressDialog;
+import android.widget.Toast;
+import android.graphics.Bitmap;
 
 public class Leaflet_StickerController {
 
@@ -35,6 +43,7 @@ public class Leaflet_StickerController {
     private final LinearLayout ly_controlsShow, lay_colorOpacity, ly_stk_rotation;
     private final ImageView pick_hue_color;
     private final RelativeLayout sti_btn_up, sti_btnLeft, sti_btnRight, sti_btnDown, lay_duplicateSticker, lay_str_delete;
+    private final LinearLayout lay_remove_bg;
     private final TextView stk_view_rotate;
     private final SeekBar alpha_seekBar;
     private final Leaflet_LineColorPicker hue_seekBar;
@@ -69,6 +78,7 @@ public class Leaflet_StickerController {
         sti_btnDown = activity.findViewById(R.id.sti_btnDown);
         lay_duplicateSticker = activity.findViewById(R.id.lay_duplicateSticker);
         lay_str_delete = activity.findViewById(R.id.lay_str_delete);
+        lay_remove_bg = activity.findViewById(R.id.lay_remove_bg);
 
         alpha_seekBar = activity.findViewById(R.id.alpha_seekBar);
         hue_seekBar = activity.findViewById(R.id.hue_seekBar);
@@ -245,6 +255,41 @@ public class Leaflet_StickerController {
             }
         });
 
+        lay_remove_bg.setOnClickListener(v -> {
+            if (activity instanceof Leaflet_PosterEditActivity && resizableStickerView != null) {
+                Bitmap bitmap = resizableStickerView.getMainImageBitmap();
+                if (bitmap != null) {
+                    ProgressDialog pd = new ProgressDialog(activity);
+                    pd.setMessage("Removing Background...");
+                    pd.setCancelable(false);
+                    pd.show();
+
+                    SubjectSegmenterOptions options = new SubjectSegmenterOptions.Builder()
+                            .enableForegroundBitmap()
+                            .build();
+                    SubjectSegmenter segmenter = SubjectSegmentation.getClient(options);
+                    InputImage image = InputImage.fromBitmap(bitmap, 0);
+
+                    segmenter.process(image)
+                            .addOnSuccessListener(result -> {
+                                Bitmap foregroundBitmap = result.getForegroundBitmap();
+                                if (foregroundBitmap != null) {
+                                    resizableStickerView.setMainImageBitmap(foregroundBitmap);
+                                } else {
+                                    Toast.makeText(activity, "No subject found", Toast.LENGTH_SHORT).show();
+                                }
+                                pd.dismiss();
+                                segmenter.close();
+                            })
+                            .addOnFailureListener(e -> {
+                                pd.dismiss();
+                                Toast.makeText(activity, "Failed to remove background", Toast.LENGTH_SHORT).show();
+                                segmenter.close();
+                            });
+                }
+            }
+        });
+
     }
 
     private void showLayout(View view) {
@@ -262,3 +307,4 @@ public class Leaflet_StickerController {
         stk_view_rotate.setText(String.format(Locale.getDefault(), "%.1f°", resizableStickerView.getRotation()));
     }
 }
+

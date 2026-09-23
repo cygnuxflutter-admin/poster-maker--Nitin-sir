@@ -104,9 +104,7 @@ public class Leaflet_BGSelectionController {
                     new Leaflet_GetBgData(preferenceClass, jsonArray, new Leaflet_GetBgData.OnGetCatDataListener() {
                         @Override
                         public void onGetDataComplete(ArrayList<Leaflet_BgModel> posterDataLists) {
-                            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-                                setPagerAdapter(posterDataLists);
-                            }, 1200);
+                            setPagerAdapter(posterDataLists);
                         }
 
                         @Override
@@ -254,7 +252,7 @@ public class Leaflet_BGSelectionController {
         Leaflet_ColorPelleteAdapter colorListAdapter = new Leaflet_ColorPelleteAdapter(activity, cellWidth, cellHeight, (colorCode) -> {
             dialogColor.dismiss();
             Bitmap bitmap = Bitmap.createBitmap(480, 800, Bitmap.Config.ARGB_8888);
-            bitmap.eraseColor(Color.parseColor(colorCode));
+            try { bitmap.eraseColor(Color.parseColor(colorCode)); } catch (Exception e) { bitmap.eraseColor(Color.BLACK); }
             new Leaflet_SaveBitmapTask(bitmap, new File(/*Environment.getExternalStorageDirectory()*/activity.getCacheDir(), ".temp.jpg").getPath(), new Leaflet_SaveBitmapTask.OnColorBitmapListener() {
                 @Override
                 public void onDownloadComplete() {
@@ -404,3 +402,4 @@ public class Leaflet_BGSelectionController {
     }
 
 }
+

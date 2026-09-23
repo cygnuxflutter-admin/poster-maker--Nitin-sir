@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:fitsSystemWindows="true"
     android:splitMotionEvents="false">
 
     <RelativeLayout
@@ -18,7 +19,7 @@
         <RelativeLayout
             android:id="@+id/top_ly"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="56dp"
             android:layout_alignParentStart="true"
             android:layout_alignParentTop="true">
 
@@ -296,22 +297,25 @@
         <RelativeLayout
             android:id="@+id/bottom_ly"
             android:layout_width="match_parent"
-            android:layout_height="55dp"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
             android:layout_alignParentBottom="true"
             android:background="#FFFFFF"
             android:elevation="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
                 android:weightSum="5">
 
 
                 <LinearLayout
                     android:id="@+id/add_text"
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:orientation="vertical">
@@ -337,7 +341,7 @@
                 <LinearLayout
                     android:id="@+id/add_sticker"
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:orientation="vertical">
@@ -364,7 +368,7 @@
                 <LinearLayout
                     android:id="@+id/add_effect"
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:orientation="vertical">
@@ -392,7 +396,7 @@
                 <LinearLayout
                     android:id="@+id/add_user_image"
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:orientation="vertical">
@@ -418,7 +422,7 @@
                 <LinearLayout
                     android:id="@+id/add_bg"
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
                     android:orientation="vertical">
@@ -455,8 +459,8 @@
 
         <RelativeLayout
             android:id="@+id/lay_sticker"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:layout_above="@+id/bottom_ly"
             android:layout_below="@id/top_ly"
             android:background="#FFFFFF"
@@ -464,8 +468,8 @@
 
             <RelativeLayout
                 android:id="@+id/pagerLay"
-                android:layout_width="fill_parent"
-                android:layout_height="50dp">
+                android:layout_width="match_parent"
+                android:layout_height="44dp">
 
                 <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip
                     android:id="@+id/pagerSlidingTabStrip"
@@ -480,8 +484,8 @@
 
             <androidx.viewpager.widget.ViewPager
                 android:id="@+id/stickerViewPager"
-                android:layout_width="fill_parent"
-                android:layout_height="fill_parent"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 android:layout_below="@+id/pagerLay" />
 
         </RelativeLayout>

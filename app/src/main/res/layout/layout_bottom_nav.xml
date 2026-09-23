@@ -1,52 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:background="#FFFFFF"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="70dp"
+    android:layout_height="wrap_content"
     android:layout_gravity="bottom"
     android:layout_alignParentBottom="true"
-    android:background="@drawable/bg_bottom_nav">
-    
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="horizontal"
-        android:weightSum="5"
-        android:gravity="center_vertical">
-        <LinearLayout android:id="@+id/nav_home" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <ImageView android:id="@+id/nav_home_ic" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_nav_home" app:tint="#9CA3AF"/>
-            <TextView android:id="@+id/nav_home_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Home" android:textColor="#9CA3AF" android:textSize="10sp" android:layout_marginTop="4dp"/>
-        </LinearLayout>
-        
-        <LinearLayout android:id="@+id/nav_templates" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <ImageView android:id="@+id/nav_templates_ic" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_nav_templates" app:tint="#9CA3AF"/>
-            <TextView android:id="@+id/nav_templates_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Templates" android:textColor="#9CA3AF" android:textSize="10sp" android:layout_marginTop="4dp"/>
-        </LinearLayout>
-        
-        <View android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"/>
-        
-        <LinearLayout android:id="@+id/nav_backgrounds" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <ImageView android:id="@+id/nav_backgrounds_ic" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_nav_backgrounds" app:tint="#9CA3AF"/>
-            <TextView android:id="@+id/nav_backgrounds_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Backgrounds" android:textColor="#9CA3AF" android:textSize="10sp" android:layout_marginTop="4dp"/>
-        </LinearLayout>
-        
-        <LinearLayout android:id="@+id/nav_settings" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
-            <ImageView android:id="@+id/nav_settings_ic" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_nav_settings" app:tint="#9CA3AF"/>
-            <TextView android:id="@+id/nav_settings_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Settings" android:textColor="#9CA3AF" android:textSize="10sp" android:layout_marginTop="4dp"/>
-        </LinearLayout>
-    </LinearLayout>
-    
+    android:orientation="vertical"
+    android:fitsSystemWindows="true"
+    android:clipChildren="false"
+    android:clipToPadding="false">
+
     <FrameLayout
-        android:id="@+id/nav_fab"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:layout_gravity="center"
-        android:background="@drawable/bg_circle_blue">
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:src="@drawable/ic_add_white"
-            android:layout_gravity="center"/>
+        android:layout_width="match_parent"
+        android:layout_height="70dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:background="@drawable/bg_bottom_nav">
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:weightSum="5"
+            android:gravity="center_vertical">
+            <LinearLayout android:id="@+id/nav_home" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/nav_home_ic" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_nav_home" app:tint="#9CA3AF"/>
+                <TextView android:id="@+id/nav_home_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Home" android:textColor="#9CA3AF" android:textSize="10sp" android:layout_marginTop="2dp"/>
+            </LinearLayout>
+            
+            <LinearLayout android:id="@+id/nav_templates" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/nav_templates_ic" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_nav_templates" app:tint="#9CA3AF"/>
+                <TextView android:id="@+id/nav_templates_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Templates" android:textColor="#9CA3AF" android:textSize="10sp" android:layout_marginTop="2dp"/>
+            </LinearLayout>
+            
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
+            
+            <LinearLayout android:id="@+id/nav_backgrounds" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/nav_backgrounds_ic" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_nav_backgrounds" app:tint="#9CA3AF"/>
+                <TextView android:id="@+id/nav_backgrounds_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Backgrounds" android:textColor="#9CA3AF" android:textSize="10sp" android:layout_marginTop="2dp"/>
+            </LinearLayout>
+            
+            <LinearLayout android:id="@+id/nav_settings" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                <ImageView android:id="@+id/nav_settings_ic" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_nav_settings" app:tint="#9CA3AF"/>
+                <TextView android:id="@+id/nav_settings_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Settings" android:textColor="#9CA3AF" android:textSize="10sp" android:layout_marginTop="2dp"/>
+            </LinearLayout>
+        </LinearLayout>
+        
+        <FrameLayout
+            android:id="@+id/nav_fab"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="center"
+            android:background="@drawable/bg_circle_blue">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_add_white"
+                android:layout_gravity="center"/>
+        </FrameLayout>
+        
     </FrameLayout>
-    
-</FrameLayout>
+</LinearLayout>
+

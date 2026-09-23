@@ -45,7 +45,7 @@ public class Leaflet_ColorPelleteAdapter extends RecyclerView.Adapter<Leaflet_Co
         holder.iv_image.getLayoutParams().height = cellHeight;
         holder.iv_image.invalidate();
 
-        holder.iv_image.setBackgroundColor(Color.parseColor(colorList[position]));
+        try { holder.iv_image.setBackgroundColor(Color.parseColor(colorList[position])); } catch (Exception e) { holder.iv_image.setBackgroundColor(Color.BLACK); }
 
         holder.iv_image.setOnClickListener(v -> colorPelleteListener.onClick(colorList[position]));
 
@@ -69,3 +69,4 @@ public class Leaflet_ColorPelleteAdapter extends RecyclerView.Adapter<Leaflet_Co
         }
     }
 }
+

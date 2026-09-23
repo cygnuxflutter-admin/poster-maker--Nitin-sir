@@ -5,10 +5,12 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Point;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Display;
+import android.view.View;
 import android.view.WindowManager;
 
 import androidx.annotation.NonNull;
@@ -130,6 +132,45 @@ public class Leaflet_MyApplication extends android.app.Application {
         OneSignal.initWithContext(this);
         OneSignal.setAppId("35b6d659-eeda-4729-b2c0-ebef7ac69e3e");
         OneSignal.promptForPushNotifications();
+
+        registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {
+                try {
+                    if (activity.getClass().getName().contains("UCropActivity")) {
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(activity.getWindow().getDecorView(), (v, insets) -> {
+                            androidx.core.graphics.Insets systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+                            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                            return insets;
+                        });
+                    }
+                    
+                    View topLy = activity.findViewById(R.id.top_ly);
+                    if (topLy == null) topLy = activity.findViewById(R.id.header);
+                    
+                    if (topLy != null) {
+                        androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(topLy, (v, insets) -> {
+                            androidx.core.graphics.Insets systemBars = insets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+                            int originalPaddingTop = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, activity.getResources().getDisplayMetrics());
+                            if (v.getId() == R.id.header) {
+                                originalPaddingTop = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, activity.getResources().getDisplayMetrics());
+                            }
+                            v.setPadding(v.getPaddingLeft(), systemBars.top + originalPaddingTop, v.getPaddingRight(), v.getPaddingBottom());
+                            return insets;
+                        });
+                        androidx.core.view.ViewCompat.requestApplyInsets(topLy);
+                    }
+                } catch (Exception e) {
+                    Log.e("Leaflet_MyApplication", "Error in onActivityCreated callback", e);
+                }
+            }
+            @Override public void onActivityStarted(@NonNull Activity activity) {}
+            @Override public void onActivityResumed(@NonNull Activity activity) {}
+            @Override public void onActivityPaused(@NonNull Activity activity) {}
+            @Override public void onActivityStopped(@NonNull Activity activity) {}
+            @Override public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {}
+            @Override public void onActivityDestroyed(@NonNull Activity activity) {}
+        });
     }
 
     public static synchronized Leaflet_MyApplication getInstance() {

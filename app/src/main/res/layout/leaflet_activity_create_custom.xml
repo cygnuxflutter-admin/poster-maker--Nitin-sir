@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fitsSystemWindows="true"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -86,11 +87,10 @@
             android:lineSpacingExtra="4dp"
             android:textSize="14sp" />
 
-        <!-- Card Container that expands to fill space -->
+        <!-- Card Container -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="wrap_content"
             android:layout_marginHorizontal="20dp"
             android:orientation="vertical">
 
@@ -98,8 +98,7 @@
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_gallery"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="120dp"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
@@ -186,8 +185,7 @@
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_camera"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="120dp"
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
@@ -274,8 +272,7 @@
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_color"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
+                android:layout_height="120dp"
                 android:layout_marginBottom="24dp"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
@@ -421,3 +418,5 @@
         </LinearLayout>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
+
+
