@@ -3,32 +3,31 @@
     android:layout_width="match_parent"
     android:padding="@dimen/_2sdp"
     android:background="@drawable/leaflet_ad_bg"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
     <RelativeLayout
         android:id="@+id/parentLyt"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:background="@color/white"
             android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical">
 
                 <RelativeLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="0dp"
+                    android:layout_width="match_parent"
+                    android:layout_height="130dp"
                     android:gravity="center"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_weight="1">
+                    android:layout_gravity="center_horizontal">
 
                     <ImageView
                         android:id="@+id/unified_image_view"
@@ -39,7 +38,8 @@
                     <com.google.android.gms.ads.nativead.MediaView
                         android:id="@+id/ad_media"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent" />
+                        android:layout_height="match_parent"
+                        android:minHeight="120dp" />
 
                 </RelativeLayout>
 

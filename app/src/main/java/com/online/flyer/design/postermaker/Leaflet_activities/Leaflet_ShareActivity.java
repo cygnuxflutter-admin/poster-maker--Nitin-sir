@@ -72,9 +72,9 @@ Boolean rateSubmit = false;
 
         rl_ad.setVisibility(View.VISIBLE);
         if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
-//            if (preferenceClass.getAdsId("BannerAdunitID") != null) {
+            if (preferenceClass.getAdsId("BannerAdunitID") != null) {
                 Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
-//            }
+            }
         }
 
 

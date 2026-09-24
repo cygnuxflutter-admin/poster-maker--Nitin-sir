@@ -87,21 +87,65 @@ public class Leaflet_MyCreationAdapter extends RecyclerView.Adapter<Leaflet_MyCr
             });
 
             if (holder.btn_del != null) {
+                holder.btn_del.setVisibility(View.GONE);
+                /*
                 holder.btn_del.setOnClickListener(view -> Leaflet_MaterialDialogUtils.getInstance().DeleteDialog(activity, dialog -> {
-                    File file = new File(itemList.get(position));
+                    int currentPosition = holder.getAdapterPosition();
+                    if (currentPosition == RecyclerView.NO_POSITION) return;
+                    
+                    File file = new File(itemList.get(currentPosition));
+                    boolean isDeleted = false;
+                    
                     if (file.exists()) {
-                        boolean delete = file.delete();
-                        if (delete) {
-                            itemList.remove(position);
-                            notifyDataSetChanged();
-                            if (itemList.size() == 0) {
-                                myCreationListener.onEmptyAdapter();
+                        isDeleted = file.delete();
+                    }
+                    
+                    try {
+                        android.net.Uri uri = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_SignatureFileUtils.getContentUriForImageFromMediaStore(activity, file.getAbsolutePath());
+                        if (uri != null) {
+                            int deletedRows = activity.getContentResolver().delete(uri, null, null);
+                            if (deletedRows > 0) isDeleted = true;
+                        }
+                    } catch (SecurityException e) {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                            android.net.Uri uri = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_SignatureFileUtils.getContentUriForImageFromMediaStore(activity, file.getAbsolutePath());
+                            if (uri != null) {
+                                java.util.List<android.net.Uri> uris = new java.util.ArrayList<>();
+                                uris.add(uri);
+                                android.app.PendingIntent pendingIntent = android.provider.MediaStore.createDeleteRequest(activity.getContentResolver(), uris);
+                                try {
+                                    activity.startIntentSenderForResult(pendingIntent.getIntentSender(), 1001, null, 0, 0, 0);
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                }
+                            }
+                        } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                            if (e instanceof android.app.RecoverableSecurityException) {
+                                android.app.RecoverableSecurityException rse = (android.app.RecoverableSecurityException) e;
+                                try {
+                                    activity.startIntentSenderForResult(rse.getUserAction().getActionIntent().getIntentSender(), 1001, null, 0, 0, 0);
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                }
                             }
                         }
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
+                    
+                    if (isDeleted || !file.exists()) {
+                        itemList.remove(currentPosition);
+                        notifyDataSetChanged();
+                        if (itemList.size() == 0) {
+                            myCreationListener.onEmptyAdapter();
+                        }
+                    }
+                    
                     if (dialog != null && dialog.isShowing())
                         dialog.dismiss();
                 }));
+                */
             }
 
             if (holder.btn_share != null) {

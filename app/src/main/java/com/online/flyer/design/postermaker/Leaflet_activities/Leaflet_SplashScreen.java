@@ -80,6 +80,45 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         }
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.leaflet_activity_splash_screen);
+
+        // Add cool slide-up and fade animation to Splash Logo
+        android.view.View splashLogo = findViewById(R.id.splash_logo);
+        if (splashLogo != null) {
+            android.view.animation.AnimationSet animationSet = new android.view.animation.AnimationSet(true);
+            animationSet.setInterpolator(new android.view.animation.DecelerateInterpolator(2.0f));
+            
+            // Slide up from 50% below
+            android.view.animation.TranslateAnimation slideUp = new android.view.animation.TranslateAnimation(
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f);
+            slideUp.setDuration(1200);
+
+            // Scale bounce
+            android.view.animation.ScaleAnimation scaleAnimation = new android.view.animation.ScaleAnimation(0.8f, 1.0f, 0.8f, 1.0f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f);
+            scaleAnimation.setDuration(1200);
+            
+            android.view.animation.AlphaAnimation alphaAnimation = new android.view.animation.AlphaAnimation(0.0f, 1.0f);
+            alphaAnimation.setDuration(1200);
+            
+            animationSet.addAnimation(slideUp);
+            animationSet.addAnimation(scaleAnimation);
+            animationSet.addAnimation(alphaAnimation);
+            
+            splashLogo.startAnimation(animationSet);
+        }
+        
+        // Add fade in to whole screen layout
+        android.view.View splashLayout = findViewById(R.id.splash_layout);
+        if (splashLayout != null) {
+            android.view.animation.AlphaAnimation layoutFade = new android.view.animation.AlphaAnimation(0.0f, 1.0f);
+            layoutFade.setDuration(800);
+            splashLayout.startAnimation(layoutFade);
+        }
+
         Leaflet_MyApplication.isAdsSplash = true;
 
 
@@ -160,7 +199,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
                             } else {
                                 preferenceClass.setDataType("BannerAdunitID", getStringValue(snapshot, "BannerAdunitID", "ca-app-pub-7915560734124811/1184742625"));
                                 preferenceClass.setDataType("InterstitalAdunitID", getStringValue(snapshot, "InterstitalAdunitID", "ca-app-pub-7915560734124811/6506808330"));
-                                preferenceClass.setDataType("RewardVideoUnitID", getStringValue(snapshot, "RewardVideoUnitID", "ca-app-pub-7915560734124811/4221969500"));
+                                preferenceClass.setDataType("RewardVideoUnitID", getStringValue(snapshot, "RewardVideoUnitID", "ca-app-pub-7915560734124811/3188089435"));
                                 preferenceClass.setDataType("NativeUnitID", getStringValue(snapshot, "NativeUnitID", "ca-app-pub-7915560734124811/5807970180"));
 
                                 preferenceClass.setDataType("AdxBannerAdunitID", getStringValue(snapshot, "AdxBannerAdunitID", ""));
@@ -175,10 +214,12 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
                                 preferenceClass.setDataType("fbInterstitalAdunitID", getStringValue(snapshot, "fbInterstitalAdunitID", ""));
                                 preferenceClass.setDataType("fbBannerAdunitID", getStringValue(snapshot, "fbBannerAdunitID", ""));
 
-                                preferenceClass.setAdsId("google_Rw_ID", getStringValue(snapshot, "google_Rw_ID", "ca-app-pub-7915560734124811/4221969500"));
+                                preferenceClass.setAdsId("google_Rw_ID", getStringValue(snapshot, "google_Rw_ID", "ca-app-pub-7915560734124811/3188089435"));
                             }
                             preferenceClass.setAdsStatus("bannerAdStatus", getIntValue(snapshot, "bannerAdStatus", 1));
-                            preferenceClass.setAdsStatus("interstitalAdStatus", getIntValue(snapshot, "interstitalAdStatus", 1));
+                            // Try both spellings just in case
+                            int interstitialStatus = getIntValue(snapshot, "interstitialAdStatus", getIntValue(snapshot, "interstitalAdStatus", 1));
+                            preferenceClass.setAdsStatus("interstitialAdStatus", interstitialStatus);
                             preferenceClass.setAdsStatus("EditScreenAdCount", getIntValue(snapshot, "EditScreenAdCount", 3));
 
                             preferenceClass.setDataType("PremiumAdType", getStringValue(snapshot, "PremiumAdType", "Reward"));
@@ -186,6 +227,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
                             preferenceClass.setAdsId("AD_FB_Rw_ID", getStringValue(snapshot, "AD_FB_Rw_ID", ""));
 
                             preferenceClass.setInt("UpdateAvailable", getIntValue(snapshot, "UpdateAvailable", 0));
+                            preferenceClass.setInt("force_update", getIntValue(snapshot, "force_update", 0));
                             preferenceClass.setDataType("UpdateVersionName", getStringValue(snapshot, "UpdateVersionName", "1.0"));
 
                             preferenceClass.setInt("download", getIntValue(snapshot, "download", 1));
@@ -231,11 +273,12 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         }
 
         int updateType = preferenceClass.getInt("UpdateAvailable");
+        int forceUpdate = preferenceClass.getInt("force_update");
         String serverVersion = preferenceClass.getDataType("UpdateVersionName");
         boolean isNewVersion = !BuildConfig.VERSION_NAME.equals(serverVersion);
 
-        if ((updateType == 1 || updateType == 2) && isNewVersion) {
-            final boolean isForceUpdate = (updateType == 1); // 1 = Force Update, 2 = Optional Update
+        if (updateType == 1 && isNewVersion) {
+            final boolean isForceUpdate = (forceUpdate == 1); // If both are 1, it's a Force Update. If force_update is 0, Optional.
 
             dialog = new Dialog(Leaflet_SplashScreen.this);
             dialog.setContentView(R.layout.leaflet_dialog_app_info);
@@ -271,7 +314,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
             dialog.setOnKeyListener((dialogInterface, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
                     if (isForceUpdate) {
-                        finishAffinity();
+                        finishAffinity(); // Exits the app
                         return true;
                     }
                 }

@@ -48,6 +48,15 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         super.onCreate(savedInstanceState);
         setContentView(R.layout.leaflet_activity_background_selection);
 
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh);
+        if (swipeRefresh != null) {
+            swipeRefresh.setOnRefreshListener(() -> {
+                finish();
+                startActivity(getIntent());
+                overridePendingTransition(0, 0);
+            });
+        }
+
         findByID();
 
         findViewById(R.id.ic_back).setOnClickListener(v -> onBackPressed());
@@ -299,8 +308,16 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        overridePendingTransition(0, 0);
+        if (getIntent().getBooleanExtra("auto_load", false)) {
+            super.onBackPressed();
+            overridePendingTransition(0, 0);
+        } else {
+            android.content.Intent intent = new android.content.Intent(this, com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity.class);
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+            overridePendingTransition(0, 0);
+        }
     }
 
     @Override
@@ -343,12 +360,18 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
                 }, materialDialog -> {
                     if (materialDialog != null && materialDialog.isShowing())
                         materialDialog.dismiss();
+                    if (getIntent().getBooleanExtra("auto_load", false)) {
+                        finish();
+                    }
                 });
             } else {
                 downloadTask(strings);
             }
         } else {
             Toast.makeText(this, "Make sure you are connected to internet!!", Toast.LENGTH_SHORT).show();
+            if (getIntent().getBooleanExtra("auto_load", false)) {
+                finish();
+            }
         }
     }
 

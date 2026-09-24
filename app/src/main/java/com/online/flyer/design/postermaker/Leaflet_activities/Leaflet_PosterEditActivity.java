@@ -314,13 +314,15 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         this.screenHeight = (getResources().getDisplayMetrics().heightPixels - Leaflet_SizeUtils.dpToPx(this, 110.0f));//(float) (dimension.heightPixels - ImageUtils.dpToPx(this, R.styleable.AppCompatTheme_checkedTextViewStyle));
 
         prefManager = new Leaflet_PreferenceClass(this);
-//        rl_ad = findViewById(R.id.rl_ad);
-//        rl_ad.setVisibility(View.VISIBLE);
-//        if (NetworkUtils.isNetworkAvailable(this)) {
-//            if (prefManager.getAdsId("BannerAdunitID") != null) {
-//                LoadAds.loadAdmobBannerAd(this, rl_ad);
-//            }
-//        }
+        RelativeLayout rl_ad = findViewById(R.id.rl_ad);
+        if (rl_ad != null) {
+            rl_ad.setVisibility(View.VISIBLE);
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
+                if (prefManager.getAdsId("BannerAdunitID") != null) {
+                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
+                }
+            }
+        }
 
         textController = new Leaflet_TextController(this, guideline);
         stickerController = new Leaflet_StickerController(this, guideline);

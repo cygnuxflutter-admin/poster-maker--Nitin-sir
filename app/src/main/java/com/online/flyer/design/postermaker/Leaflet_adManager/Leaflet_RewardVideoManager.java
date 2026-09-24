@@ -18,14 +18,14 @@ import com.google.android.gms.ads.AdError;
 import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.FullScreenContentCallback;
 import com.google.android.gms.ads.LoadAdError;
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAd;
-import com.google.android.gms.ads.rewardedinterstitial.RewardedInterstitialAdLoadCallback;
+import com.google.android.gms.ads.rewarded.RewardedAd;
+import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback;
 
 public class Leaflet_RewardVideoManager {
     private static Leaflet_PreferenceClass preferenceClass;
     private static String AD_google_Rw;
     private static AlertDialog alertDialog;
-    public static RewardedInterstitialAd mRewardedAd;
+    public static RewardedAd mRewardedAd;
     public static com.facebook.ads.InterstitialAd interstitialFB;
 
 
@@ -41,8 +41,15 @@ public class Leaflet_RewardVideoManager {
             AD_google_Rw = preferenceClass.getAdsId("google_Rw_ID");
         }
 
+        if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
+            AD_google_Rw = "ca-app-pub-3940256099942544/5224354917";
+            Log.d("AdManager", "Debug Mode: Using Test Reward Video ID");
+        } else {
+            Log.d("AdManager", "Fetching Reward Ad from Firebase (via Prefs): " + AD_google_Rw);
+        }
+
         if (AD_google_Rw == null || AD_google_Rw.trim().isEmpty() || AD_google_Rw.equals("null")) {
-            fbInterstitial(context, onAdLoadInterface);
+            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
             return;
         }
 
@@ -64,9 +71,9 @@ public class Leaflet_RewardVideoManager {
 
         try {
             AdRequest adRequest = new AdRequest.Builder().build();
-            RewardedInterstitialAd.load(context, AD_google_Rw, adRequest, new RewardedInterstitialAdLoadCallback() {
+            RewardedAd.load(context, AD_google_Rw, adRequest, new RewardedAdLoadCallback() {
                 @Override
-                public void onAdLoaded(RewardedInterstitialAd ad) {
+                public void onAdLoaded(@NonNull RewardedAd ad) {
                     mRewardedAd = ad;
                     if (alertDialog != null) {
                         if (alertDialog.isShowing()) {
@@ -95,11 +102,17 @@ public class Leaflet_RewardVideoManager {
                 @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                     super.onAdFailedToLoad(loadAdError);
-                    fbInterstitial(context, onAdLoadInterface);
+                    if (alertDialog != null && alertDialog.isShowing()) {
+                        alertDialog.dismiss();
+                    }
+                    if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
                 }
             });
         } catch (Exception e) {
-            fbInterstitial(context, onAdLoadInterface);
+            if (alertDialog != null && alertDialog.isShowing()) {
+                alertDialog.dismiss();
+            }
+            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
         }
 
 

@@ -68,7 +68,8 @@
         <LinearLayout
             android:id="@+id/ly_search"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="50dp"
             android:layout_toEndOf="@+id/ic_back_container"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -78,7 +79,8 @@
             <EditText
                 android:id="@+id/et_search"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="50dp"
                 android:layout_weight="1"
                 android:background="@null"
                 android:fontFamily="@font/leaflet_visbyroundcf_bold"
@@ -87,7 +89,7 @@
                 android:maxLines="1"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
-                android:textColor="@color/white"
+                android:textColor="#1F2937"
                 android:textColorHint="#9CA3AF"
                 android:textCursorDrawable="@drawable/color_cursor"
                 android:textSize="16sp" />
@@ -147,12 +149,19 @@
             app:pstsUnderlineColor="@color/transparent" />
     </RelativeLayout>
 
-    <androidx.viewpager.widget.ViewPager
-        android:id="@+id/viewPager"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+    <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSwipeRefreshLayout
+        android:id="@+id/swipe_refresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_above="@id/bottom_nav_include"
-        android:layout_below="@+id/viewPagerLay" />
+        android:layout_below="@+id/viewPagerLay">
+
+        <androidx.viewpager.widget.ViewPager
+            android:id="@+id/viewPager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSwipeRefreshLayout>
 
     <LinearLayout
         android:id="@+id/bottom_ly"

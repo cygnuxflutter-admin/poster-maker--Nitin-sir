@@ -59,16 +59,36 @@ public class Leaflet_MyApplication extends android.app.Application {
     public Leaflet_AppOpenManager appOpenManager;
     private Leaflet_InterstitialAdManager interstitialAdManager;
     public static Leaflet_MyApplication mInstance;
+    
+    public Activity currentActivity;
+    private android.app.Dialog noInternetDialog;
+    private boolean wasDisconnected = false;
+
+    public static int interstitialClickCount = 0;
 
     public static void showInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
-        if (onAdLoadInterface != null) {
-            onAdLoadInterface.onAdClose();
+        if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
+            int targetCount = pref.getAdsStatus("interstitialAdStatus");
+            if (targetCount <= 0) targetCount = 1;
+            
+            interstitialClickCount++;
+            
+            if (interstitialClickCount % targetCount == 0) {
+                ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager().showInterstitialAd(activity, onAdLoadInterface);
+            } else {
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+            }
+        } else {
+            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
         }
     }
 
     public static void showInterstitialAdWithOutCount(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
-        if (onAdLoadInterface != null) {
-            onAdLoadInterface.onAdClose();
+        if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
+            ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager().showInterstitialAd(activity, onAdLoadInterface);
+        } else {
+            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
         }
     }
 
@@ -165,12 +185,111 @@ public class Leaflet_MyApplication extends android.app.Application {
                 }
             }
             @Override public void onActivityStarted(@NonNull Activity activity) {}
-            @Override public void onActivityResumed(@NonNull Activity activity) {}
-            @Override public void onActivityPaused(@NonNull Activity activity) {}
+            @Override public void onActivityResumed(@NonNull Activity activity) {
+                currentActivity = activity;
+                checkAndShowDialog();
+            }
+            @Override public void onActivityPaused(@NonNull Activity activity) {
+                if (currentActivity == activity) currentActivity = null;
+                if (noInternetDialog != null && noInternetDialog.isShowing()) {
+                    noInternetDialog.dismiss();
+                }
+            }
             @Override public void onActivityStopped(@NonNull Activity activity) {}
             @Override public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {}
             @Override public void onActivityDestroyed(@NonNull Activity activity) {}
         });
+
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && cm != null) {
+            cm.registerDefaultNetworkCallback(new android.net.ConnectivityManager.NetworkCallback() {
+                @Override
+                public void onAvailable(@NonNull android.net.Network network) {
+                    if (wasDisconnected) {
+                        wasDisconnected = false;
+                        if (currentActivity != null) {
+                            currentActivity.runOnUiThread(() -> {
+                                if (noInternetDialog != null && noInternetDialog.isShowing()) {
+                                    noInternetDialog.dismiss();
+                                }
+                                if (currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity ||
+                                    currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_TemplateSelectionActivity ||
+                                    currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity ||
+                                    currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_SplashScreen) {
+                                    currentActivity.recreate();
+                                }
+                            });
+                        }
+                    }
+                }
+
+                @Override
+                public void onLost(@NonNull android.net.Network network) {
+                    wasDisconnected = true;
+                    if (currentActivity != null) {
+                        currentActivity.runOnUiThread(() -> checkAndShowDialog());
+                    }
+                }
+            });
+        }
+    }
+
+    private void checkAndShowDialog() {
+        if (currentActivity == null) return;
+        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        boolean isConnected = false;
+        if (cm != null) {
+            android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        }
+        if (!isConnected) {
+            wasDisconnected = true;
+            if (noInternetDialog == null || !noInternetDialog.isShowing()) {
+                showNoInternetDialog(currentActivity);
+            }
+        }
+    }
+
+    private void showNoInternetDialog(Activity activity) {
+        if (activity == null || activity.isFinishing()) return;
+        noInternetDialog = new android.app.Dialog(activity, 16974126);
+        noInternetDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        noInternetDialog.setContentView(R.layout.leaflet_error_dialog);
+        noInternetDialog.setCancelable(false);
+        
+        android.widget.TextView tvTitle = noInternetDialog.findViewById(R.id.title);
+        android.widget.TextView tvDesc = noInternetDialog.findViewById(R.id.description);
+        android.widget.TextView btnOk = noInternetDialog.findViewById(R.id.btn_ok);
+        
+        if (tvTitle != null) tvTitle.setText("No Internet");
+        if (tvDesc != null) tvDesc.setText("Please turn on your internet connection to continue.");
+        if (btnOk != null) {
+            btnOk.setText("Retry");
+            btnOk.setOnClickListener(v -> {
+                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                boolean connected = false;
+                if (cm != null) {
+                    android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                    connected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+                }
+                if (connected) {
+                    noInternetDialog.dismiss();
+                    wasDisconnected = false;
+                    if (currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity ||
+                        currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_TemplateSelectionActivity ||
+                        currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity ||
+                        currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_SplashScreen) {
+                        currentActivity.recreate();
+                    }
+                } else {
+                    android.widget.Toast.makeText(activity, "Still no internet!", android.widget.Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        
+        try {
+            noInternetDialog.show();
+        } catch (Exception ignored) {}
     }
 
     public static synchronized Leaflet_MyApplication getInstance() {

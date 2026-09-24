@@ -56,9 +56,9 @@ public class Leaflet_MyDesignActivity extends AppCompatActivity {
 
         RelativeLayout rl_ad = findViewById(R.id.rl_ad);
         if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
-//            if (new Leaflet_PreferenceClass(this).getAdsId("BannerAdunitID") != null) {
+            if (new Leaflet_PreferenceClass(this).getAdsId("BannerAdunitID") != null) {
                 loadAdmobBannerAd(this, rl_ad);
-//            }
+            }
         }
     }
 

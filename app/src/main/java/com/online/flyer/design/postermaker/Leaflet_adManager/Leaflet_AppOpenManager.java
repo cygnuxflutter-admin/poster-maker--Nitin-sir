@@ -5,6 +5,7 @@ import static androidx.lifecycle.Lifecycle.Event.ON_START;
 import android.app.Activity;
 import android.app.Application;
 import android.os.Bundle;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LifecycleObserver;
@@ -61,7 +62,6 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             @Override
             public void onAdFailedToLoad(LoadAdError loadAdError) {
                 // Handle the error.
-                fetchAdX();
             }
         };
 
@@ -69,10 +69,15 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             preferenceClass = new Leaflet_PreferenceClass(myApplication);
         }
         AD_UNIT_ID1 = preferenceClass.getAdsId("AppOpenID");
-        AD_UNIT_ID2 = preferenceClass.getAdsId("AdxAppOpenID");
+
+        if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
+            AD_UNIT_ID1 = "ca-app-pub-3940256099942544/3419835294";
+            Log.d("AdManager", "Debug Mode: Using Test AppOpen ID");
+        } else {
+            Log.d("AdManager", "Fetching AppOpen Ad from Firebase (via Prefs): " + AD_UNIT_ID1);
+        }
 
         if (AD_UNIT_ID1 == null || AD_UNIT_ID1.trim().isEmpty() || AD_UNIT_ID1.equals("null")) {
-            fetchAdX();
             return;
         }
 
@@ -80,40 +85,7 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             AdRequest request = getAdRequest();
             AppOpenAd.load(myApplication, AD_UNIT_ID1, request, AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT, loadCallback);
         } catch (Exception e) {
-            fetchAdX();
-        }
-    }
-
-    public void fetchAdX() {
-        if (isAdAvailable()) {
-            return;
-        }
-        loadCallback = new AppOpenAd.AppOpenAdLoadCallback() {
-            @Override
-            public void onAdLoaded(@NonNull AppOpenAd ad) {
-                Leaflet_AppOpenManager.this.appOpenAd = ad;
-                Leaflet_AppOpenManager.this.loadTime = new Date().getTime();
-            }
-
-            @Override
-            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-
-            }
-        };
-        if (preferenceClass == null) {
-            preferenceClass = new Leaflet_PreferenceClass(myApplication);
-        }
-        AD_UNIT_ID1 = preferenceClass.getAdsId("AppOpenID");
-        AD_UNIT_ID2 = preferenceClass.getAdsId("AdxAppOpenID");
-
-        if (AD_UNIT_ID2 == null || AD_UNIT_ID2.trim().isEmpty() || AD_UNIT_ID2.equals("null")) {
-            return;
-        }
-
-        try {
-            AdRequest request = getAdRequest();
-            AppOpenAd.load(myApplication, AD_UNIT_ID2, request, AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT, loadCallback);
-        } catch (Exception e) {
+            // Ignore error
         }
     }
 

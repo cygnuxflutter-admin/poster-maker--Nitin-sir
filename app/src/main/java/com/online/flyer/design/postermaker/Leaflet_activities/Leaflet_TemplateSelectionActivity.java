@@ -54,6 +54,15 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         super.onCreate(savedInstanceState);
         setContentView(R.layout.leaflet_activity_template_selection);
 
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh);
+        if (swipeRefresh != null) {
+            swipeRefresh.setOnRefreshListener(() -> {
+                finish();
+                startActivity(getIntent());
+                overridePendingTransition(0, 0);
+            });
+        }
+
         findByID();
 
         findViewById(R.id.ic_back).setOnClickListener(v -> onBackPressed());
@@ -64,8 +73,8 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
             findViewById(R.id.pagerSlidingTabStrip).setVisibility(android.view.View.GONE);
             int catId = getIntent().getIntExtra("cat_id", 0);
             int postId = getIntent().getIntExtra("post_id", 0);
-            templateSelectionController.startMaterialDialog();
-            loadPoster(preferenceClass.getDataType("field_0"), catId, postId);
+            boolean isPremium = getIntent().getBooleanExtra("auto_open_premium", false);
+            onPosterClick(catId, postId, isPremium);
         }
     }
 
@@ -78,10 +87,15 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
 
         String targetCat = getIntent().getStringExtra("category_name");
-        if (targetCat != null && vp != null) {
+        String targetCatId = getIntent().getStringExtra("category_id");
+        if ((targetCat != null || targetCatId != null) && vp != null) {
             int targetIndex = -1;
             for (int i = 0; i < allCategories.size(); i++) {
-                if (allCategories.get(i).getCat_name().toLowerCase().contains(targetCat.toLowerCase())) {
+                if (targetCatId != null && String.valueOf(allCategories.get(i).getCat_id()).equals(targetCatId)) {
+                    targetIndex = i;
+                    break;
+                }
+                if (targetCat != null && allCategories.get(i).getCat_name().toLowerCase().contains(targetCat.toLowerCase())) {
                     targetIndex = i;
                     break;
                 }
@@ -98,6 +112,12 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                 vp.setCurrentItem(targetIndex);
             }
         }
+        
+        if (getIntent().getBooleanExtra("show_all_categories", false)) {
+            openAllCategories();
+            getIntent().removeExtra("show_all_categories");
+        }
+
 
         if (vp != null) {
             vp.addOnPageChangeListener(new androidx.viewpager.widget.ViewPager.OnPageChangeListener() {
@@ -278,8 +298,16 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        overridePendingTransition(0, 0);
+        if (getIntent().getBooleanExtra("auto_load", false)) {
+            super.onBackPressed();
+            overridePendingTransition(0, 0);
+        } else {
+            android.content.Intent intent = new android.content.Intent(this, com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity.class);
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+            overridePendingTransition(0, 0);
+        }
     }
 
     @Override
@@ -328,6 +356,9 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                 }, materialDialog -> {
                     if (materialDialog != null && materialDialog.isShowing())
                         materialDialog.dismiss();
+                    if (getIntent().getBooleanExtra("auto_load", false)) {
+                        finish();
+                    }
                 });
 
             } else {
@@ -336,6 +367,9 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
             }
         } else {
             Leaflet_MaterialDialogUtils.getInstance().errorDialog(Leaflet_TemplateSelectionActivity.this, "Make sure you are connected to internet!!");
+            if (getIntent().getBooleanExtra("auto_load", false)) {
+                finish();
+            }
         }
     }
 
