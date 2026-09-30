@@ -153,7 +153,7 @@
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/bottom_nav_include"
+        android:layout_above="@id/rl_ad"
         android:layout_below="@+id/viewPagerLay">
 
         <androidx.viewpager.widget.ViewPager
@@ -215,6 +215,14 @@
         android:layout_height="70dp"
         android:layout_alignParentBottom="true"
         layout="@layout/layout_bottom_nav" />
+
+    <RelativeLayout
+        android:id="@+id/rl_ad"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/bottom_nav_include"
+        android:gravity="center"
+        android:visibility="gone" />
 
 </RelativeLayout>
 

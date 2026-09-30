@@ -208,6 +208,8 @@
                 android:id="@+id/lay_scroll"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingBottom="150dp"
                 android:layout_centerHorizontal="true">
 
                 <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_AspectRatioFrameLayout
@@ -261,11 +263,20 @@
                         android:layout_gravity="end|bottom"
                         android:visibility="visible">
 
-                        <ImageView
-                            android:id="@+id/btn_watermark"
-                            android:layout_width="50dp"
-                            android:layout_height="50dp"
-                            android:src="@drawable/leaflet_water_mark" />
+                        <androidx.cardview.widget.CardView
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            app:cardCornerRadius="10dp"
+                            app:cardElevation="0dp"
+                            app:cardBackgroundColor="@android:color/transparent">
+                            
+                            <ImageView
+                                android:id="@+id/btn_watermark"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:src="@drawable/leaflet_new_logo" />
+                        </androidx.cardview.widget.CardView>
 
                         <ImageView
                             android:id="@+id/btn_watermark_remove"

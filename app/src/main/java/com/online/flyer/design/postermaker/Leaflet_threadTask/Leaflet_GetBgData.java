@@ -56,7 +56,8 @@ public class Leaflet_GetBgData extends AsyncTask<Void, Void, String> {
                 String field_44 = textJSONObject.getString(preferenceClass.getDataType("field_44"));
                 String field_45 = textJSONObject.getString(preferenceClass.getDataType("field_45"));
 
-                if ((j) % preferenceClass.getInt("rv_count", 4) == 0) {
+                int rvCount = preferenceClass.getInt("rv_count", 4);
+                if (rvCount > 0 && j % rvCount == 0) {
                     bgImageArrayList.add(null);
                 }
 

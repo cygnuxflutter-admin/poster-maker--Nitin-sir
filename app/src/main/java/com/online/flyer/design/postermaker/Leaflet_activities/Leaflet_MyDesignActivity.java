@@ -115,8 +115,13 @@ public class Leaflet_MyDesignActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        overridePendingTransition(0, 0);
+        com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+            @Override
+            public void onAdClose() {
+                finish();
+                overridePendingTransition(0, 0);
+            }
+        });
     }
 
     @Override

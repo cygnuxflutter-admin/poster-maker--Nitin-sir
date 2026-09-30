@@ -39,7 +39,6 @@ public class Leaflet_ColorPelleteAdapter extends RecyclerView.Adapter<Leaflet_Co
 
     @Override
     public void onBindViewHolder(final MyViewHolder holder, final int position) {
-        holder.titanicTextView.setVisibility(View.GONE);
         holder.iv_lock.setVisibility(View.GONE);
         holder.iv_image.getLayoutParams().width = cellWidth;
         holder.iv_image.getLayoutParams().height = cellHeight;
@@ -57,15 +56,42 @@ public class Leaflet_ColorPelleteAdapter extends RecyclerView.Adapter<Leaflet_Co
     }
 
     public static class MyViewHolder extends RecyclerView.ViewHolder {
-        ImageView iv_image, titanicTextView, iv_lock;
+        ImageView iv_image;
+        android.view.View iv_lock;
+        android.view.View ad_layout;
+        android.view.View iv_like;
 
         public MyViewHolder(View itemView) {
             super(itemView);
 
             iv_image = itemView.findViewById(R.id.iv_image);
-            titanicTextView = itemView.findViewById(R.id.titanicTextView);
             iv_lock = itemView.findViewById(R.id.iv_lock);
-
+            ad_layout = itemView.findViewById(R.id.ad_layout);
+            iv_like = itemView.findViewById(R.id.iv_like);
+            
+            if (ad_layout != null) {
+                ad_layout.setVisibility(View.GONE);
+            }
+            if (iv_like != null) {
+                iv_like.setVisibility(View.GONE);
+            }
+            
+            // Hide progress bar if present (it doesn't have an ID, so we find it by type)
+            if (itemView instanceof android.view.ViewGroup) {
+                android.view.ViewGroup vg = (android.view.ViewGroup) itemView;
+                hideProgressBars(vg);
+            }
+        }
+        
+        private void hideProgressBars(android.view.ViewGroup vg) {
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                android.view.View child = vg.getChildAt(i);
+                if (child instanceof android.widget.ProgressBar) {
+                    child.setVisibility(View.GONE);
+                } else if (child instanceof android.view.ViewGroup) {
+                    hideProgressBars((android.view.ViewGroup) child);
+                }
+            }
         }
     }
 }

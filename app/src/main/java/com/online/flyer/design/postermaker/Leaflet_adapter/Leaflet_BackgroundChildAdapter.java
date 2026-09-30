@@ -131,7 +131,6 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Leaflet
             content_layout = itemView.findViewById(R.id.content_layout);
             ad_layout = itemView.findViewById(R.id.ad_layout);
             native_banner_ad_container = itemView.findViewById(R.id.native_banner_ad_container);
-            ImageView titanicTextView = itemView.findViewById(R.id.titanicTextView);
             // new Titanic().start(titanicTextView);
         }
     }

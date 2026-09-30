@@ -59,7 +59,8 @@ public class Leaflet_GetTemplateData extends AsyncTask<Void, Void, String> {
                 String field_11 = jsonObject.getString(preferenceClass.getDataType("field_11"));
                 String field_8 = jsonObject.getString(preferenceClass.getDataType("field_8"));
 
-                if ((j) % preferenceClass.getInt("rv_count", 4) == 0) {
+                int rvCount = preferenceClass.getInt("rv_count", 4);
+                if (rvCount > 0 && j % rvCount == 0) {
                     posterThumbFullArrayList.add(null);
                 }
 

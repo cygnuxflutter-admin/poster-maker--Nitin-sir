@@ -17,7 +17,8 @@
     <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_marginBottom="70dp">
 
         <androidx.core.widget.NestedScrollView
             android:id="@+id/nested_scroll_view"
@@ -50,7 +51,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Hello, Creator 👋"
+                        android:text="Poster Maker"
                         android:textColor="#111827"
                         android:textSize="24sp"
                         android:textStyle="bold" />
@@ -58,18 +59,34 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Turn your ideas into beautiful posters"
+                        android:text="Turn Ideas Into Posters."
                         android:textColor="#6B7280"
                         android:textSize="14sp"
                         android:layout_marginTop="4dp"/>
                 </LinearLayout>
                 
-                <ImageView
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_notification_bell" 
-                    android:background="@drawable/bg_circle_white"/>
+                <FrameLayout
+                    android:id="@+id/btn_notification"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                    
+                    <ImageView
+                        android:layout_width="44dp"
+                        android:layout_height="44dp"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_notification_bell" 
+                        android:background="@drawable/bg_circle_white"/>
+                        
+                    <View
+                        android:id="@+id/notification_badge"
+                        android:layout_width="12dp"
+                        android:layout_height="12dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginEnd="2dp"
+                        android:background="@drawable/bg_circle_red"
+                        android:visibility="gone"/>
+                </FrameLayout>
             </LinearLayout>
 
             <!-- ============== HERO BANNER (Swipeable) ============== -->
@@ -87,10 +104,18 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
+                    <!-- Shimmer Loader for Hero Banner -->
+                    <include layout="@layout/leaflet_hero_banner_shimmer"
+                        android:id="@+id/hero_banner_shimmer"
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp" />
+
                     <!-- NestedScrollableHost fixes swipe inside NestedScrollView -->
                     <com.online.flyer.design.postermaker.Leaflet_components.Leaflet_NestedScrollableHost
+                        android:id="@+id/hero_banner_host"
                         android:layout_width="match_parent"
-                        android:layout_height="200dp">
+                        android:layout_height="200dp"
+                        android:visibility="gone">
 
                         <androidx.viewpager2.widget.ViewPager2
                             android:id="@+id/hero_banner_viewpager"
@@ -439,6 +464,13 @@
                     android:layout_centerVertical="true"/>
             </RelativeLayout>
 
+            <!-- Shimmer Loader for Popular Templates -->
+            <include layout="@layout/leaflet_popular_shimmer"
+                android:id="@+id/popular_shimmer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp" />
+
             <com.online.flyer.design.postermaker.Leaflet_components.Leaflet_HorizontalRecyclerView
                 android:id="@+id/popular_posters_rv"
                 android:layout_width="match_parent"
@@ -447,23 +479,35 @@
                 android:layout_marginTop="14dp"
                 android:paddingStart="20dp"
                 android:paddingEnd="20dp"
+                android:layout_marginBottom="20dp"
                 android:clipToPadding="false"
                 android:clipChildren="false"
                 android:orientation="horizontal"
+                android:visibility="gone"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 android:overScrollMode="never" />
             <!-- ============== END POPULAR POSTERS ============== -->
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="90dp" />
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
     </com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSwipeRefreshLayout>
 
-    <include layout="@layout/layout_bottom_nav" android:layout_gravity="bottom" />
+    <LinearLayout
+        android:id="@+id/bottom_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical">
 
+        <!-- Banner Ad Container -->
+        <RelativeLayout
+            android:id="@+id/banner_ad_container_home"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"/>
+
+        <include layout="@layout/layout_bottom_nav" />
+    </LinearLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
 

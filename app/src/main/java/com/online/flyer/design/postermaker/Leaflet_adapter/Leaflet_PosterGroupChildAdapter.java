@@ -130,7 +130,6 @@ public class Leaflet_PosterGroupChildAdapter extends RecyclerView.Adapter<Leafle
             ad_layout = itemView.findViewById(R.id.ad_layout);
             native_banner_ad_container = itemView.findViewById(R.id.native_banner_ad_container);
             //TitanicTextView titanicTextView = itemView.findViewById(R.id.titanicTextView);
-            ImageView titanicTextView = itemView.findViewById(R.id.titanicTextView);
           //  new Titanic().start(titanicTextView);
         }
     }

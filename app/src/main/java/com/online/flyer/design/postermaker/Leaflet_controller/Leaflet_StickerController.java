@@ -283,7 +283,7 @@ public class Leaflet_StickerController {
                             })
                             .addOnFailureListener(e -> {
                                 pd.dismiss();
-                                Toast.makeText(activity, "Failed to remove background", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(activity, "Failed to remove background: " + e.getMessage(), Toast.LENGTH_LONG).show();
                                 segmenter.close();
                             });
                 }

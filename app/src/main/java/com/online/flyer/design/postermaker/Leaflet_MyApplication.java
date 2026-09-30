@@ -69,13 +69,28 @@ public class Leaflet_MyApplication extends android.app.Application {
     public static void showInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
         if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
-            int targetCount = pref.getAdsStatus("interstitialAdStatus");
-            if (targetCount <= 0) targetCount = 1;
+            final int targetCount = pref.getAdsStatus("interstitialAdStatus") <= 0 ? 1 : pref.getAdsStatus("interstitialAdStatus");
+            
             
             interstitialClickCount++;
             
+            Leaflet_InterstitialAdManager adManager = ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager();
+
+            if (targetCount > 1 && interstitialClickCount % targetCount == targetCount - 1) {
+                adManager.fetchAdMobAd();
+            }
+            
             if (interstitialClickCount % targetCount == 0) {
-                ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager().showInterstitialAd(activity, onAdLoadInterface);
+                Leaflet_InterstitialAdManager.OnAdLoadInterface wrappedListener = new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+                    @Override
+                    public void onAdClose() {
+                        if (targetCount == 1) {
+                            adManager.fetchAdMobAd();
+                        }
+                        if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                    }
+                };
+                adManager.showInterstitialAd(activity, wrappedListener);
             } else {
                 if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
             }
@@ -92,9 +107,38 @@ public class Leaflet_MyApplication extends android.app.Application {
         }
     }
 
+    public static int editInterstitialClickCount = 0;
+
     public static void showEditInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
-        if (onAdLoadInterface != null) {
-            onAdLoadInterface.onAdClose();
+        if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
+            final int targetCount = pref.getAdsStatus("EditScreenAdCount") <= 0 ? 1 : pref.getAdsStatus("EditScreenAdCount");
+            
+            
+            editInterstitialClickCount++;
+            
+            Leaflet_InterstitialAdManager adManager = ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager();
+
+            if (targetCount > 1 && editInterstitialClickCount % targetCount == targetCount - 1) {
+                adManager.fetchAdMobAd();
+            }
+            
+            if (editInterstitialClickCount % targetCount == 0) {
+                Leaflet_InterstitialAdManager.OnAdLoadInterface wrappedListener = new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+                    @Override
+                    public void onAdClose() {
+                        if (targetCount == 1) {
+                            adManager.fetchAdMobAd();
+                        }
+                        if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                    }
+                };
+                adManager.showInterstitialAd(activity, wrappedListener);
+            } else {
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+            }
+        } else {
+            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
         }
     }
 
@@ -112,6 +156,7 @@ public class Leaflet_MyApplication extends android.app.Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO);
         mInstance = this;
 
 

@@ -210,6 +210,20 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         }
         
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.setupBottomNav(this, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.TAB_TEMPLATES);
+
+        // Load Banner Ad
+        android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
+        if (rl_ad != null) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
+            if (pref.getInt("show_banner_templates", 1) == 1 && pref.getAdsId("BannerAdunitID") != null) {
+                rl_ad.setVisibility(android.view.View.VISIBLE);
+                if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
+                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
+                }
+            } else {
+                rl_ad.setVisibility(android.view.View.GONE);
+            }
+        }
     }
 
     public void openAllCategories() {
@@ -299,14 +313,24 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     @Override
     public void onBackPressed() {
         if (getIntent().getBooleanExtra("auto_load", false)) {
-            super.onBackPressed();
-            overridePendingTransition(0, 0);
+            com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+                @Override
+                public void onAdClose() {
+                    finish();
+                    overridePendingTransition(0, 0);
+                }
+            });
         } else {
-            android.content.Intent intent = new android.content.Intent(this, com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity.class);
-            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(intent);
-            finish();
-            overridePendingTransition(0, 0);
+            com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+                @Override
+                public void onAdClose() {
+                    android.content.Intent intent = new android.content.Intent(Leaflet_TemplateSelectionActivity.this, com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity.class);
+                    intent.addFlags(android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP | android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    startActivity(intent);
+                    finish();
+                    overridePendingTransition(0, 0);
+                }
+            });
         }
     }
 

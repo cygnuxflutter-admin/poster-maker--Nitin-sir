@@ -56,7 +56,7 @@
         <LinearLayout
             android:id="@+id/ly_search"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_toEndOf="@+id/ic_back"
             android:gravity="center_vertical"
             android:orientation="horizontal"
@@ -65,12 +65,13 @@
             <EditText
                 android:id="@+id/et_search"
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:background="@null"
                 android:fontFamily="@font/leaflet_visbyroundcf_bold"
                 android:hint="Search categories..."
                 android:inputType="text"
+                android:minHeight="48dp"
                 android:maxLines="1"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
@@ -104,9 +105,17 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rv_all_categories"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:clipToPadding="false"
         android:padding="16dp" />
+
+    <RelativeLayout
+        android:id="@+id/rl_ad"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:visibility="gone" />
 
 </LinearLayout>
 

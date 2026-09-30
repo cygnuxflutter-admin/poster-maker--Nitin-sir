@@ -81,43 +81,27 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.leaflet_activity_splash_screen);
 
-        // Add cool slide-up and fade animation to Splash Logo
-        android.view.View splashLogo = findViewById(R.id.splash_logo);
-        if (splashLogo != null) {
+        // Minimal and professional animation for Logo
+        android.view.View logoCard = findViewById(R.id.logo_card);
+        if (logoCard != null) {
             android.view.animation.AnimationSet animationSet = new android.view.animation.AnimationSet(true);
-            animationSet.setInterpolator(new android.view.animation.DecelerateInterpolator(2.0f));
+            animationSet.setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f));
             
-            // Slide up from 50% below
-            android.view.animation.TranslateAnimation slideUp = new android.view.animation.TranslateAnimation(
-                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f,
-                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f,
-                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f,
-                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f);
-            slideUp.setDuration(1200);
-
-            // Scale bounce
-            android.view.animation.ScaleAnimation scaleAnimation = new android.view.animation.ScaleAnimation(0.8f, 1.0f, 0.8f, 1.0f,
+            android.view.animation.ScaleAnimation scaleAnimation = new android.view.animation.ScaleAnimation(0.85f, 1.0f, 0.85f, 1.0f,
                     android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f,
                     android.view.animation.Animation.RELATIVE_TO_SELF, 0.5f);
-            scaleAnimation.setDuration(1200);
+            scaleAnimation.setDuration(800);
             
             android.view.animation.AlphaAnimation alphaAnimation = new android.view.animation.AlphaAnimation(0.0f, 1.0f);
-            alphaAnimation.setDuration(1200);
+            alphaAnimation.setDuration(800);
             
-            animationSet.addAnimation(slideUp);
             animationSet.addAnimation(scaleAnimation);
             animationSet.addAnimation(alphaAnimation);
             
-            splashLogo.startAnimation(animationSet);
+            logoCard.startAnimation(animationSet);
         }
-        
-        // Add fade in to whole screen layout
-        android.view.View splashLayout = findViewById(R.id.splash_layout);
-        if (splashLayout != null) {
-            android.view.animation.AlphaAnimation layoutFade = new android.view.animation.AlphaAnimation(0.0f, 1.0f);
-            layoutFade.setDuration(800);
-            splashLayout.startAnimation(layoutFade);
-        }
+
+        // We removed wave animations to keep it clean and fast
 
         Leaflet_MyApplication.isAdsSplash = true;
 
@@ -145,6 +129,8 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
 
         if (Leaflet_NetworkUtils.isNetworkAvailable(Leaflet_SplashScreen.this)) {
             getData();
+        } else {
+            Leaflet_MaterialDialogUtils.getInstance().errorDialog(Leaflet_SplashScreen.this, "Make sure you are connected to internet !!");
         }
     }
 
@@ -168,7 +154,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
             database = FirebaseDatabase.getInstance();
             DatabaseReference project_data = database.getReference("all_data").child("datas");
-            project_data.addValueEventListener(new ValueEventListener() {
+            project_data.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     for (int i = 0; i <= 48; i++) {
@@ -177,7 +163,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
                     }
 
                     project_data2 = database.getReference("all_data").child("ad_data");
-                    project_data2.addValueEventListener(new ValueEventListener() {
+                    project_data2.addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot snapshot) {
                             if (USE_TEST_ADS) {
@@ -228,6 +214,16 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
 
                             preferenceClass.setInt("UpdateAvailable", getIntValue(snapshot, "UpdateAvailable", 0));
                             preferenceClass.setInt("force_update", getIntValue(snapshot, "force_update", 0));
+                            
+                            // Custom Banner Controls
+                            preferenceClass.setInt("show_banner_home", getIntValue(snapshot, "show_banner_home", 1));
+                            preferenceClass.setInt("show_banner_background", getIntValue(snapshot, "show_banner_background", 1));
+                            preferenceClass.setInt("show_banner_templates", getIntValue(snapshot, "show_banner_templates", 1));
+                            preferenceClass.setInt("show_native_exit", getIntValue(snapshot, "show_native_exit", 1));
+                            preferenceClass.setInt("show_app_open_ad", getIntValue(snapshot, "show_app_open_ad", 1));
+                            preferenceClass.setInt("show_splash_app_open", getIntValue(snapshot, "show_splash_app_open", 1));
+                            preferenceClass.setInt("show_fallback_interstitial", getIntValue(snapshot, "show_fallback_interstitial", 0)); // 0 = default off, 1 = fallback on
+                            
                             preferenceClass.setDataType("UpdateVersionName", getStringValue(snapshot, "UpdateVersionName", "1.0"));
 
                             preferenceClass.setInt("download", getIntValue(snapshot, "download", 1));
@@ -235,6 +231,8 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
 
                             preferenceClass.setInt("rv_count", getIntValue(snapshot, "rv_count", 2));
                             preferenceClass.setInt("PremiumPostCount", getIntValue(snapshot, "PremiumPostCount", 2));
+                            preferenceClass.setInt("freeDownloadCount", getIntValue(snapshot, "freeDownloadCount", 0));
+                            preferenceClass.setInt("show_reward_on_save", getIntValue(snapshot, "show_reward_on_save", 1));
 
                             preferenceClass.setDataType("main_key", getStringValue(snapshot, "main_key", ""));
                             preferenceClass.setDecryptionType(getIntValue(snapshot, "decryptionType", 0));
@@ -355,6 +353,15 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         Application application = getApplication();
         ((Leaflet_MyApplication) application).showAdIfAvailable(Leaflet_SplashScreen.this, () -> {
             Leaflet_MyApplication.isAdsSplash = false;
+            
+            // Preload interstitial if target count is 1
+            if (preferenceClass.getAdsStatus("interstitialAdStatus") == 1) {
+                ((Leaflet_MyApplication) application).getInterstitialAdManager().fetchAdMobAd();
+            }
+            if (preferenceClass.getAdsStatus("EditScreenAdCount") == 1) {
+                ((Leaflet_MyApplication) application).getInterstitialAdManager().fetchAdMobAd();
+            }
+            
             Intent intent = new Intent(getApplicationContext(), Leaflet_PosterMainActivity.class);
             startActivity(intent);
             finish();
@@ -363,6 +370,15 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
 
     public void callMainActivity() {
         Leaflet_MyApplication.isAdsSplash = false;
+        
+        // Preload interstitial if target count is 1
+        if (preferenceClass.getAdsStatus("interstitialAdStatus") == 1) {
+            ((Leaflet_MyApplication) getApplicationContext()).getInterstitialAdManager().fetchAdMobAd();
+        }
+        if (preferenceClass.getAdsStatus("EditScreenAdCount") == 1) {
+            ((Leaflet_MyApplication) getApplicationContext()).getInterstitialAdManager().fetchAdMobAd();
+        }
+        
         ((Leaflet_MyApplication) getApplicationContext()).sendRequest();
 
         Intent intent = new Intent(getApplicationContext(), Leaflet_PosterMainActivity.class);

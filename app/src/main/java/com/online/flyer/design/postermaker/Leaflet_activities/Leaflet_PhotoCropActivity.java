@@ -32,7 +32,7 @@ public class Leaflet_PhotoCropActivity extends AppCompatActivity implements Leaf
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFlags(1024, 1024);
+        // getWindow().setFlags(1024, 1024);
         setContentView(R.layout.leaflet_activity_photo_crop);
 
         cropImageView = findViewById(R.id.cropImageView);
@@ -69,8 +69,13 @@ public class Leaflet_PhotoCropActivity extends AppCompatActivity implements Leaf
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        overridePendingTransition(0, 0);
+        com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+            @Override
+            public void onAdClose() {
+                finish();
+                overridePendingTransition(0, 0);
+            }
+        });
     }
 
     @Override

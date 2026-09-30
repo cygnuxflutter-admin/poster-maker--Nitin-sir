@@ -34,13 +34,15 @@ public class Leaflet_InterstitialAdManager {
         } else {
             Log.d("AdManager", "Fetching Interstitial Ad from Firebase (via Prefs): " + admobInterstitialAdId);
         }
-        
-        fetchAdMobAd();
     }
 
     public void fetchAdMobAd() {
         if (admobInterstitialAdId == null || admobInterstitialAdId.trim().isEmpty() || admobInterstitialAdId.equals("null")) {
             return;
+        }
+        
+        if (isAdmobAdAvailable()) {
+            return; // Already loaded
         }
 
         AdRequest adRequest = new AdRequest.Builder().build();
@@ -78,7 +80,6 @@ public class Leaflet_InterstitialAdManager {
                     if (Leaflet_InterstitialAdManager.this.onAdLoadInterface != null) {
                         Leaflet_InterstitialAdManager.this.onAdLoadInterface.onAdClose();
                     }
-                    fetchAdMobAd(); // Preload next
                 }
 
                 @Override
@@ -87,7 +88,6 @@ public class Leaflet_InterstitialAdManager {
                     if (Leaflet_InterstitialAdManager.this.onAdLoadInterface != null) {
                         Leaflet_InterstitialAdManager.this.onAdLoadInterface.onAdClose();
                     }
-                    fetchAdMobAd(); // Preload next
                 }
             });
             admobInterstitialAd.show(activity);

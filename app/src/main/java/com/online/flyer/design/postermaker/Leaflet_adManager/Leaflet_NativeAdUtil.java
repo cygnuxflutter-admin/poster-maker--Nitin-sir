@@ -52,12 +52,28 @@ public class Leaflet_NativeAdUtil {
     }
 
     public static void loadNativeAd(RelativeLayout nativeAdContainer, Activity context) {
+        Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(context);
+        if (pref.getInt("show_native_exit", 1) == 0) {
+            nativeAdContainer.setVisibility(View.GONE);
+            return;
+        }
+        
+        if (nativeAdContainer.getLayoutParams() != null && nativeAdContainer.getLayoutParams().height == android.view.ViewGroup.LayoutParams.WRAP_CONTENT) {
+            nativeAdContainer.getLayoutParams().height = (int) (250 * context.getResources().getDisplayMetrics().density);
+            nativeAdContainer.requestLayout();
+        }
+        
         nativeAdContainer.setVisibility(View.VISIBLE);
         Leaflet_NativeAdUtil util = new Leaflet_NativeAdUtil(context);
         util.fillAdmobNativeAd(nativeAdContainer);
     }
 
     public void fillAdmobNativeAd(final RelativeLayout nativeAdContainer) {
+        if ("loaded".equals(nativeAdContainer.getTag())) {
+            // ALREADY LOADED! This prevents huge requests and low impressions when scrolling.
+            return;
+        }
+
         String nativeUnitId = preferenceClass.getAdsId("NativeUnitID");
         
         if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
@@ -68,7 +84,16 @@ public class Leaflet_NativeAdUtil {
         }
 
         if (nativeUnitId == null || nativeUnitId.trim().isEmpty() || nativeUnitId.equals("null")) {
+            nativeAdContainer.setVisibility(View.GONE);
             return;
+        }
+
+        nativeAdContainer.setTag("loaded"); // Set tag so it doesn't request again for this container
+        
+        // Add Shimmer Loader
+        if (nativeAdContainer.getChildCount() == 0) {
+            View shimmerView = LayoutInflater.from(context).inflate(R.layout.leaflet_native_shimmer, nativeAdContainer, false);
+            nativeAdContainer.addView(shimmerView);
         }
 
         try {
@@ -84,7 +109,6 @@ public class Leaflet_NativeAdUtil {
                 populateUnifiedNativeAdView(nativeAd, adView);
                 nativeAdContainer.removeAllViews();
                 nativeAdContainer.addView(adView);
-                nativeAdContainer.setBackgroundColor(Color.parseColor("#151515"));
             });
 
             VideoOptions videoOptions = new VideoOptions.Builder().setStartMuted(true).build();

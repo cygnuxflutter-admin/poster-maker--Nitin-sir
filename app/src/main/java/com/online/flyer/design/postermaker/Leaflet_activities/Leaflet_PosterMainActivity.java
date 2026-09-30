@@ -89,6 +89,21 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.leaflet_activity_mainposter);
 
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
+        if (pref.getInt("show_banner_home", 1) == 1) {
+            android.widget.RelativeLayout bannerContainer = findViewById(R.id.banner_ad_container_home);
+            if (bannerContainer != null) {
+                com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, bannerContainer);
+                
+                android.view.View srView = findViewById(R.id.swipe_refresh);
+                if (srView != null) {
+                    androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams params = (androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams) srView.getLayoutParams();
+                    params.bottomMargin += (int) (50 * getResources().getDisplayMetrics().density);
+                    srView.setLayoutParams(params);
+                }
+            }
+        }
+
         androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh);
         if (swipeRefresh != null) {
             swipeRefresh.setOnRefreshListener(() -> {
@@ -104,6 +119,13 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         OneSignal.initWithContext(this);
         OneSignal.setAppId("35b6d659-eeda-4729-b2c0-ebef7ac69e3e");
         OneSignal.promptForPushNotifications();
+
+        android.view.View btnNotification = findViewById(R.id.btn_notification);
+        if (btnNotification != null) {
+            btnNotification.setOnClickListener(v -> {
+                startActivity(new Intent(Leaflet_PosterMainActivity.this, Leaflet_NotificationActivity.class));
+            });
+        }
 
         checkAccess();
 
@@ -130,7 +152,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 //                    if (Build.MANUFACTURER.equals("TECNO MOBILE LIMITED") && Build.BRAND.equals("TECNO") ||
 //                            Build.BRAND.equals("samsung") || Build.BRAND.equals("OPPO") ||
 //                            Build.BRAND.equals("vivo")) {
-                    Leaflet_MaterialDialogUtils.getInstance().PermissionDialog(Leaflet_PosterMainActivity.this);
+                    // Leaflet_MaterialDialogUtils.getInstance().PermissionDialog(Leaflet_PosterMainActivity.this);
 //                        Log.e("#brand", Build.BRAND);
 //                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
 //                        Uri uri = Uri.fromParts("package", getPackageName(), null);
@@ -156,7 +178,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 //                    if (Build.MANUFACTURER.equals("TECNO MOBILE LIMITED") && Build.BRAND.equals("TECNO") ||
 //                            Build.BRAND.equals("samsung") || Build.BRAND.equals("OPPO") ||
 //                            Build.BRAND.equals("vivo")) {
-                    Leaflet_MaterialDialogUtils.getInstance().PermissionDialog(Leaflet_PosterMainActivity.this);
+                    // Leaflet_MaterialDialogUtils.getInstance().PermissionDialog(Leaflet_PosterMainActivity.this);
 //                        Log.e("#brand", Build.BRAND);
 //                        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
 //                        Uri uri = Uri.fromParts("package", getPackageName(), null);
@@ -184,7 +206,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             if (!checkPermission()) {
                 try {
                     requestPermission();
-                    Leaflet_MaterialDialogUtils.getInstance().PermissionDialog(Leaflet_PosterMainActivity.this);
+                    // Leaflet_MaterialDialogUtils.getInstance().PermissionDialog(Leaflet_PosterMainActivity.this);
                 } catch (ActivityNotFoundException e) {
                     Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APPLICATIONS_SETTINGS);
                     startActivity(intent);
@@ -242,6 +264,9 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         heroBannerViewPager = findViewById(R.id.hero_banner_viewpager);
         bannerIndicatorLayout = findViewById(R.id.banner_indicator_layout);
 
+        View heroBannerShimmer = findViewById(R.id.hero_banner_shimmer);
+        View heroBannerHost = findViewById(R.id.hero_banner_host);
+
         // Call API to fetch banners from admin panel
         loadHeroBannersFromApi();
 
@@ -295,6 +320,18 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         startAutoScroll();
     }
 
+    private void updateNotificationBadge() {
+        android.view.View badge = findViewById(R.id.notification_badge);
+        if (badge != null) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NotificationDB db = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NotificationDB(this);
+            if (db.getUnreadCount() > 0) {
+                badge.setVisibility(android.view.View.VISIBLE);
+            } else {
+                badge.setVisibility(android.view.View.GONE);
+            }
+        }
+    }
+
     private void loadHeroBannersFromApi() {
         String requestUrl = "https://cygnux.in/postermaker/api/v1/poster/hero";
         String key = preferenceClass.getDataType("field_0");
@@ -321,6 +358,10 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
                             updateBannerIndicator(heroBannerAdapter.getStartPosition() % heroBannerAdapter.getRealCount());
                         }
                     }
+                    android.view.View shimmer = findViewById(R.id.hero_banner_shimmer);
+                    android.view.View host = findViewById(R.id.hero_banner_host);
+                    if (shimmer != null) shimmer.setVisibility(android.view.View.GONE);
+                    if (host != null) host.setVisibility(android.view.View.VISIBLE);
                 } else {
                     android.util.Log.e("CygnuxAPI", "<-- No data field in hero response");
                 }
@@ -445,6 +486,10 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
                     if (popularPosterAdapter != null) {
                         popularPosterAdapter.updateData(popularPosterList);
                     }
+                    android.view.View popShimmer = findViewById(R.id.popular_shimmer);
+                    android.view.View popRv = findViewById(R.id.popular_posters_rv);
+                    if (popShimmer != null) popShimmer.setVisibility(android.view.View.GONE);
+                    if (popRv != null) popRv.setVisibility(android.view.View.VISIBLE);
                 } else {
                     android.util.Log.e("CygnuxAPI", "<-- No data field in popular posters response");
                 }
@@ -472,6 +517,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         startAutoScroll();
+        updateNotificationBadge();
     }
 
     @Override

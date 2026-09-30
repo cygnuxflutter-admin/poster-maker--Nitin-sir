@@ -51,17 +51,9 @@ public class Leaflet_SettingsActivity extends AppCompatActivity {
             Leaflet_ShareUtils.onPrivacyPolicy(Leaflet_SettingsActivity.this);
         });
 
-        findViewById(R.id.tv_liked_posters).setOnClickListener(v -> {
-            Intent intent = new Intent(Leaflet_SettingsActivity.this, Leaflet_FavoritesActivity.class);
-            intent.putExtra(Leaflet_FavoritesActivity.EXTRA_TYPE, Leaflet_FavoritesActivity.TYPE_POSTERS);
-            startActivity(intent);
-        });
+        findViewById(R.id.tv_liked_posters).setOnClickListener(v -> { Leaflet_MyApplication.showInterstitialAd(this, () -> { Intent intent = new Intent(Leaflet_SettingsActivity.this, Leaflet_FavoritesActivity.class); intent.putExtra(Leaflet_FavoritesActivity.EXTRA_TYPE, Leaflet_FavoritesActivity.TYPE_POSTERS); startActivity(intent); }); });
 
-        findViewById(R.id.tv_liked_backgrounds).setOnClickListener(v -> {
-            Intent intent = new Intent(Leaflet_SettingsActivity.this, Leaflet_FavoritesActivity.class);
-            intent.putExtra(Leaflet_FavoritesActivity.EXTRA_TYPE, Leaflet_FavoritesActivity.TYPE_BACKGROUNDS);
-            startActivity(intent);
-        });
+        findViewById(R.id.tv_liked_backgrounds).setOnClickListener(v -> { Leaflet_MyApplication.showInterstitialAd(this, () -> { Intent intent = new Intent(Leaflet_SettingsActivity.this, Leaflet_FavoritesActivity.class); intent.putExtra(Leaflet_FavoritesActivity.EXTRA_TYPE, Leaflet_FavoritesActivity.TYPE_BACKGROUNDS); startActivity(intent); }); });
         
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.setupBottomNav(this, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.TAB_SETTINGS);
     }

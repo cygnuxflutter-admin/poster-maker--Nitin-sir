@@ -139,6 +139,11 @@
             android:name=".Leaflet_activities.Leaflet_AllCategoriesActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="subject_segment" />
+        <meta-data android:name="com.onesignal.NotificationServiceExtension" android:value="com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NotificationExtender" />
+            <activity android:name=".Leaflet_activities.Leaflet_NotificationActivity" android:screenOrientation="portrait" android:theme="@style/Theme.PosterMaker" android:exported="false" />
     </application>
 
 </manifest>

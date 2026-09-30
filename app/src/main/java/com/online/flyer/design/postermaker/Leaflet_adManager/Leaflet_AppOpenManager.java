@@ -68,17 +68,22 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
         if (preferenceClass == null) {
             preferenceClass = new Leaflet_PreferenceClass(myApplication);
         }
-        AD_UNIT_ID1 = preferenceClass.getAdsId("AppOpenID");
-
-        if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
-            AD_UNIT_ID1 = "ca-app-pub-3940256099942544/3419835294";
-            Log.d("AdManager", "Debug Mode: Using Test AppOpen ID");
-        } else {
-            Log.d("AdManager", "Fetching AppOpen Ad from Firebase (via Prefs): " + AD_UNIT_ID1);
+        
+        if (preferenceClass.getInt("show_app_open_ad", 1) == 0) {
+            return;
         }
+
+        AD_UNIT_ID1 = preferenceClass.getAdsId("AppOpenID");
 
         if (AD_UNIT_ID1 == null || AD_UNIT_ID1.trim().isEmpty() || AD_UNIT_ID1.equals("null")) {
             return;
+        }
+
+        if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
+            AD_UNIT_ID1 = "ca-app-pub-3940256099942544/9257395921";
+            Log.d("AdManager", "Debug Mode: Using Test AppOpen ID");
+        } else {
+            Log.d("AdManager", "Fetching AppOpen Ad from Firebase (via Prefs): " + AD_UNIT_ID1);
         }
 
         try {
@@ -100,7 +105,10 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
      * Utility method that checks if ad exists and can be shown.
      */
     public boolean isAdAvailable() {
-        return false;
+        if (preferenceClass != null && preferenceClass.getInt("show_app_open_ad", 1) == 0) {
+            return false;
+        }
+        return appOpenAd != null && wasLoadTimeLessThanNHoursAgo(4);
     }
 
     public void sendRequest() {
@@ -173,9 +181,11 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
             appOpenAd.show(activity);
         } else {
+            Log.d(LOG_TAG, "showAdIfSplashAvailable: ad not available, loading now");
             loadCallback = new AppOpenAd.AppOpenAdLoadCallback() {
                 @Override
                 public void onAdLoaded(AppOpenAd ad) {
+                    Log.d(LOG_TAG, "showAdIfSplashAvailable: ad loaded!");
                     Leaflet_AppOpenManager.this.appOpenAd = ad;
                     Leaflet_AppOpenManager.this.loadTime = (new Date()).getTime();
 
@@ -190,6 +200,7 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
 
                         @Override
                         public void onAdFailedToShowFullScreenContent(AdError adError) {
+                            Log.d(LOG_TAG, "showAdIfSplashAvailable: failed to show - " + adError.getMessage());
                             onShowAdCompleteListener.onShowAdComplete();
                         }
 
@@ -199,20 +210,52 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
                         }
                     };
                     appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
-                    appOpenAd.show(currentActivity);
+                    if (currentActivity != null) {
+                        appOpenAd.show(currentActivity);
+                    } else {
+                        Log.d(LOG_TAG, "showAdIfSplashAvailable: currentActivity is null, using passed activity");
+                        appOpenAd.show(activity);
+                    }
                 }
 
                 @Override
                 public void onAdFailedToLoad(LoadAdError loadAdError) {
-                    onShowAdCompleteListener.onShowAdComplete();
+                    Log.d(LOG_TAG, "showAdIfSplashAvailable: AppOpen failed.");
+                    loadFallbackInterstitial(activity, onShowAdCompleteListener);
                 }
             };
             if (preferenceClass == null) {
                 preferenceClass = new Leaflet_PreferenceClass(myApplication);
             }
+            
+            if (preferenceClass.getInt("show_app_open_ad", 1) == 0) {
+                Log.d(LOG_TAG, "show_app_open_ad is 0, skipping App Open globally...");
+                loadFallbackInterstitial(activity, onShowAdCompleteListener);
+                return;
+            }
+
+            if (preferenceClass.getInt("show_splash_app_open", 1) == 0) {
+                Log.d(LOG_TAG, "show_splash_app_open is 0, skipping App Open only on Splash...");
+                loadFallbackInterstitial(activity, onShowAdCompleteListener);
+                return;
+            }
+
             AD_UNIT_ID1 = preferenceClass.getAdsId("AppOpenID");
-            AD_UNIT_ID2 = preferenceClass.getAdsId("AdxAppOpenID");
+            
+            Log.d(LOG_TAG, "AppOpenID from prefs: " + AD_UNIT_ID1);
+            if (AD_UNIT_ID1 == null || AD_UNIT_ID1.trim().isEmpty() || AD_UNIT_ID1.equals("null")) {
+                Log.d(LOG_TAG, "AppOpenID is null/empty, skipping App Open...");
+                loadFallbackInterstitial(activity, onShowAdCompleteListener);
+                return;
+            }
+
+            if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
+                AD_UNIT_ID1 = "ca-app-pub-3940256099942544/9257395921";
+                Log.d(LOG_TAG, "Debug Mode: Using Test AppOpen ID: " + AD_UNIT_ID1);
+            }
+            
             AdRequest request = getAdRequest();
+            Log.d(LOG_TAG, "Calling AppOpenAd.load with ID: " + AD_UNIT_ID1);
             AppOpenAd.load(myApplication, AD_UNIT_ID1, request, AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT, loadCallback);
         }
     }
@@ -295,4 +338,48 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
         return (dateDifference < (numMilliSecondsPerHour * numHours));
     }
 
+    private void loadFallbackInterstitial(@NonNull Activity activity, @NonNull Leaflet_MyApplication.OnShowAdCompleteListener onShowAdCompleteListener) {
+        if (preferenceClass.getInt("show_fallback_interstitial", 0) == 0) {
+            Log.d(LOG_TAG, "Fallback Interstitial is disabled via Firebase.");
+            onShowAdCompleteListener.onShowAdComplete();
+            return;
+        }
+
+        Log.d(LOG_TAG, "Trying fallback Interstitial...");
+
+        String interstitialId = preferenceClass.getAdsId("InterstitalAdunitID");
+        if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
+            interstitialId = "ca-app-pub-3940256099942544/1033173712"; // Test Interstitial
+        }
+
+        if (interstitialId == null || interstitialId.trim().isEmpty() || interstitialId.equals("null")) {
+            onShowAdCompleteListener.onShowAdComplete();
+            return;
+        }
+
+        com.google.android.gms.ads.AdRequest adRequest = new com.google.android.gms.ads.AdRequest.Builder().build();
+        com.google.android.gms.ads.interstitial.InterstitialAd.load(myApplication, interstitialId, adRequest,
+                new com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback() {
+                    @Override
+                    public void onAdLoaded(@NonNull com.google.android.gms.ads.interstitial.InterstitialAd interstitialAd) {
+                        interstitialAd.setFullScreenContentCallback(new com.google.android.gms.ads.FullScreenContentCallback() {
+                            @Override
+                            public void onAdDismissedFullScreenContent() {
+                                onShowAdCompleteListener.onShowAdComplete();
+                            }
+                            @Override
+                            public void onAdFailedToShowFullScreenContent(AdError adError) {
+                                onShowAdCompleteListener.onShowAdComplete();
+                            }
+                        });
+                        interstitialAd.show(activity);
+                    }
+
+                    @Override
+                    public void onAdFailedToLoad(@NonNull LoadAdError fallbackError) {
+                        Log.d(LOG_TAG, "showAdIfSplashAvailable: Fallback Interstitial also failed - " + fallbackError.getMessage());
+                        onShowAdCompleteListener.onShowAdComplete();
+                    }
+                });
+    }
 }

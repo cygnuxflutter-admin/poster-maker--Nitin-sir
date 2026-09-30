@@ -103,8 +103,9 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
     private final int INTENT_FOR_BG = 0x2020;
     private final int SELECT_PICTURE_FROM_CAMERA = 905;
     private final int SELECT_PICTURE_FROM_GALLERY = 907;
-    private final float wr = 1.0f;
-    private final float hr = 1.0f;
+    private float wr = 1.0f;
+    private float hr = 1.0f;
+    private boolean isRewardAdWatchedForSave = false;
     private Leaflet_AspectRatioFrameLayout center_rel;
     private RelativeLayout main_rel, save_ly;
     private RelativeLayout btn_layControls;
@@ -167,7 +168,7 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        getWindow().setFlags(1024, 1024);
+        // getWindow().setFlags(1024, 1024);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.leaflet_activity_poster_edit);
@@ -316,12 +317,12 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         prefManager = new Leaflet_PreferenceClass(this);
         RelativeLayout rl_ad = findViewById(R.id.rl_ad);
         if (rl_ad != null) {
-            rl_ad.setVisibility(View.VISIBLE);
-            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
-                if (prefManager.getAdsId("BannerAdunitID") != null) {
-                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
-                }
-            }
+            rl_ad.setVisibility(View.GONE); // Hide banner ad in edit screen
+            // if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
+            //     if (prefManager.getAdsId("BannerAdunitID") != null) {
+            //         com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
+            //     }
+            // }
         }
 
         textController = new Leaflet_TextController(this, guideline);
@@ -776,6 +777,56 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
             this.lay_StkrMain.setVisibility(View.GONE);
         }
     }
+    
+    private void handleSaveWithRewardAd(boolean isSavePoster) {
+        Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(this);
+        int showRewardAd = pref.getInt("show_reward_on_save", 1);
+        
+        if (showRewardAd == 0) {
+            // Ad is turned off completely, everything is free
+            new saveTemplateAsync(isSavePoster).execute();
+            return;
+        }
+        
+        int freeDownloadCount = pref.getInt("freeDownloadCount", 0);
+        int userSavedCount = pref.getInt("userSavedCount", 0);
+        
+        if (freeDownloadCount > 0 && userSavedCount < freeDownloadCount) {
+            // Still in free limit
+            pref.setInt("userSavedCount", userSavedCount + 1);
+            new saveTemplateAsync(isSavePoster).execute();
+        } else {
+            // Free limit reached (or 0 free), show reward ad popup
+            String title = isSavePoster ? "Download Poster" : "Save Template";
+            String msg = "Watch an ad to " + (isSavePoster ? "download this poster" : "save this template");
+            
+            Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, title, msg, materialDialog -> {
+                if (materialDialog != null && materialDialog.isShowing()) {
+                    materialDialog.dismiss();
+                }
+                
+                if (pref.getDataType("PremiumAdType") != null && pref.getDataType("PremiumAdType").equals("Reward")) {
+                    Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_PosterEditActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+                        @Override
+                        public void onAdClose() {
+                            isRewardAdWatchedForSave = true;
+                            new saveTemplateAsync(isSavePoster).execute();
+                        }
+                    });
+                } else {
+                    Leaflet_MyApplication.showInterstitialAdWithOutCount(Leaflet_PosterEditActivity.this, () -> {
+                        isRewardAdWatchedForSave = true;
+                        new saveTemplateAsync(isSavePoster).execute();
+                    });
+                }
+            }, materialDialog -> {
+                // User clicked Cancel, do nothing
+                if (materialDialog != null && materialDialog.isShowing()) {
+                    materialDialog.dismiss();
+                }
+            });
+        }
+    }
 
     @Override
     public void onClick(View v) {
@@ -862,43 +913,16 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
             hideStickerControl();
             hideEffectControl();
             hideListControl();
-
-//            if (SDK_INT >= Build.VERSION_CODES.M) {
-//                if (checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PERMISSION_GRANTED
-//                        || checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PERMISSION_GRANTED) {
-//                    if (ActivityCompat.shouldShowRequestPermissionRationale(MailER_PosterEditActivity.this, WRITE_EXTERNAL_STORAGE)
-//                            || ActivityCompat.shouldShowRequestPermissionRationale(MailER_PosterEditActivity.this, READ_EXTERNAL_STORAGE)) {
             permission_type = "template";
-//                        requestPermissions(new String[]{"android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"}, PERMISSION_GRANTED);
-//                    } else {
-//                        MailER_MaterialDialogUtils.getInstance().PermissionDialog(this);
-//                    }
-//                    return;
-//                }
-//            }
             btn_watermark_remove.setVisibility(View.GONE);
-            new saveTemplateAsync(false).execute();
+            handleSaveWithRewardAd(false);
         } else if (id == R.id.btn_save_poster) {
             hideAllControls();
             hideStickerControl();
             hideEffectControl();
             hideListControl();
-
-//            if (SDK_INT >= Build.VERSION_CODES.M) {
-//                if (checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PERMISSION_GRANTED
-//                        || checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PERMISSION_GRANTED) {
-//                    if (ActivityCompat.shouldShowRequestPermissionRationale(MailER_PosterEditActivity.this, WRITE_EXTERNAL_STORAGE)
-//                            || ActivityCompat.shouldShowRequestPermissionRationale(MailER_PosterEditActivity.this, READ_EXTERNAL_STORAGE)) {
-            permission_type = "poster";
-//                        requestPermissions(new String[]{"android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"}, PERMISSION_GRANTED);
-//                    } else {
-//                        MailER_MaterialDialogUtils.getInstance().PermissionDialog(this);
-//                    }
-//                    return;
-//                }
-//            }
             btn_watermark_remove.setVisibility(View.GONE);
-            new saveTemplateAsync(true).execute();
+            handleSaveWithRewardAd(true);
         } else if (id == R.id.btn_reset) {
             Leaflet_MyApplication.showEditInterstitialAd(this, () -> {
                 Leaflet_MaterialDialogUtils.getInstance().resetDialog(this, materialDialog -> {
@@ -1273,8 +1297,13 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         TextView btn_yes = dialog.findViewById(R.id.btn_yes);
         btn_yes.setOnClickListener(v -> {
             dialog.dismiss();
-            super.onBackPressed();
-        overridePendingTransition(0, 0);
+            Leaflet_MyApplication.showEditInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+                @Override
+                public void onAdClose() {
+                    Leaflet_PosterEditActivity.super.onBackPressed();
+                    overridePendingTransition(0, 0);
+                }
+            });
         });
 
         TextView btn_no = dialog.findViewById(R.id.btn_no);
@@ -1589,6 +1618,8 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
                 main_rel.requestLayout();
                 background_img.setImageBitmap(bg_bitmap);
                 Leaflet_PosterEditActivity.this.bg_bitmap = bg_bitmap;
+                Leaflet_PosterEditActivity.this.wr = (float) bg_bitmap.getWidth() / (float) mainWidth;
+                Leaflet_PosterEditActivity.this.hr = (float) bg_bitmap.getHeight() / (float) mainHeight;
                 trans_img.setImageDrawable(drawable);
                 effectController.effect_alpha_seekbar.setProgress(overlay_opacity);
 
@@ -1703,7 +1734,9 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
                 rl_watermark.setVisibility(View.VISIBLE); // visible
 
                 if (!loadUserFrame) {
-                    new SetPosterDataAsync().execute();
+                    main_rel.post(() -> {
+                        new SetPosterDataAsync().execute();
+                    });
                 } else {
                     new createUndoRedoAsync(false, false, "nothing", "both").execute();
                     if (mMaterialDialog != null && mMaterialDialog.isShowing())
@@ -2045,7 +2078,12 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
 
             if (save) {
                 if (path != null) {
-                    Leaflet_MyApplication.showInterstitialAd(Leaflet_PosterEditActivity.this, Leaflet_PosterEditActivity.this::startIntent);
+                    if (isRewardAdWatchedForSave) {
+                        isRewardAdWatchedForSave = false;
+                        startIntent();
+                    } else {
+                        Leaflet_MyApplication.showEditInterstitialAd(Leaflet_PosterEditActivity.this, Leaflet_PosterEditActivity.this::startIntent);
+                    }
                 } else {
                     Toast.makeText(Leaflet_PosterEditActivity.this, "Something went wrong!!!", Toast.LENGTH_SHORT).show();
                 }
