@@ -58,7 +58,6 @@ public class Leaflet_ColorPelleteAdapter extends RecyclerView.Adapter<Leaflet_Co
     public static class MyViewHolder extends RecyclerView.ViewHolder {
         ImageView iv_image;
         android.view.View iv_lock;
-        android.view.View ad_layout;
         android.view.View iv_like;
 
         public MyViewHolder(View itemView) {
@@ -66,12 +65,8 @@ public class Leaflet_ColorPelleteAdapter extends RecyclerView.Adapter<Leaflet_Co
 
             iv_image = itemView.findViewById(R.id.iv_image);
             iv_lock = itemView.findViewById(R.id.iv_lock);
-            ad_layout = itemView.findViewById(R.id.ad_layout);
             iv_like = itemView.findViewById(R.id.iv_like);
             
-            if (ad_layout != null) {
-                ad_layout.setVisibility(View.GONE);
-            }
             if (iv_like != null) {
                 iv_like.setVisibility(View.GONE);
             }

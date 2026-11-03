@@ -40,7 +40,7 @@ public class Leaflet_NavUtils {
         ImageView icSettings = activity.findViewById(R.id.nav_settings_ic);
         TextView tvSettings = activity.findViewById(R.id.nav_settings_tv);
 
-        int activeColor = Color.parseColor("#2563EB");
+        int activeColor = Color.parseColor("#0066FF");
         int inactiveColor = Color.parseColor("#9CA3AF");
 
         icHome.setImageTintList(ColorStateList.valueOf(activeTab == TAB_HOME ? activeColor : inactiveColor));

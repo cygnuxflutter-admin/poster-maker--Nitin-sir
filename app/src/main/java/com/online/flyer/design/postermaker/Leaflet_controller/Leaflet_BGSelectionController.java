@@ -76,52 +76,77 @@ public class Leaflet_BGSelectionController {
     }
 
     public void loadBgImages() {
-        startMaterialDialog();
-        getBgThumb(preferenceClass.getDataType("field_0"));
+        String cachedJson = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().getCache(activity, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.KEY_BACKGROUNDS);
+        if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+            // Instant 0-second loading from cache!
+            Log.d("BGController", "Loading backgrounds instantly from cache...");
+            parseAndDisplayBgJson(cachedJson, true);
+
+            // Silent background refresh
+            getBgThumb(preferenceClass.getDataType("field_0"), true);
+        } else {
+            Log.d("BGController", "No backgrounds cache found, fetching from API...");
+            startMaterialDialog();
+            getBgThumb(preferenceClass.getDataType("field_0"), false);
+        }
+    }
+
+    public void refreshData(boolean forceRefresh) {
+        if (forceRefresh) {
+            startMaterialDialog();
+            getBgThumb(preferenceClass.getDataType("field_0"), false);
+        } else {
+            getBgThumb(preferenceClass.getDataType("field_0"), true);
+        }
     }
 
     private void getBgThumb(String key) {
+        getBgThumb(key, false);
+    }
+
+    private void getBgThumb(String key, final boolean isSilent) {
         String requestUrl = preferenceClass.getDataType("field_1") + preferenceClass.getDataType("field_34") + preferenceClass.getDataType("field_38");
         StringRequest stringRequest = new StringRequest(Request.Method.POST, requestUrl, response -> {
-            String text1 = null;
-
-            Log.d("qwertyu", "getBgThumb: " + response);
-//            if (preferenceClass.getDecryptionType() == 0) {
-//                byte[] octets = Base64.decode(response, Base64.URL_SAFE);
-//                String text_base = new String(octets, StandardCharsets.UTF_8);
-//                byte[] octets1 = Base64.decode(text_base, Base64.URL_SAFE);
-//                text1 = new String(octets1, StandardCharsets.UTF_8);
-//            } else if (preferenceClass.getDecryptionType() == 1) {
-//                MainSecurity decrypted = MainSecurity.decrypt(preferenceClass.getDataType("main_key"), response);
-//                text1 = decrypted.getData();
-//            }
             try {
-                JSONObject jsonObject = new JSONObject(response);
-                JSONArray jsonArray = jsonObject.getJSONArray(preferenceClass.getDataType("field_39"));
-                if (jsonArray.length() == 0) {
-                    Leaflet_MaterialDialogUtils.getInstance().errorDialog2(activity, activity.getResources().getString(R.string.something_went_wrong));
-                } else {
-                    new Leaflet_GetBgData(preferenceClass, jsonArray, new Leaflet_GetBgData.OnGetCatDataListener() {
-                        @Override
-                        public void onGetDataComplete(ArrayList<Leaflet_BgModel> posterDataLists) {
-                            setPagerAdapter(posterDataLists);
-                        }
+                Log.d("BGController", "getBgThumb response (silent=" + isSilent + "): length=" + (response != null ? response.length() : 0));
+                if (response == null || response.trim().isEmpty()) {
+                    if (!isSilent) dismissMaterialDialog();
+                    return;
+                }
 
-                        @Override
-                        public void onError() {
-                            dismissMaterialDialog();
-                            Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, activity.getResources().getString(R.string.something_went_wrong));
-                        }
-                    }).execute();
+                JSONObject jsonObject = new JSONObject(response);
+                if (jsonObject.has(preferenceClass.getDataType("field_39"))) {
+                    // Check if fresh data is different from cache
+                    String oldCache = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().getCache(activity, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.KEY_BACKGROUNDS);
+                    boolean isDifferent = (oldCache == null || !oldCache.equals(response));
+
+                    // Cache fresh copy on disk
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().saveCache(activity, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.KEY_BACKGROUNDS, response);
+
+                    if (!isSilent) {
+                        parseAndDisplayBgJson(response, false);
+                    } else if (isDifferent) {
+                        Log.d("BGController", "Backgrounds data updated from background sync!");
+                        parseAndDisplayBgJson(response, true);
+                    }
+                } else {
+                    if (!isSilent) {
+                        dismissMaterialDialog();
+                        Leaflet_MaterialDialogUtils.getInstance().errorDialog2(activity, activity.getResources().getString(R.string.something_went_wrong));
+                    }
                 }
             } catch (Exception e) {
-                dismissMaterialDialog();
-                Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, activity.getResources().getString(R.string.something_went_wrong));
+                if (!isSilent) {
+                    dismissMaterialDialog();
+                    Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, activity.getResources().getString(R.string.something_went_wrong));
+                }
                 e.printStackTrace();
             }
         }, error -> {
-            dismissMaterialDialog();
-            Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, activity.getResources().getString(R.string.something_went_wrong));
+            if (!isSilent) {
+                dismissMaterialDialog();
+                Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, activity.getResources().getString(R.string.something_went_wrong));
+            }
             error.printStackTrace();
         }) {
             @Override
@@ -135,24 +160,69 @@ public class Leaflet_BGSelectionController {
         Volley.newRequestQueue(activity).add(stringRequest);
     }
 
+    private void parseAndDisplayBgJson(String jsonResponse, boolean isSilentOrCache) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+            JSONArray jsonArray = jsonObject.getJSONArray(preferenceClass.getDataType("field_39"));
+            if (jsonArray.length() == 0) {
+                if (!isSilentOrCache) {
+                    Leaflet_MaterialDialogUtils.getInstance().errorDialog2(activity, activity.getResources().getString(R.string.something_went_wrong));
+                }
+            } else {
+                new Leaflet_GetBgData(preferenceClass, jsonArray, new Leaflet_GetBgData.OnGetCatDataListener() {
+                    @Override
+                    public void onGetDataComplete(ArrayList<Leaflet_BgModel> posterDataLists) {
+                        setPagerAdapter(posterDataLists);
+                    }
+
+                    @Override
+                    public void onError() {
+                        if (!isSilentOrCache) {
+                            dismissMaterialDialog();
+                            Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, activity.getResources().getString(R.string.something_went_wrong));
+                        }
+                    }
+                }).execute();
+            }
+        } catch (Exception e) {
+            if (!isSilentOrCache) {
+                dismissMaterialDialog();
+                Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, activity.getResources().getString(R.string.something_went_wrong));
+            }
+            e.printStackTrace();
+        }
+    }
+
     private void setPagerAdapter(ArrayList<Leaflet_BgModel> posterDataLists) {
+        if (activity == null || activity.isFinishing()) return;
+
         Leaflet_PagerSlidingTabStrip tabs = activity.findViewById(R.id.pagerSlidingTabStrip);
         ViewPager viewPager = activity.findViewById(R.id.viewPager);
-        
+        if (viewPager == null || tabs == null) {
+            dismissMaterialDialog();
+            return;
+        }
+
+        int currentItem = viewPager.getCurrentItem();
+
         ArrayList<Leaflet_BgModel> tabList = new ArrayList<>();
-        int maxItems = Math.min(4, posterDataLists.size());
+        int maxItems = Math.min(6, posterDataLists.size());
         for (int i = 0; i < maxItems; i++) {
             tabList.add(posterDataLists.get(i));
         }
-        
+
         viewPager.setAdapter(new Leaflet_BackgroundPagerAdapter(supportFragmentManager, tabList));
-        viewPager.setCurrentItem(0);
+        if (currentItem > 0 && currentItem < tabList.size()) {
+            viewPager.setCurrentItem(currentItem, false);
+        } else {
+            viewPager.setCurrentItem(0, false);
+        }
         tabs.setViewPager(viewPager);
-        
+
         if (activity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) {
             ((com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) activity).onCategoriesLoaded(posterDataLists, tabList);
         }
-        
+
         dismissMaterialDialog();
     }
 
@@ -173,6 +243,7 @@ public class Leaflet_BGSelectionController {
         Intent intent = new Intent();
         intent.setType("image/*");
         intent.setAction("android.intent.action.PICK");
+        com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
         activity.startActivityForResult(Intent.createChooser(intent, activity.getResources().getString(R.string.select_picture)), GALLERY_INTENT);
     }
 
@@ -198,6 +269,7 @@ public class Leaflet_BGSelectionController {
                 FileProvider.getUriForFile(activity, BuildConfig.APPLICATION_ID + ".provider",
                         camera_file));
 
+        com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
         activity.startActivityForResult(intent, CAMERA_INTENT);
 
 

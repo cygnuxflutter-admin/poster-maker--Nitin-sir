@@ -52,7 +52,7 @@ public class Leaflet_FavoritesActivity extends AppCompatActivity {
     }
 
     private void loadData() {
-        int cellWidth = (int) (getResources().getDisplayMetrics().widthPixels - (42 * getResources().getDisplayMetrics().density)) / 2;
+        int cellWidth = (int) (getResources().getDisplayMetrics().widthPixels - (24 * getResources().getDisplayMetrics().density)) / 2;
         int cellHeight = (700 * cellWidth) / 507;
 
         if (TYPE_POSTERS.equals(type)) {

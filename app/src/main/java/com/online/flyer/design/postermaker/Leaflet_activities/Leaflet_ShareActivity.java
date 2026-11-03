@@ -70,10 +70,12 @@ Boolean rateSubmit = false;
 //            remove_wm_ll.setVisibility(View.VISIBLE);
 //        }
 
-        rl_ad.setVisibility(View.VISIBLE);
         if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
-            if (preferenceClass.getAdsId("BannerAdunitID") != null) {
-                Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
+            if (preferenceClass.isBannerAdEnabled("share")) {
+                rl_ad.setVisibility(View.VISIBLE);
+                Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad, "share");
+            } else {
+                rl_ad.setVisibility(View.GONE);
             }
         }
 
@@ -203,12 +205,14 @@ Boolean rateSubmit = false;
         shareIntent.putExtra(Intent.EXTRA_STREAM, FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", new File(imagePath)));
 
         if (more) {
+            com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
             startActivity(Intent.createChooser(shareIntent, "Share Image using"));
             return;
         }
 
         try {
             shareIntent.setPackage(package_name);
+            com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
             startActivity(shareIntent);
         } catch (Exception e2) {
             Toast.makeText(this, error_msg, Toast.LENGTH_LONG).show();

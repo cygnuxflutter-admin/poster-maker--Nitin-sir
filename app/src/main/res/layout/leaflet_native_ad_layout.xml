@@ -1,108 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
 <com.google.android.gms.ads.nativead.NativeAdView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root_layout"
     android:layout_width="match_parent"
-    android:padding="@dimen/_2sdp"
-    android:background="@drawable/leaflet_ad_bg"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
-    <RelativeLayout
-        android:id="@+id/parentLyt"
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_ad_inner"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:gravity="center_vertical">
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="2dp">
 
         <RelativeLayout
+            android:id="@+id/parentLyt"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_gravity="center"
-            android:background="@color/white"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:background="#FFFFFF">
 
-            <LinearLayout
+            <!-- MediaView (Centered large ad image / creative) -->
+            <com.google.android.gms.ads.nativead.MediaView
+                android:id="@+id/ad_media"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="vertical">
+                android:layout_height="150dp"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:layout_marginTop="10dp"
+                android:background="#FFFFFF" />
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:layout_gravity="center_horizontal">
+            <!-- Headline (Ad Title) -->
+            <TextView
+                android:id="@+id/ad_headline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/ad_media"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:layout_marginTop="10dp"
+                android:ellipsize="end"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:maxLines="1"
+                android:text="Sponsored Ad"
+                android:textColor="#111827"
+                android:textSize="15sp"
+                android:textStyle="bold" />
 
-                    <ImageView
-                        android:id="@+id/unified_image_view"
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent"
-                        android:scaleType="centerCrop" />
+            <!-- Body / Advertiser -->
+            <TextView
+                android:id="@+id/ad_body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/ad_headline"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="Tap to learn more"
+                android:textColor="#6B7280"
+                android:textSize="12sp" />
 
-                    <com.google.android.gms.ads.nativead.MediaView
-                        android:id="@+id/ad_media"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:minHeight="120dp" />
+            <!-- Call To Action Button (Full width blue rounded button) -->
+            <Button
+                android:id="@+id/ad_call_to_action"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_below="@id/ad_body"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="14dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="14dp"
+                android:background="@drawable/bg_ad_cta_button"
+                android:elevation="1dp"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:gravity="center"
+                android:letterSpacing="0.03"
+                android:text="INSTALL"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
-                </RelativeLayout>
-
-
-                <TextView
-                    android:id="@+id/ad_headline"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:maxLines="2"
-                    android:paddingLeft="5dp"
-                    android:paddingTop="5dp"
-                    android:paddingRight="5dp"
-                    android:text="Take a Look at Our Free eBook"
-                    android:textColor="@color/black"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/ad_body"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:maxLines="1"
-                    android:paddingLeft="5dp"
-                    android:paddingRight="5dp"
-                    android:paddingBottom="5dp"
-                    android:text="See our Connected Worker plan..."
-                    android:textColor="#929090"
-                    android:textSize="10sp" />
-
-                <Button
-                    android:id="@+id/ad_call_to_action"
-                    android:layout_width="match_parent"
-                    android:layout_height="30dp"
-                    android:layout_gravity="center"
-                    android:layout_marginLeft="8dp"
-                    android:layout_marginRight="8dp"
-                    android:layout_marginBottom="2dp"
-                    android:background="@drawable/leaflet_rounded_bg"
-                    android:backgroundTint="#127CB4"
-                    android:gravity="center"
-                    android:paddingLeft="10dp"
-                    android:paddingRight="10dp"
-                    android:textColor="@android:color/black"
-                    android:textSize="11sp"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
+            <!-- Yellow Ad Attribution Badge pinned to top-left -->
             <TextView
                 android:id="@+id/ad_attribution"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:paddingHorizontal="@dimen/_8sdp"
-                android:background="#FFCC66"
-                android:paddingLeft="2dp"
-                android:paddingRight="2dp"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:background="@drawable/bg_ad_badge_yellow"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="3dp"
+                android:paddingBottom="3dp"
                 android:text="Ad"
-                android:textColor="#FFFFFF"
-                android:textSize="16sp" />
+                android:textColor="#000000"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:elevation="4dp" />
 
         </RelativeLayout>
-    </RelativeLayout>
+
+    </androidx.cardview.widget.CardView>
 
 </com.google.android.gms.ads.nativead.NativeAdView>

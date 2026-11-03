@@ -25,16 +25,19 @@ public class Leaflet_BackgroundFragment extends Fragment {
     private RecyclerView template_rv;
     private GetPosterListener getPosterListener;
     private ArrayList<Leaflet_BgImage> bgImages = new ArrayList<>();
+    private String categoryName = "Background";
 
     public interface GetPosterListener {
         void onPosterClick(String path, boolean premium);
     }
 
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.leaflet_template_fragment, container, false);
         assert getArguments() != null;
         //noinspection unchecked
         bgImages = (ArrayList<Leaflet_BgImage>) getArguments().getSerializable("posterDataLists");
+        categoryName = getArguments().getString("category_name", "Background");
         this.getPosterListener = (GetPosterListener) getActivity();
         template_rv = view.findViewById(R.id.template_rv);
         setPosterAdapter();
@@ -44,16 +47,34 @@ public class Leaflet_BackgroundFragment extends Fragment {
     public void setPosterAdapter() {
         template_rv.setHasFixedSize(true);
         GridLayoutManager layoutManager = new GridLayoutManager(getActivity(), 2, LinearLayoutManager.VERTICAL, false);
-        template_rv.setLayoutManager(layoutManager);
 
         DisplayMetrics displayMetrics = new DisplayMetrics();
         Objects.requireNonNull(getActivity()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         float screenDensity = getResources().getDisplayMetrics().density;
         int screenWidth = (displayMetrics).widthPixels;
-        int cellWidth = (int) (screenWidth - (42 * screenDensity)) / 2;
+        int cellWidth = (int) (screenWidth - (24 * screenDensity)) / 2;
         int cellHeight = (700 * cellWidth) / 507;
 
-        Leaflet_BackgroundChildAdapter backgroundChildAdapter = new Leaflet_BackgroundChildAdapter(getActivity(), bgImages, cellWidth, cellHeight, (path, premium) -> getPosterListener.onPosterClick(path, premium));
+        Leaflet_BackgroundChildAdapter backgroundChildAdapter = new Leaflet_BackgroundChildAdapter(
+                getActivity(),
+                bgImages,
+                categoryName,
+                cellWidth,
+                cellHeight,
+                (path, premium) -> getPosterListener.onPosterClick(path, premium)
+        );
+
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                if (backgroundChildAdapter.getItemViewType(position) == Leaflet_BackgroundChildAdapter.TYPE_AD) {
+                    return 2; // Span across both columns
+                }
+                return 1;
+            }
+        });
+
+        template_rv.setLayoutManager(layoutManager);
         template_rv.setAdapter(backgroundChildAdapter);
         template_rv.invalidate();
     }

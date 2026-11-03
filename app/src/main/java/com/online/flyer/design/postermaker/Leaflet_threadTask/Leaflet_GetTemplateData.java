@@ -53,15 +53,22 @@ public class Leaflet_GetTemplateData extends AsyncTask<Void, Void, String> {
         ArrayList<Leaflet_PosterImage> posterThumbFullArrayList = new ArrayList<>();
         try {
             JSONArray field_7 = arrayJSONObject.getJSONArray(preferenceClass.getDataType("field_7"));
+            int firstAdAfter = preferenceClass.getGridFirstAdAfter("templates");
+            int repeatAdAfter = preferenceClass.getGridRepeatAdAfter("templates");
+            boolean adEnabled = preferenceClass.isGridAdEnabled("templates");
+
             for (int j = 0; j < field_7.length(); j++) {
                 JSONObject jsonObject = field_7.getJSONObject(j);
                 String field_10 = jsonObject.getString(preferenceClass.getDataType("field_10"));
                 String field_11 = jsonObject.getString(preferenceClass.getDataType("field_11"));
                 String field_8 = jsonObject.getString(preferenceClass.getDataType("field_8"));
 
-                int rvCount = preferenceClass.getInt("rv_count", 4);
-                if (rvCount > 0 && j % rvCount == 0) {
-                    posterThumbFullArrayList.add(null);
+                if (adEnabled && firstAdAfter > 0) {
+                    if (j == firstAdAfter) {
+                        posterThumbFullArrayList.add(null);
+                    } else if (repeatAdAfter > 0 && j > firstAdAfter && (j - firstAdAfter) % repeatAdAfter == 0) {
+                        posterThumbFullArrayList.add(null);
+                    }
                 }
 
                 posterThumbFullArrayList.add(new Leaflet_PosterImage(field_10, field_11, field_8, cat_id));

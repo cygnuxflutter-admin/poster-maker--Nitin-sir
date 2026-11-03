@@ -54,18 +54,22 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         super.onCreate(savedInstanceState);
         setContentView(R.layout.leaflet_activity_template_selection);
 
+        findByID();
+
         androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh);
         if (swipeRefresh != null) {
             swipeRefresh.setOnRefreshListener(() -> {
-                finish();
-                startActivity(getIntent());
-                overridePendingTransition(0, 0);
+                if (templateSelectionController != null) {
+                    templateSelectionController.refreshData(true);
+                }
+                swipeRefresh.setRefreshing(false);
             });
         }
 
-        findByID();
-
-        findViewById(R.id.ic_back).setOnClickListener(v -> onBackPressed());
+        android.view.View backBtn = findViewById(R.id.ic_back);
+        if (backBtn != null) backBtn.setOnClickListener(v -> onBackPressed());
+        android.view.View backContainer = findViewById(R.id.ic_back_container);
+        if (backContainer != null) backContainer.setOnClickListener(v -> onBackPressed());
         deleteFromExternalStorage();
 
         if (getIntent().getBooleanExtra("auto_load", false)) {
@@ -186,7 +190,7 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                     currentTabList.clear();
                     String query = s.toString().toLowerCase().trim();
                     if (query.isEmpty()) {
-                        int maxItems = Math.min(5, allCategories.size());
+                        int maxItems = Math.min(6, allCategories.size());
                         for (int i = 0; i < maxItems; i++) {
                             currentTabList.add(allCategories.get(i));
                         }
@@ -215,10 +219,10 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
         if (rl_ad != null) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
-            if (pref.getInt("show_banner_templates", 1) == 1 && pref.getAdsId("BannerAdunitID") != null) {
+            if (pref.isBannerAdEnabled("templates")) {
                 rl_ad.setVisibility(android.view.View.VISIBLE);
                 if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
-                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
+                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad, "templates");
                 }
             } else {
                 rl_ad.setVisibility(android.view.View.GONE);
@@ -250,6 +254,15 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     @Override
     protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 2002 && resultCode == RESULT_OK && data != null) {
+            int catId = data.getIntExtra("cat_id", 0);
+            int postId = data.getIntExtra("post_id", 0);
+            boolean isPremium = data.getBooleanExtra("is_premium", false);
+            if (catId != 0 && postId != 0) {
+                onPosterClick(catId, postId, isPremium);
+            }
+            return;
+        }
         if (requestCode == 1001 && resultCode == RESULT_OK && data != null) {
             String selectedCatName = data.getStringExtra("selected_category_name");
             if (selectedCatName != null && allCategories != null && currentTabList != null) {

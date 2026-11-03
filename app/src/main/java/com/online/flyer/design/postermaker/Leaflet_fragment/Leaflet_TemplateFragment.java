@@ -24,6 +24,7 @@ public class Leaflet_TemplateFragment extends Fragment {
 
     private RecyclerView template_rv;
     private int catId;
+    private String catName = "Template";
     private GetPosterListener getPosterListener;
     private ArrayList<Leaflet_PosterImage> posterThumbFulls;
 
@@ -31,11 +32,12 @@ public class Leaflet_TemplateFragment extends Fragment {
         void onPosterClick(int cat_id, int post_id, boolean premium);
     }
 
-
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.leaflet_template_fragment, container, false);
         assert getArguments() != null;
         this.catId = getArguments().getInt("catId");
+        this.catName = getArguments().getString("cat_name", "Template");
         //noinspection unchecked
         posterThumbFulls = (ArrayList<Leaflet_PosterImage>) getArguments().getSerializable("posterDataLists");
         this.getPosterListener = (GetPosterListener) getActivity();
@@ -49,16 +51,34 @@ public class Leaflet_TemplateFragment extends Fragment {
         template_rv.setHasFixedSize(true);
         GridLayoutManager layoutManager = new GridLayoutManager(getActivity(), 2, LinearLayoutManager.VERTICAL, false);
 
-        template_rv.setLayoutManager(layoutManager);
-
         DisplayMetrics displayMetrics = new DisplayMetrics();
         Objects.requireNonNull(getActivity()).getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         float screenDensity = getResources().getDisplayMetrics().density;
         int screenWidth = (displayMetrics).widthPixels;
-        int cellWidth = (int) (screenWidth - (42 * screenDensity)) / 2;
+        int cellWidth = (int) (screenWidth - (24 * screenDensity)) / 2;
         int cellHeight = (700 * cellWidth) / 507;
 
-        Leaflet_PosterGroupChildAdapter posterGroupChildAdapter = new Leaflet_PosterGroupChildAdapter(getActivity(), posterThumbFulls, catId, cellWidth, cellHeight, (cat_id, post_id, premium) -> getPosterListener.onPosterClick(cat_id, post_id, premium));
+        Leaflet_PosterGroupChildAdapter posterGroupChildAdapter = new Leaflet_PosterGroupChildAdapter(
+                getActivity(),
+                posterThumbFulls,
+                catId,
+                catName,
+                cellWidth,
+                cellHeight,
+                (cat_id, post_id, premium) -> getPosterListener.onPosterClick(cat_id, post_id, premium)
+        );
+
+        layoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                if (posterGroupChildAdapter.getItemViewType(position) == Leaflet_PosterGroupChildAdapter.TYPE_AD) {
+                    return 2; // Span across both columns
+                }
+                return 1;
+            }
+        });
+
+        template_rv.setLayoutManager(layoutManager);
         template_rv.setAdapter(posterGroupChildAdapter);
         template_rv.invalidate();
     }

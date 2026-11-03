@@ -65,8 +65,8 @@
                             android:layout_width="23dp"
                             android:layout_height="23dp"
                             android:layout_centerInParent="true"
-                            app:tint="@color/selected"
-                            android:src="@drawable/leaflet_ic_back" />
+                            app:tint="#1E293B"
+                            android:src="@drawable/ic_arrow_back" />
                     </RelativeLayout>
 
                     <RelativeLayout
@@ -258,15 +258,17 @@
 
                     <RelativeLayout
                         android:id="@+id/rl_watermark"
-                        android:layout_width="50dp"
-                        android:layout_height="50dp"
+                        android:layout_width="56dp"
+                        android:layout_height="46dp"
                         android:layout_gravity="end|bottom"
+                        android:layout_marginEnd="6dp"
+                        android:layout_marginBottom="6dp"
                         android:visibility="visible">
 
                         <androidx.cardview.widget.CardView
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            app:cardCornerRadius="10dp"
+                            app:cardCornerRadius="0dp"
                             app:cardElevation="0dp"
                             app:cardBackgroundColor="@android:color/transparent">
                             
@@ -274,8 +276,8 @@
                                 android:id="@+id/btn_watermark"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
-                                android:scaleType="centerCrop"
-                                android:src="@drawable/leaflet_new_logo" />
+                                android:scaleType="fitCenter"
+                                android:src="@drawable/logowatermark" />
                         </androidx.cardview.widget.CardView>
 
                         <ImageView
@@ -283,7 +285,7 @@
                             android:layout_width="@dimen/_10sdp"
                             android:layout_height="@dimen/_10sdp"
                             android:layout_alignParentEnd="true"
-                            android:layout_gravity="end|bottom"
+                            android:layout_alignParentTop="true"
                             android:background="@color/black"
                             android:src="@drawable/leaflet_ic_close"
                             android:visibility="visible" />

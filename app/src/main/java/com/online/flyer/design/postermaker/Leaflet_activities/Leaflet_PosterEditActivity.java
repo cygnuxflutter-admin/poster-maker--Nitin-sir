@@ -18,6 +18,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Looper;
+import android.graphics.drawable.ColorDrawable;
+import android.view.Window;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.util.Base64;
@@ -97,6 +100,18 @@ import java.util.List;
 import java.util.Objects;
 
 public class Leaflet_PosterEditActivity extends AppCompatActivity implements View.OnClickListener, Leaflet_StickersFragment.GetSnapListener, Leaflet_AutofitTextRel.TouchEventListener, Leaflet_ResizableStickerView.TouchEventListener {
+    // Reward Timer for free editing
+    private Leaflet_PreferenceClass preferenceClass;
+    private final Handler rewardTimerHandler = new Handler(Looper.getMainLooper());
+    private Runnable rewardTimerRunnable;
+    private long rewardTimerDurationMs = 0;
+    private long rewardTimerStartTime = 0;
+    private long rewardTimerRemainingMs = 0;
+    private boolean isRewardTimerRunning = false;
+    private boolean isRewardTimerExpired = false;
+    private Dialog rewardTimerDialog;
+    private int undoRedoActionCount = 0;
+
 
     @SuppressLint("StaticFieldLeak")
     public static RelativeLayout txt_stkr_rel;
@@ -174,8 +189,13 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         setContentView(R.layout.leaflet_activity_poster_edit);
 
         findById();
+        startRewardTimer();
 
         main_rel.setOnTouchListener((v, event) -> {
+            if (isRewardTimerExpired) {
+                showRewardTimerDialog();
+                return true;
+            }
             hideEffectControl();
             hideAllControls();
             hideListControl();
@@ -780,42 +800,60 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
     
     private void handleSaveWithRewardAd(boolean isSavePoster) {
         Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(this);
-        int showRewardAd = pref.getInt("show_reward_on_save", 1);
+        boolean isRewardAdEnabled = pref.isDownloadRewardAdEnabled();
         
-        if (showRewardAd == 0) {
-            // Ad is turned off completely, everything is free
+        if (!isRewardAdEnabled) {
+            // Reward ad is disabled on download via Remote Config
             new saveTemplateAsync(isSavePoster).execute();
             return;
         }
         
-        int freeDownloadCount = pref.getInt("freeDownloadCount", 0);
+        int freeDownloadCount = pref.getFreeDownloadCount();
         int userSavedCount = pref.getInt("userSavedCount", 0);
         
         if (freeDownloadCount > 0 && userSavedCount < freeDownloadCount) {
-            // Still in free limit
+            // Still within free limit
             pref.setInt("userSavedCount", userSavedCount + 1);
+            Toast.makeText(this, "Free download " + (userSavedCount + 1) + " of " + freeDownloadCount, Toast.LENGTH_SHORT).show();
             new saveTemplateAsync(isSavePoster).execute();
         } else {
-            // Free limit reached (or 0 free), show reward ad popup
+            // Free limit reached (or 0 free allowed), show reward ad popup
             String title = isSavePoster ? "Download Poster" : "Save Template";
-            String msg = "Watch an ad to " + (isSavePoster ? "download this poster" : "save this template");
+            String msg = pref.isDownloadRemoveWatermarkEnabled() 
+                    ? "Watch a short video ad to download in high quality and remove watermark."
+                    : "Watch a short video ad to download this poster.";
             
-            Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, title, msg, materialDialog -> {
+            Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, title, msg, "download", materialDialog -> {
                 if (materialDialog != null && materialDialog.isShowing()) {
                     materialDialog.dismiss();
                 }
                 
-                if (pref.getDataType("PremiumAdType") != null && pref.getDataType("PremiumAdType").equals("Reward")) {
+                String adType = pref.getDownloadAdType();
+                if ("Reward".equalsIgnoreCase(adType)) {
                     Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_PosterEditActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
                         @Override
                         public void onAdClose() {
                             isRewardAdWatchedForSave = true;
+                            if (pref.isDownloadRemoveWatermarkEnabled()) {
+                                runOnUiThread(() -> {
+                                    if (rl_watermark != null) {
+                                        rl_watermark.setVisibility(View.GONE);
+                                    }
+                                });
+                            }
                             new saveTemplateAsync(isSavePoster).execute();
                         }
                     });
                 } else {
                     Leaflet_MyApplication.showInterstitialAdWithOutCount(Leaflet_PosterEditActivity.this, () -> {
                         isRewardAdWatchedForSave = true;
+                        if (pref.isDownloadRemoveWatermarkEnabled()) {
+                            runOnUiThread(() -> {
+                                if (rl_watermark != null) {
+                                    rl_watermark.setVisibility(View.GONE);
+                                }
+                            });
+                        }
                         new saveTemplateAsync(isSavePoster).execute();
                     });
                 }
@@ -833,65 +871,60 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         removeScroll();
         int id = v.getId();
 
+        if (isRewardTimerExpired && id != R.id.btn_backPress) {
+            showRewardTimerDialog();
+            return;
+        }
+
         if (id == R.id.add_text) {
-            Leaflet_MyApplication.showEditInterstitialAd(this, () -> {
-                hideAllControls();
-                hideStickerControl();
-                hideEffectControl();
-                hideListControl();
-                showTextDialog("", null);
-            });
+            hideAllControls();
+            hideStickerControl();
+            hideEffectControl();
+            hideListControl();
+            showTextDialog("", null);
 
         } else if (id == R.id.add_sticker) {
-            Leaflet_MyApplication.showEditInterstitialAd(this, () -> {
-                hideAllControls();
-                hideEffectControl();
-                hideListControl();
-                if (lay_sticker.getVisibility() == View.GONE) {
-                    lay_sticker.setVisibility(View.VISIBLE);
-                    save_ly.setVisibility(View.GONE);
-//                    img_sticker.setImageTintList(getResources().getColorStateList(R.color.blue));
-                    txtHeader.setText("Choose Sticker");
-                    return;
-                }
-                hideStickerControl();
-            });
+            hideAllControls();
+            hideEffectControl();
+            hideListControl();
+            if (lay_sticker.getVisibility() == View.GONE) {
+                lay_sticker.setVisibility(View.VISIBLE);
+                save_ly.setVisibility(View.GONE);
+//                img_sticker.setImageTintList(getResources().getColorStateList(R.color.blue));
+                txtHeader.setText("Choose Sticker");
+                return;
+            }
+            hideStickerControl();
 
         } else if (id == R.id.add_effect) {
-            Leaflet_MyApplication.showEditInterstitialAd(this, () -> {
-                hideAllControls();
-                hideStickerControl();
-                hideListControl();
-                if (lay_effects.getVisibility() == View.GONE) {
+            hideAllControls();
+            hideStickerControl();
+            hideListControl();
+            if (lay_effects.getVisibility() == View.GONE) {
 //                lay_effects.startAnimation(AnimClass.getAnimUp(this));
-                    lay_effects.setVisibility(View.VISIBLE);
-//                    img_effect.setImageTintList(getResources().getColorStateList(R.color.blue));
-                    return;
-                }
-                hideEffectControl();
-            });
+                lay_effects.setVisibility(View.VISIBLE);
+//                img_effect.setImageTintList(getResources().getColorStateList(R.color.blue));
+                return;
+            }
+            hideEffectControl();
         } else if (id == R.id.add_user_image) {
-            Leaflet_MyApplication.showEditInterstitialAd(this, () -> {
-                hideAllControls();
-                hideStickerControl();
-                hideEffectControl();
-                hideListControl();
-                showUserDialog();
-            });
+            hideAllControls();
+            hideStickerControl();
+            hideEffectControl();
+            hideListControl();
+            showUserDialog();
         } else if (id == R.id.add_bg) {
-            Leaflet_MyApplication.showEditInterstitialAd(this, () -> {
-                hideAllControls();
-                hideStickerControl();
-                hideEffectControl();
-                hideListControl();
-                if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
-                    Intent intent = new Intent(this, Leaflet_BackgroundSelectionActivity.class);
-                    intent.putExtra("mode", "user");
-                    startActivityForResult(intent, INTENT_FOR_BG);
-                } else {
-                    Toast.makeText(this, "Make sure you are connected to internet!!", Toast.LENGTH_SHORT).show();
-                }
-            });
+            hideAllControls();
+            hideStickerControl();
+            hideEffectControl();
+            hideListControl();
+            if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
+                Intent intent = new Intent(this, Leaflet_BackgroundSelectionActivity.class);
+                intent.putExtra("mode", "user");
+                startActivityForResult(intent, INTENT_FOR_BG);
+            } else {
+                Toast.makeText(this, "Make sure you are connected to internet!!", Toast.LENGTH_SHORT).show();
+            }
 
         } else if (id == R.id.btn_layControls) {
             hideAllControls();
@@ -924,43 +957,27 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
             btn_watermark_remove.setVisibility(View.GONE);
             handleSaveWithRewardAd(true);
         } else if (id == R.id.btn_reset) {
-            Leaflet_MyApplication.showEditInterstitialAd(this, () -> {
-                Leaflet_MaterialDialogUtils.getInstance().resetDialog(this, materialDialog -> {
-                    Leaflet_DatabaseHandler dh = Leaflet_DatabaseHandler.getDbHandler(this);
-                    dh.deleteUndoTemplateInfo();
-                    dh.deleteRedoTemplateInfo();
-                    if (materialDialog != null && materialDialog.isShowing())
-                        materialDialog.dismiss();
-                    recreate();
-                }, materialDialog -> {
-                    if (materialDialog != null && materialDialog.isShowing())
-                        materialDialog.dismiss();
-                });
+            Leaflet_MaterialDialogUtils.getInstance().resetDialog(this, materialDialog -> {
+                Leaflet_DatabaseHandler dh = Leaflet_DatabaseHandler.getDbHandler(this);
+                dh.deleteUndoTemplateInfo();
+                dh.deleteRedoTemplateInfo();
+                if (materialDialog != null && materialDialog.isShowing())
+                    materialDialog.dismiss();
+                recreate();
+            }, materialDialog -> {
+                if (materialDialog != null && materialDialog.isShowing())
+                    materialDialog.dismiss();
             });
         } else if (id == R.id.btn_undo) {
             if (undo_progress == 0) {
                 return;
             }
-            hideAllControls();
-            hideStickerControl();
-            hideEffectControl();
-            hideListControl();
-            btn_undo.setVisibility(View.GONE);
-            btn_redo.setVisibility(View.GONE);
-            progress_undo_redo.setVisibility(View.VISIBLE);
-            new saveRedoAsync().execute();
+            handleUndoRedoAction(this::executeUndo);
         } else if (id == R.id.btn_redo) {
             if (redo_progress == 0) {
                 return;
             }
-            hideAllControls();
-            hideStickerControl();
-            hideEffectControl();
-            hideListControl();
-            btn_undo.setVisibility(View.GONE);
-            btn_redo.setVisibility(View.GONE);
-            progress_undo_redo.setVisibility(View.VISIBLE);
-            new saveUndoAsync().execute();
+            handleUndoRedoAction(this::executeRedo);
         }
 
     }
@@ -1036,6 +1053,7 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
                 Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
                 camera_file = new File(getCacheDir(), ".temp.jpg");
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, FileProvider.getUriForFile(this, BuildConfig.APPLICATION_ID + ".provider", camera_file));
+                com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
                 startActivityForResult(intent, SELECT_PICTURE_FROM_CAMERA);
                 dialog.dismiss();
             }
@@ -1062,6 +1080,7 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
             Intent intent = new Intent();
             intent.setType("image/*");
             intent.setAction("android.intent.action.PICK");
+            com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
             startActivityForResult(Intent.createChooser(intent, getResources().getString(R.string.select_picture)), SELECT_PICTURE_FROM_GALLERY);
         });
 
@@ -1083,17 +1102,15 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         fitEditText.setText(text);
         cancel.setOnClickListener(v -> dialog.dismiss());
         add.setOnClickListener(v -> {
-            Leaflet_MyApplication.showEditInterstitialAd(this, () -> {
-                String string = fitEditText.getText().toString();
-                if (string.length() == 0) {
-                    Toast.makeText(Leaflet_PosterEditActivity.this, "Please enter text here.", Toast.LENGTH_SHORT).show();
-                    return;
-                }
+            String string = fitEditText.getText().toString();
+            if (string.length() == 0) {
+                Toast.makeText(Leaflet_PosterEditActivity.this, "Please enter text here.", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
-                addOrChangeText(string, autofitTextRel);
+            addOrChangeText(string, autofitTextRel);
 
-                dialog.dismiss();
-            });
+            dialog.dismiss();
         });
 
         dialog.show();
@@ -1511,16 +1528,22 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
             showFragment(this.listFragment);
         }
 
+        resumeRewardTimer();
         super.onResume();
     }
 
     @Override
     public void onPause() {
+        pauseRewardTimer();
         super.onPause();
     }
 
     @Override
     public void onDestroy() {
+        stopRewardTimer();
+        if (rewardTimerDialog != null && rewardTimerDialog.isShowing()) {
+            rewardTimerDialog.dismiss();
+        }
         super.onDestroy();
     }
 
@@ -2024,7 +2047,8 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         protected String doInBackground(String... strings) {
 
             if (save) {
-                if (rl_watermark.getVisibility() == View.GONE) {
+                boolean removeWatermark = (rl_watermark == null || rl_watermark.getVisibility() == View.GONE || isRewardAdWatchedForSave);
+                if (removeWatermark) {
                     savePath = Leaflet_BitmapUtils.saveBitmap(Leaflet_PosterEditActivity.this, Leaflet_BitmapUtils.viewToBitmap(Leaflet_PosterEditActivity.this, main_rel));//18042023
                     premiumPoster = true;
                 } else {
@@ -2629,5 +2653,260 @@ public class Leaflet_PosterEditActivity extends AppCompatActivity implements Vie
         }
     }
 
-}
 
+    // =========================================================================
+    // Reward Timer Implementation
+    // =========================================================================
+
+    private void startRewardTimer() {
+        if (preferenceClass == null) {
+            preferenceClass = new Leaflet_PreferenceClass(this);
+        }
+
+        if (!preferenceClass.isRewardTimerEnabled()) {
+            isRewardTimerExpired = false;
+            return;
+        }
+
+        int seconds = preferenceClass.getRewardTimerSeconds();
+        if (seconds <= 0) {
+            seconds = 50;
+        }
+
+        rewardTimerDurationMs = seconds * 1000L;
+        rewardTimerRemainingMs = rewardTimerDurationMs;
+        isRewardTimerExpired = false;
+
+        scheduleRewardTimer(rewardTimerRemainingMs);
+    }
+
+    private void scheduleRewardTimer(long delayMs) {
+        stopRewardTimer();
+
+        if (delayMs <= 0) {
+            onRewardTimerFinished();
+            return;
+        }
+
+        rewardTimerStartTime = System.currentTimeMillis();
+        isRewardTimerRunning = true;
+
+        rewardTimerRunnable = () -> {
+            isRewardTimerRunning = false;
+            onRewardTimerFinished();
+        };
+
+        rewardTimerHandler.postDelayed(rewardTimerRunnable, delayMs);
+    }
+
+    private void onRewardTimerFinished() {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+        isRewardTimerExpired = true;
+        showRewardTimerDialog();
+    }
+
+    private void pauseRewardTimer() {
+        if (isRewardTimerRunning) {
+            long elapsed = System.currentTimeMillis() - rewardTimerStartTime;
+            rewardTimerRemainingMs = Math.max(0, rewardTimerRemainingMs - elapsed);
+            stopRewardTimer();
+        }
+    }
+
+    private void resumeRewardTimer() {
+        if (preferenceClass == null) {
+            preferenceClass = new Leaflet_PreferenceClass(this);
+        }
+        if (!preferenceClass.isRewardTimerEnabled()) {
+            return;
+        }
+        if (isRewardTimerExpired) {
+            return;
+        }
+        if (rewardTimerRemainingMs > 0) {
+            scheduleRewardTimer(rewardTimerRemainingMs);
+        } else if (!isRewardTimerRunning) {
+            startRewardTimer();
+        }
+    }
+
+    private void stopRewardTimer() {
+        isRewardTimerRunning = false;
+        if (rewardTimerHandler != null && rewardTimerRunnable != null) {
+            rewardTimerHandler.removeCallbacks(rewardTimerRunnable);
+        }
+    }
+
+    private void showRewardTimerDialog() {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+
+        if (rewardTimerDialog != null && rewardTimerDialog.isShowing()) {
+            return;
+        }
+
+        rewardTimerDialog = new Dialog(this, 16974126);
+        rewardTimerDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        rewardTimerDialog.setContentView(R.layout.leaflet_reward_dialog);
+        rewardTimerDialog.setCancelable(false);
+
+        if (rewardTimerDialog.getWindow() != null) {
+            rewardTimerDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        TextView tvTitle = rewardTimerDialog.findViewById(R.id.title);
+        TextView tvDescription = rewardTimerDialog.findViewById(R.id.description);
+        TextView btnCancel = rewardTimerDialog.findViewById(R.id.button1);
+        TextView btnWatch = rewardTimerDialog.findViewById(R.id.button2);
+
+        if (tvTitle != null) {
+            tvTitle.setText("Free Editing Time Ended");
+        }
+        if (tvDescription != null) {
+            tvDescription.setText("Your free editing time has ended. Watch a short video ad to unlock more time and continue editing your poster.");
+        }
+
+        if (btnCancel != null) {
+            btnCancel.setText("Cancel");
+            btnCancel.setOnClickListener(v -> {
+                if (rewardTimerDialog != null && rewardTimerDialog.isShowing()) {
+                    rewardTimerDialog.dismiss();
+                }
+            });
+        }
+
+        if (btnWatch != null) {
+            btnWatch.setText("Watch Ad");
+            btnWatch.setOnClickListener(v -> {
+                if (rewardTimerDialog != null && rewardTimerDialog.isShowing()) {
+                    rewardTimerDialog.dismiss();
+                }
+
+                String customRwId = preferenceClass.getRewardTimerAdId();
+                Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_PosterEditActivity.this, customRwId, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+                    @Override
+                    public void onAdClose() {
+                        Toast.makeText(Leaflet_PosterEditActivity.this, "Free editing time unlocked!", Toast.LENGTH_SHORT).show();
+                        isRewardTimerExpired = false;
+                        startRewardTimer();
+                    }
+                });
+            });
+        }
+
+        try {
+            rewardTimerDialog.show();
+        } catch (Exception ignored) {}
+    }
+
+    // =========================================================================
+    // Undo / Redo Remote Config & Ad Handling
+    // =========================================================================
+
+    private void executeUndo() {
+        hideAllControls();
+        hideStickerControl();
+        hideEffectControl();
+        hideListControl();
+        btn_undo.setVisibility(View.GONE);
+        btn_redo.setVisibility(View.GONE);
+        progress_undo_redo.setVisibility(View.VISIBLE);
+        new saveRedoAsync().execute();
+    }
+
+    private void executeRedo() {
+        hideAllControls();
+        hideStickerControl();
+        hideEffectControl();
+        hideListControl();
+        btn_undo.setVisibility(View.GONE);
+        btn_redo.setVisibility(View.GONE);
+        progress_undo_redo.setVisibility(View.VISIBLE);
+        new saveUndoAsync().execute();
+    }
+
+    private void handleUndoRedoAction(Runnable action) {
+        if (preferenceClass == null) {
+            preferenceClass = new Leaflet_PreferenceClass(this);
+        }
+
+        if (!preferenceClass.isUndoRedoAdEnabled()) {
+            if (action != null) action.run();
+            return;
+        }
+
+        int freeAllowed = preferenceClass.getUndoRedoFreeActions();
+        if (undoRedoActionCount < freeAllowed) {
+            undoRedoActionCount++;
+            if (action != null) action.run();
+        } else {
+            showUndoRedoRewardDialog(action);
+        }
+    }
+
+    private void showUndoRedoRewardDialog(final Runnable onActionGranted) {
+        if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) {
+            return;
+        }
+
+        final Dialog dialog = new Dialog(this, 16974126);
+        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.leaflet_reward_dialog);
+        dialog.setCancelable(true);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        TextView tvTitle = dialog.findViewById(R.id.title);
+        TextView tvDescription = dialog.findViewById(R.id.description);
+        TextView btnCancel = dialog.findViewById(R.id.button1);
+        TextView btnWatch = dialog.findViewById(R.id.button2);
+
+        if (tvTitle != null) {
+            tvTitle.setText("Unlock Undo / Redo");
+        }
+        if (tvDescription != null) {
+            tvDescription.setText("Watch a short video ad to unlock Undo & Redo actions for your design.");
+        }
+
+        if (btnCancel != null) {
+            btnCancel.setText("Cancel");
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        if (btnWatch != null) {
+            btnWatch.setText("Watch Ad");
+            btnWatch.setOnClickListener(v -> {
+                dialog.dismiss();
+
+                String adType = preferenceClass.getUndoRedoAdType();
+                String adId = preferenceClass.getUndoRedoAdId();
+
+                if ("interstitial".equalsIgnoreCase(adType)) {
+                    Leaflet_MyApplication.showInterstitialAdWithOutCount(Leaflet_PosterEditActivity.this, () -> {
+                        undoRedoActionCount = 0;
+                        Toast.makeText(Leaflet_PosterEditActivity.this, "Undo / Redo Unlocked!", Toast.LENGTH_SHORT).show();
+                        if (onActionGranted != null) onActionGranted.run();
+                    });
+                } else {
+                    Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_PosterEditActivity.this, adId, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+                        @Override
+                        public void onAdClose() {
+                            undoRedoActionCount = 0;
+                            Toast.makeText(Leaflet_PosterEditActivity.this, "Undo / Redo Unlocked!", Toast.LENGTH_SHORT).show();
+                            if (onActionGranted != null) onActionGranted.run();
+                        }
+                    });
+                }
+            });
+        }
+
+        try {
+            dialog.show();
+        } catch (Exception ignored) {}
+    }
+}

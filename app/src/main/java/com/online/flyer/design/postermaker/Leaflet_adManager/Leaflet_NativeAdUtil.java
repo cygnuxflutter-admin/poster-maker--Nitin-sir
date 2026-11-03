@@ -52,29 +52,110 @@ public class Leaflet_NativeAdUtil {
     }
 
     public static void loadNativeAd(RelativeLayout nativeAdContainer, Activity context) {
+        loadNativeAd(nativeAdContainer, context, "exit_dialog");
+    }
+
+    public static void loadNativeAd(RelativeLayout nativeAdContainer, Activity context, String screenType) {
+        if (nativeAdContainer == null || context == null) return;
         Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(context);
-        if (pref.getInt("show_native_exit", 1) == 0) {
+        String key = screenType != null ? screenType : "exit_dialog";
+        
+        boolean enabled = pref.isGridAdEnabled(key);
+        if (!enabled || pref.getInt("show_native_exit", 1) == 0) {
             nativeAdContainer.setVisibility(View.GONE);
             return;
         }
         
-        if (nativeAdContainer.getLayoutParams() != null && nativeAdContainer.getLayoutParams().height == android.view.ViewGroup.LayoutParams.WRAP_CONTENT) {
-            nativeAdContainer.getLayoutParams().height = (int) (250 * context.getResources().getDisplayMetrics().density);
+        if (nativeAdContainer.getLayoutParams() != null) {
+            nativeAdContainer.getLayoutParams().height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
             nativeAdContainer.requestLayout();
+        }
+        
+        String customAdId = pref.getGridNativeAdId(key);
+        boolean showShimmerOnFail = pref.shouldShowNativeShimmerOnFail(key);
+
+        nativeAdContainer.setVisibility(View.VISIBLE);
+        Leaflet_NativeAdUtil util = new Leaflet_NativeAdUtil(context);
+        util.fillAdmobNativeAd(nativeAdContainer, customAdId, showShimmerOnFail, null);
+    }
+
+    public static void loadRewardDialogNativeAd(RelativeLayout nativeAdContainer, Activity context, String itemType) {
+        if (nativeAdContainer == null || context == null) return;
+        Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(context);
+        
+        boolean enabled = pref.isRewardDialogNativeAdEnabled(itemType);
+        if (!enabled) {
+            nativeAdContainer.removeAllViews();
+            nativeAdContainer.setVisibility(View.GONE);
+            return;
+        }
+        
+        if (nativeAdContainer.getLayoutParams() != null) {
+            nativeAdContainer.getLayoutParams().height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+            nativeAdContainer.requestLayout();
+        }
+
+        String customAdId = pref.getRewardDialogNativeAdId(itemType);
+        boolean showShimmerOnFail = pref.shouldShowNativeShimmerOnFail("reward_dialog");
+
+        nativeAdContainer.setVisibility(View.VISIBLE);
+        Leaflet_NativeAdUtil util = new Leaflet_NativeAdUtil(context);
+        util.fillAdmobNativeAd(nativeAdContainer, customAdId, showShimmerOnFail, new OnNativeAdListener() {
+            @Override
+            public void onAdLoaded() {
+                nativeAdContainer.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAdFailed() {
+                nativeAdContainer.removeAllViews();
+                nativeAdContainer.setVisibility(View.GONE);
+            }
+        });
+    }
+
+    public static void loadOnboardingNativeAd(RelativeLayout nativeAdContainer, Activity context) {
+        loadOnboardingNativeAd(nativeAdContainer, context, null);
+    }
+
+    public static void loadOnboardingNativeAd(RelativeLayout nativeAdContainer, Activity context, String customUnitId) {
+        if (nativeAdContainer == null || context == null) return;
+        Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(context);
+        if (pref.getInt("show_onboarding_native", 1) == 0) {
+            nativeAdContainer.setVisibility(View.GONE);
+            return;
         }
         
         nativeAdContainer.setVisibility(View.VISIBLE);
         Leaflet_NativeAdUtil util = new Leaflet_NativeAdUtil(context);
-        util.fillAdmobNativeAd(nativeAdContainer);
+        util.fillAdmobNativeAd(nativeAdContainer, customUnitId);
+    }
+
+    public interface OnNativeAdListener {
+        void onAdLoaded();
+        void onAdFailed();
     }
 
     public void fillAdmobNativeAd(final RelativeLayout nativeAdContainer) {
+        fillAdmobNativeAd(nativeAdContainer, null, false, null);
+    }
+
+    public void fillAdmobNativeAd(final RelativeLayout nativeAdContainer, String customUnitId) {
+        fillAdmobNativeAd(nativeAdContainer, customUnitId, false, null);
+    }
+
+    public void fillAdmobNativeAd(final RelativeLayout nativeAdContainer, String customUnitId, boolean showShimmerOnFail, OnNativeAdListener listener) {
         if ("loaded".equals(nativeAdContainer.getTag())) {
             // ALREADY LOADED! This prevents huge requests and low impressions when scrolling.
             return;
         }
 
-        String nativeUnitId = preferenceClass.getAdsId("NativeUnitID");
+        String nativeUnitId;
+        if (customUnitId != null && !customUnitId.trim().isEmpty() && !customUnitId.equals("null") && !customUnitId.contains("xxxx")) {
+            nativeUnitId = customUnitId;
+        } else {
+            nativeUnitId = preferenceClass.getAdsId("NativeUnitID");
+        }
         
         if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
             nativeUnitId = "ca-app-pub-3940256099942544/2247696110";
@@ -84,7 +165,12 @@ public class Leaflet_NativeAdUtil {
         }
 
         if (nativeUnitId == null || nativeUnitId.trim().isEmpty() || nativeUnitId.equals("null")) {
-            nativeAdContainer.setVisibility(View.GONE);
+            if (!showShimmerOnFail) {
+                nativeAdContainer.removeAllViews();
+                nativeAdContainer.setVisibility(View.GONE);
+
+            }
+            if (listener != null) listener.onAdFailed();
             return;
         }
 
@@ -95,6 +181,7 @@ public class Leaflet_NativeAdUtil {
             View shimmerView = LayoutInflater.from(context).inflate(R.layout.leaflet_native_shimmer, nativeAdContainer, false);
             nativeAdContainer.addView(shimmerView);
         }
+        nativeAdContainer.setVisibility(View.VISIBLE);
 
         try {
             AdLoader.Builder builder = new AdLoader.Builder(context, nativeUnitId);
@@ -108,7 +195,12 @@ public class Leaflet_NativeAdUtil {
                 adView = (NativeAdView) LayoutInflater.from(context).inflate(R.layout.leaflet_native_ad_layout, null);
                 populateUnifiedNativeAdView(nativeAd, adView);
                 nativeAdContainer.removeAllViews();
-                nativeAdContainer.addView(adView);
+                RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+                );
+                nativeAdContainer.addView(adView, lp);
+                if (listener != null) listener.onAdLoaded();
             });
 
             VideoOptions videoOptions = new VideoOptions.Builder().setStartMuted(true).build();
@@ -119,12 +211,33 @@ public class Leaflet_NativeAdUtil {
                 @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                     Log.e("AdMob_Native", "Native ad failed to load: " + loadAdError.getMessage() + " (Code: " + loadAdError.getCode() + ")");
+                    nativeAdContainer.setTag(null);
+                    if (!showShimmerOnFail) {
+                        nativeAdContainer.removeAllViews();
+                        nativeAdContainer.setVisibility(View.GONE);
+                    } else {
+                        nativeAdContainer.setVisibility(View.VISIBLE);
+                    }
+                    if (listener != null) {
+                        listener.onAdFailed();
+                    }
+                }
+
+                @Override
+                public void onAdClicked() {
+                    super.onAdClicked();
+                    Leaflet_AppOpenManager.setAdClickActive(true);
                 }
             }).build();
 
             adLoader.loadAd(new AdRequest.Builder().build());
         } catch (Exception e) {
             Log.e("AdMob_Native", "Native ad exception: " + e.getMessage());
+            if (!showShimmerOnFail) {
+                nativeAdContainer.removeAllViews();
+                nativeAdContainer.setVisibility(View.GONE);
+            }
+            if (listener != null) listener.onAdFailed();
         }
     }
 
@@ -145,7 +258,13 @@ public class Leaflet_NativeAdUtil {
         unifiedNativeAdView.setBodyView(unifiedNativeAdView.findViewById(R.id.ad_body));
         unifiedNativeAdView.setCallToActionView(unifiedNativeAdView.findViewById(R.id.ad_call_to_action));
 
-        ImageView imageView = unifiedNativeAdView.findViewById(R.id.unified_image_view);
+        ImageView imageView = null;
+        try {
+            int imgId = unifiedNativeAdView.getResources().getIdentifier("unified_image_view", "id", unifiedNativeAdView.getContext().getPackageName());
+            if (imgId != 0) {
+                imageView = unifiedNativeAdView.findViewById(imgId);
+            }
+        } catch (Exception ignored) {}
 
         populateNativeAdView(unifiedNativeAd, unifiedNativeAdView, mediaView, imageView);
     }
@@ -204,20 +323,29 @@ public class Leaflet_NativeAdUtil {
         }
 
         View bodyView = unifiedNativeAdView.getBodyView();
-        if (unifiedNativeAd.getBody() == null) {
+        String bodyText = unifiedNativeAd.getBody();
+        if (bodyText == null || bodyText.trim().isEmpty()) {
+            bodyText = unifiedNativeAd.getAdvertiser();
+        }
+        if (bodyText == null || bodyText.trim().isEmpty()) {
             if (bodyView != null) {
-                bodyView.setVisibility(View.INVISIBLE);
+                bodyView.setVisibility(View.GONE);
             }
         } else {
             if (bodyView != null) {
                 bodyView.setVisibility(View.VISIBLE);
-                ((TextView) bodyView).setText(unifiedNativeAd.getBody());
+                ((TextView) bodyView).setText(bodyText);
             }
         }
 
         Button callToActionView = (Button) unifiedNativeAdView.getCallToActionView();
         if (callToActionView != null) {
-            callToActionView.setText(unifiedNativeAd.getCallToAction());
+            String cta = unifiedNativeAd.getCallToAction();
+            if (cta != null && !cta.trim().isEmpty()) {
+                callToActionView.setText(cta.toUpperCase());
+            } else {
+                callToActionView.setText("INSTALL");
+            }
         }
 
         unifiedNativeAdView.setNativeAd(unifiedNativeAd);

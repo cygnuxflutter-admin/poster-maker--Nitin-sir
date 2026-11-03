@@ -17,13 +17,14 @@
 
         <ImageView
             android:id="@+id/ic_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="12dp"
             android:padding="8dp"
-            android:src="@drawable/leaflet_ic_back"
-            app:tint="#0066FF" />
+            android:background="@drawable/bg_circle_button_flat"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#1E293B" />
 
         <TextView
             android:layout_width="wrap_content"

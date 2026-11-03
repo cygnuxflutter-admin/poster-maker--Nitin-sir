@@ -1,0 +1,38 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp"
+    android:height="30dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Tilted Price Tag Body -->
+    <path
+        android:fillColor="#E11D48"
+        android:pathData="M23.5,4.5 C24.5,4.5 25.5,5.5 25.5,6.5 L27.5,17 C27.5,18 27,19 26,19.8 L16,27.5 C14.8,28.5 13,28.3 12,27.2 L5,19 C4,17.8 4.2,16 5.2,15.2 L15.5,7 C16.2,6.5 17.2,6 18.2,5.5 Z" />
+
+    <!-- Tag Highlight Layer / 3D Edge -->
+    <path
+        android:fillColor="#F43F5E"
+        android:pathData="M23,6 L25,16.5 L15.5,24.5 L7,17.5 L16,10 Z" />
+
+    <!-- Top Tag Hole / Ring (Cyan Accent like screenshot) -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M22,9.5 C23.1,9.5 24,8.6 24,7.5 C24,6.4 23.1,5.5 22,5.5 C20.9,5.5 20,6.4 20,7.5 C20,8.6 20.9,9.5 22,9.5 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,8.5 C22.6,8.5 23,8.1 23,7.5 C23,6.9 22.6,6.5 22,6.5 C21.4,6.5 21,6.9 21,7.5 C21,8.1 21.4,8.5 22,8.5 Z" />
+
+    <!-- Bold White Percentage Sign (%) -->
+    <!-- Slash -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M18.5,12.5 L13,21.5 L11.2,20.5 L16.7,11.5 Z" />
+    <!-- Top-left Dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12.5,14.5 C13.3,14.5 14,13.8 14,13 C14,12.2 13.3,11.5 12.5,11.5 C11.7,11.5 11,12.2 11,13 C11,13.8 11.7,14.5 12.5,14.5 Z" />
+    <!-- Bottom-right Dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M17.5,21.5 C18.3,21.5 19,20.8 19,20 C19,19.2 18.3,18.5 17.5,18.5 C16.7,18.5 16,19.2 16,20 C16,20.8 16.7,21.5 17.5,21.5 Z" />
+</vector>

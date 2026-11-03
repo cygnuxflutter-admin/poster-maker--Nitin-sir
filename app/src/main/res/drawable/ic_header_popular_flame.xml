@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="22dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Outer Flame Body (Vibrant Red-Orange) -->
+    <path
+        android:fillColor="#F97316"
+        android:pathData="M16,2 C16,2 9,10 9,18 C9,22.4 12.1,26 16,26 C19.9,26 23,22.4 23,18 C23,11 18.5,6.5 18.5,6.5 C18.5,6.5 18,11 15.5,12.5 C15.5,9.5 16,2 16,2 Z" />
+
+    <!-- Red Accent Base -->
+    <path
+        android:fillColor="#EA580C"
+        android:pathData="M11,19 C11,23 13.5,26 16,26 C18.5,26 21,23 21,19 C21,16 19.5,14 19.5,14 C19.5,14 19.5,16.5 18,17.5 C18,14.5 16,13 16,13 C16,13 11,15.5 11,19 Z" />
+
+    <!-- Mid Flame (Bright Golden Amber) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M16,14 C16,14 13,17 13,20 C13,22 14.3,24 16,24 C17.7,24 19,22 19,20 C19,17.5 18,15.5 18,15.5 C18,15.5 17.5,17 16.5,17.5 C16.5,16 16,14 16,14 Z" />
+
+    <!-- Inner Core Flame Glow (Light Warm Yellow) -->
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M16,18 C16,18 14.5,20 14.5,21.5 C14.5,22.8 15.2,23.5 16,23.5 C16.8,23.5 17.5,22.8 17.5,21.5 C17.5,20 16,18 16,18 Z" />
+</vector>

@@ -1,6 +1,7 @@
 package com.online.flyer.design.postermaker.Leaflet_adManager;
 
 import static androidx.lifecycle.Lifecycle.Event.ON_START;
+import static androidx.lifecycle.Lifecycle.Event.ON_STOP;
 
 import android.app.Activity;
 import android.app.Application;
@@ -8,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
 import androidx.lifecycle.OnLifecycleEvent;
 import androidx.lifecycle.ProcessLifecycleOwner;
@@ -34,6 +36,34 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
     private static Leaflet_PreferenceClass preferenceClass;
     private String AD_UNIT_ID1, AD_UNIT_ID2;
 
+    // External Intent & Cooldown Tracking
+    private static boolean isExternalIntentActive = false;
+    private static long externalIntentTime = 0;
+    private static boolean isAdClickActive = false;
+    private static long adClickTime = 0;
+    private static long backgroundEnteredTime = 0;
+    private static long lastAdDismissedTime = 0;
+
+    public static void setExternalIntentActive(boolean active) {
+        isExternalIntentActive = active;
+        if (active) {
+            externalIntentTime = System.currentTimeMillis();
+            Log.d(LOG_TAG, "setExternalIntentActive: true at " + externalIntentTime);
+        }
+    }
+
+    public static void setAdClickActive(boolean active) {
+        isAdClickActive = active;
+        if (active) {
+            adClickTime = System.currentTimeMillis();
+            Log.d(LOG_TAG, "setAdClickActive: true at " + adClickTime);
+        }
+    }
+
+    public static void setLastAdDismissedTime(long time) {
+        lastAdDismissedTime = time;
+    }
+
     /**
      * Constructor
      */
@@ -44,10 +74,9 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
     }
 
     /**
-     * Request an ad
+     * Request a foreground App Open ad
      */
     public void fetchAd() {
-        // Have unused ad, no need to fetch another.
         if (isAdAvailable()) {
             return;
         }
@@ -57,11 +86,12 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             public void onAdLoaded(AppOpenAd ad) {
                 Leaflet_AppOpenManager.this.appOpenAd = ad;
                 Leaflet_AppOpenManager.this.loadTime = (new Date()).getTime();
+                Log.d(LOG_TAG, "fetchAd: AppOpen loaded successfully.");
             }
 
             @Override
             public void onAdFailedToLoad(LoadAdError loadAdError) {
-                // Handle the error.
+                Log.d(LOG_TAG, "fetchAd: AppOpen failed to load - " + loadAdError.getMessage());
             }
         };
 
@@ -69,11 +99,12 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             preferenceClass = new Leaflet_PreferenceClass(myApplication);
         }
         
-        if (preferenceClass.getInt("show_app_open_ad", 1) == 0) {
+        if (!preferenceClass.isForegroundAppOpenEnabled()) {
+            Log.d(LOG_TAG, "fetchAd: Foreground App Open is disabled.");
             return;
         }
 
-        AD_UNIT_ID1 = preferenceClass.getAdsId("AppOpenID");
+        AD_UNIT_ID1 = preferenceClass.getForegroundAppOpenAdId();
 
         if (AD_UNIT_ID1 == null || AD_UNIT_ID1.trim().isEmpty() || AD_UNIT_ID1.equals("null")) {
             return;
@@ -81,16 +112,16 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
 
         if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
             AD_UNIT_ID1 = "ca-app-pub-3940256099942544/9257395921";
-            Log.d("AdManager", "Debug Mode: Using Test AppOpen ID");
+            Log.d(LOG_TAG, "fetchAd: Debug Mode: Using Test AppOpen ID");
         } else {
-            Log.d("AdManager", "Fetching AppOpen Ad from Firebase (via Prefs): " + AD_UNIT_ID1);
+            Log.d(LOG_TAG, "fetchAd: Fetching AppOpen Ad with ID: " + AD_UNIT_ID1);
         }
 
         try {
             AdRequest request = getAdRequest();
             AppOpenAd.load(myApplication, AD_UNIT_ID1, request, AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT, loadCallback);
         } catch (Exception e) {
-            // Ignore error
+            Log.e(LOG_TAG, "fetchAd error: " + e.getMessage());
         }
     }
 
@@ -105,7 +136,7 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
      * Utility method that checks if ad exists and can be shown.
      */
     public boolean isAdAvailable() {
-        if (preferenceClass != null && preferenceClass.getInt("show_app_open_ad", 1) == 0) {
+        if (preferenceClass != null && !preferenceClass.isForegroundAppOpenEnabled()) {
             return false;
         }
         return appOpenAd != null && wasLoadTimeLessThanNHoursAgo(4);
@@ -122,54 +153,153 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
     }
 
     /**
-     * Shows the ad if one isn't already showing.
+     * Shows the ad on foreground transition if conditions are met.
      */
     public void showAdIfAvailable() {
-        // Only show ad if there is not already an app open ad currently showing
-        // and an ad is available.
-        if (!isShowingAd && isAdAvailable()) {
-            if (Leaflet_MyApplication.isShowingAppOpen) {
-                FullScreenContentCallback fullScreenContentCallback = new FullScreenContentCallback() {
-                    @Override
-                    public void onAdDismissedFullScreenContent() {
-                        // Set the reference to null so isAdAvailable() returns false.
-                        Leaflet_AppOpenManager.this.appOpenAd = null;
-                        isShowingAd = false;
-                        fetchAd();
-                    }
+        if (preferenceClass == null) {
+            preferenceClass = new Leaflet_PreferenceClass(myApplication);
+        }
 
-                    @Override
-                    public void onAdFailedToShowFullScreenContent(AdError adError) {
-                    }
+        if (!preferenceClass.isForegroundAppOpenEnabled()) {
+            Log.d(LOG_TAG, "showAdIfAvailable: Foreground App Open is disabled via Remote Config.");
+            return;
+        }
 
-                    @Override
-                    public void onAdShowedFullScreenContent() {
-                        isShowingAd = true;
-                    }
-                };
-
-                appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
-                appOpenAd.show(currentActivity);
+        // 1. Suppress on Ad Click
+        if (isAdClickActive) {
+            isAdClickActive = false;
+            if (preferenceClass.isSuppressOnAdClick()) {
+                Log.d(LOG_TAG, "showAdIfAvailable: Suppressed due to suppress_on_ad_click");
+                return;
             }
-        } else {
+        }
+
+        // 2. Suppress on External Intent (Camera, Gallery, File Picker, etc.)
+        if (isExternalIntentActive) {
+            isExternalIntentActive = false;
+            if (preferenceClass.isSuppressOnIntent()) {
+                Log.d(LOG_TAG, "showAdIfAvailable: Suppressed due to suppress_on_intent");
+                return;
+            }
+            int galleryCooldown = preferenceClass.getGalleryCooldownSeconds();
+            if (galleryCooldown > 0 && externalIntentTime > 0) {
+                long elapsedSec = (System.currentTimeMillis() - externalIntentTime) / 1000L;
+                if (elapsedSec < galleryCooldown) {
+                    Log.d(LOG_TAG, "showAdIfAvailable: Suppressed due to gallery_cooldown_seconds (" + elapsedSec + "s < " + galleryCooldown + "s)");
+                    return;
+                }
+            }
+        }
+
+        // 3. Foreground Cooldown (Background duration & Since last ad dismissed)
+        int cooldownSec = preferenceClass.getForegroundCooldownSeconds();
+        if (cooldownSec > 0) {
+            if (backgroundEnteredTime > 0) {
+                long timeInBackgroundSec = (System.currentTimeMillis() - backgroundEnteredTime) / 1000L;
+                if (timeInBackgroundSec < cooldownSec) {
+                    Log.d(LOG_TAG, "showAdIfAvailable: Suppressed due to cooldown_seconds (background time: " + timeInBackgroundSec + "s < " + cooldownSec + "s)");
+                    return;
+                }
+            }
+            if (lastAdDismissedTime > 0) {
+                long timeSinceDismissSec = (System.currentTimeMillis() - lastAdDismissedTime) / 1000L;
+                if (timeSinceDismissSec < cooldownSec) {
+                    Log.d(LOG_TAG, "showAdIfAvailable: Suppressed due to cooldown_seconds (time since last ad: " + timeSinceDismissSec + "s < " + cooldownSec + "s)");
+                    return;
+                }
+            }
+        }
+
+        if (isShowingAd) {
+            Log.d(LOG_TAG, "showAdIfAvailable: Already showing an ad.");
+            return;
+        }
+
+        if (!isAdAvailable()) {
+            Log.d(LOG_TAG, "showAdIfAvailable: Ad not available, fetching now.");
             fetchAd();
+            return;
+        }
+
+        if (currentActivity == null) {
+            Log.d(LOG_TAG, "showAdIfAvailable: currentActivity is null.");
+            return;
+        }
+
+        if (Leaflet_MyApplication.isShowingAppOpen) {
+            FullScreenContentCallback fullScreenContentCallback = new FullScreenContentCallback() {
+                @Override
+                public void onAdDismissedFullScreenContent() {
+                    Leaflet_AppOpenManager.this.appOpenAd = null;
+                    isShowingAd = false;
+                    lastAdDismissedTime = System.currentTimeMillis();
+                    fetchAd();
+                }
+
+                @Override
+                public void onAdFailedToShowFullScreenContent(AdError adError) {
+                    Leaflet_AppOpenManager.this.appOpenAd = null;
+                    isShowingAd = false;
+                    fetchAd();
+                }
+
+                @Override
+                public void onAdShowedFullScreenContent() {
+                    isShowingAd = true;
+                }
+
+                @Override
+                public void onAdClicked() {
+                    super.onAdClicked();
+                    setAdClickActive(true);
+                }
+            };
+
+            appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
+            appOpenAd.show(currentActivity);
         }
     }
 
     public void showAdIfSplashAvailable(@NonNull final Activity activity, @NonNull Leaflet_MyApplication.OnShowAdCompleteListener onShowAdCompleteListener) {
+        if (preferenceClass == null) {
+            preferenceClass = new Leaflet_PreferenceClass(myApplication);
+        }
+
+        if (!preferenceClass.isSplashAppOpenEnabled()) {
+            Log.d(LOG_TAG, "showAdIfSplashAvailable: Splash App Open is disabled via Remote Config/Database.");
+            loadFallbackInterstitial(activity, onShowAdCompleteListener);
+            return;
+        }
+
+        AD_UNIT_ID1 = preferenceClass.getSplashAppOpenAdId();
+        Log.d(LOG_TAG, "showAdIfSplashAvailable: Splash AppOpenID: " + AD_UNIT_ID1);
+
+        if (AD_UNIT_ID1 == null || AD_UNIT_ID1.trim().isEmpty() || AD_UNIT_ID1.equals("null")) {
+            Log.d(LOG_TAG, "showAdIfSplashAvailable: AppOpenID is null/empty, skipping to fallback.");
+            loadFallbackInterstitial(activity, onShowAdCompleteListener);
+            return;
+        }
+
+        if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
+            AD_UNIT_ID1 = "ca-app-pub-3940256099942544/9257395921";
+            Log.d(LOG_TAG, "showAdIfSplashAvailable: Debug Mode: Using Test AppOpen ID: " + AD_UNIT_ID1);
+        }
+
         if (!isShowingAd && isAdAvailable()) {
             FullScreenContentCallback fullScreenContentCallback = new FullScreenContentCallback() {
                 @Override
                 public void onAdDismissedFullScreenContent() {
-                    // Set the reference to null so isAdAvailable() returns false.
                     Leaflet_AppOpenManager.this.appOpenAd = null;
                     isShowingAd = false;
+                    lastAdDismissedTime = System.currentTimeMillis();
                     fetchAd();
                     onShowAdCompleteListener.onShowAdComplete();
                 }
 
                 @Override
                 public void onAdFailedToShowFullScreenContent(AdError adError) {
+                    Leaflet_AppOpenManager.this.appOpenAd = null;
+                    isShowingAd = false;
                     onShowAdCompleteListener.onShowAdComplete();
                 }
 
@@ -177,15 +307,21 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
                 public void onAdShowedFullScreenContent() {
                     isShowingAd = true;
                 }
+
+                @Override
+                public void onAdClicked() {
+                    super.onAdClicked();
+                    setAdClickActive(true);
+                }
             };
             appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
             appOpenAd.show(activity);
         } else {
-            Log.d(LOG_TAG, "showAdIfSplashAvailable: ad not available, loading now");
+            Log.d(LOG_TAG, "showAdIfSplashAvailable: Ad not cached, loading now with ID: " + AD_UNIT_ID1);
             loadCallback = new AppOpenAd.AppOpenAdLoadCallback() {
                 @Override
                 public void onAdLoaded(AppOpenAd ad) {
-                    Log.d(LOG_TAG, "showAdIfSplashAvailable: ad loaded!");
+                    Log.d(LOG_TAG, "showAdIfSplashAvailable: Splash AppOpen loaded!");
                     Leaflet_AppOpenManager.this.appOpenAd = ad;
                     Leaflet_AppOpenManager.this.loadTime = (new Date()).getTime();
 
@@ -194,6 +330,7 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
                         public void onAdDismissedFullScreenContent() {
                             Leaflet_AppOpenManager.this.appOpenAd = null;
                             isShowingAd = false;
+                            lastAdDismissedTime = System.currentTimeMillis();
                             fetchAd();
                             onShowAdCompleteListener.onShowAdComplete();
                         }
@@ -201,6 +338,8 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
                         @Override
                         public void onAdFailedToShowFullScreenContent(AdError adError) {
                             Log.d(LOG_TAG, "showAdIfSplashAvailable: failed to show - " + adError.getMessage());
+                            Leaflet_AppOpenManager.this.appOpenAd = null;
+                            isShowingAd = false;
                             onShowAdCompleteListener.onShowAdComplete();
                         }
 
@@ -208,55 +347,32 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
                         public void onAdShowedFullScreenContent() {
                             isShowingAd = true;
                         }
+
+                        @Override
+                        public void onAdClicked() {
+                            super.onAdClicked();
+                            setAdClickActive(true);
+                        }
                     };
                     appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
-                    if (currentActivity != null) {
-                        appOpenAd.show(currentActivity);
-                    } else {
-                        Log.d(LOG_TAG, "showAdIfSplashAvailable: currentActivity is null, using passed activity");
-                        appOpenAd.show(activity);
-                    }
+                    Activity targetAct = currentActivity != null ? currentActivity : activity;
+                    appOpenAd.show(targetAct);
                 }
 
                 @Override
                 public void onAdFailedToLoad(LoadAdError loadAdError) {
-                    Log.d(LOG_TAG, "showAdIfSplashAvailable: AppOpen failed.");
+                    Log.d(LOG_TAG, "showAdIfSplashAvailable: AppOpen load failed: " + loadAdError.getMessage());
                     loadFallbackInterstitial(activity, onShowAdCompleteListener);
                 }
             };
-            if (preferenceClass == null) {
-                preferenceClass = new Leaflet_PreferenceClass(myApplication);
-            }
-            
-            if (preferenceClass.getInt("show_app_open_ad", 1) == 0) {
-                Log.d(LOG_TAG, "show_app_open_ad is 0, skipping App Open globally...");
-                loadFallbackInterstitial(activity, onShowAdCompleteListener);
-                return;
-            }
 
-            if (preferenceClass.getInt("show_splash_app_open", 1) == 0) {
-                Log.d(LOG_TAG, "show_splash_app_open is 0, skipping App Open only on Splash...");
+            try {
+                AdRequest request = getAdRequest();
+                AppOpenAd.load(myApplication, AD_UNIT_ID1, request, AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT, loadCallback);
+            } catch (Exception e) {
+                Log.e(LOG_TAG, "showAdIfSplashAvailable load error: " + e.getMessage());
                 loadFallbackInterstitial(activity, onShowAdCompleteListener);
-                return;
             }
-
-            AD_UNIT_ID1 = preferenceClass.getAdsId("AppOpenID");
-            
-            Log.d(LOG_TAG, "AppOpenID from prefs: " + AD_UNIT_ID1);
-            if (AD_UNIT_ID1 == null || AD_UNIT_ID1.trim().isEmpty() || AD_UNIT_ID1.equals("null")) {
-                Log.d(LOG_TAG, "AppOpenID is null/empty, skipping App Open...");
-                loadFallbackInterstitial(activity, onShowAdCompleteListener);
-                return;
-            }
-
-            if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
-                AD_UNIT_ID1 = "ca-app-pub-3940256099942544/9257395921";
-                Log.d(LOG_TAG, "Debug Mode: Using Test AppOpen ID: " + AD_UNIT_ID1);
-            }
-            
-            AdRequest request = getAdRequest();
-            Log.d(LOG_TAG, "Calling AppOpenAd.load with ID: " + AD_UNIT_ID1);
-            AppOpenAd.load(myApplication, AD_UNIT_ID1, request, AppOpenAd.APP_OPEN_AD_ORIENTATION_PORTRAIT, loadCallback);
         }
     }
 
@@ -265,20 +381,28 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             FullScreenContentCallback fullScreenContentCallback = new FullScreenContentCallback() {
                 @Override
                 public void onAdDismissedFullScreenContent() {
-                    // Set the reference to null so isAdAvailable() returns false.
+                    Leaflet_AppOpenManager.this.appOpenAd = null;
+                    isShowingAd = false;
+                    lastAdDismissedTime = System.currentTimeMillis();
+                    onShowAdCompleteListener.onShowAdComplete();
+                }
+
+                @Override
+                public void onAdFailedToShowFullScreenContent(AdError adError) {
                     Leaflet_AppOpenManager.this.appOpenAd = null;
                     isShowingAd = false;
                     onShowAdCompleteListener.onShowAdComplete();
                 }
 
                 @Override
-                public void onAdFailedToShowFullScreenContent(AdError adError) {
-                    onShowAdCompleteListener.onShowAdComplete();
+                public void onAdShowedFullScreenContent() {
+                    isShowingAd = true;
                 }
 
                 @Override
-                public void onAdShowedFullScreenContent() {
-                    isShowingAd = true;
+                public void onAdClicked() {
+                    super.onAdClicked();
+                    setAdClickActive(true);
                 }
             };
             appOpenAd.setFullScreenContentCallback(fullScreenContentCallback);
@@ -319,7 +443,9 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
 
     @Override
     public void onActivityDestroyed(Activity activity) {
-        currentActivity = null;
+        if (currentActivity == activity) {
+            currentActivity = null;
+        }
     }
 
     @OnLifecycleEvent(ON_START)
@@ -327,6 +453,12 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
         if (!Leaflet_MyApplication.isAdsSplash) {
             showAdIfAvailable();
         }
+    }
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    public void onStop() {
+        backgroundEnteredTime = System.currentTimeMillis();
+        Log.d(LOG_TAG, "App entered background at: " + backgroundEnteredTime);
     }
 
     /**
@@ -339,40 +471,63 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
     }
 
     private void loadFallbackInterstitial(@NonNull Activity activity, @NonNull Leaflet_MyApplication.OnShowAdCompleteListener onShowAdCompleteListener) {
-        if (preferenceClass.getInt("show_fallback_interstitial", 0) == 0) {
-            Log.d(LOG_TAG, "Fallback Interstitial is disabled via Firebase.");
+        if (preferenceClass == null) {
+            preferenceClass = new Leaflet_PreferenceClass(myApplication);
+        }
+
+        if (!preferenceClass.isSplashFallbackInterstitialEnabled()) {
+            Log.d(LOG_TAG, "Fallback Interstitial is disabled via Remote Config/Database.");
             onShowAdCompleteListener.onShowAdComplete();
             return;
         }
 
-        Log.d(LOG_TAG, "Trying fallback Interstitial...");
-
-        String interstitialId = preferenceClass.getAdsId("InterstitalAdunitID");
+        String interstitialId = preferenceClass.getSplashFallbackInterstitialAdId();
         if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
             interstitialId = "ca-app-pub-3940256099942544/1033173712"; // Test Interstitial
         }
 
         if (interstitialId == null || interstitialId.trim().isEmpty() || interstitialId.equals("null")) {
+            Log.d(LOG_TAG, "Fallback Interstitial ID is null or empty.");
             onShowAdCompleteListener.onShowAdComplete();
             return;
         }
 
+        Log.d(LOG_TAG, "Trying fallback Interstitial with ID: " + interstitialId);
         com.google.android.gms.ads.AdRequest adRequest = new com.google.android.gms.ads.AdRequest.Builder().build();
         com.google.android.gms.ads.interstitial.InterstitialAd.load(myApplication, interstitialId, adRequest,
                 new com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback() {
                     @Override
                     public void onAdLoaded(@NonNull com.google.android.gms.ads.interstitial.InterstitialAd interstitialAd) {
-                        interstitialAd.setFullScreenContentCallback(new com.google.android.gms.ads.FullScreenContentCallback() {
-                            @Override
-                            public void onAdDismissedFullScreenContent() {
-                                onShowAdCompleteListener.onShowAdComplete();
-                            }
-                            @Override
-                            public void onAdFailedToShowFullScreenContent(AdError adError) {
-                                onShowAdCompleteListener.onShowAdComplete();
-                            }
-                        });
-                        interstitialAd.show(activity);
+                        Log.d(LOG_TAG, "Fallback Interstitial loaded successfully.");
+                        if (myApplication instanceof Leaflet_MyApplication) {
+                            ((Leaflet_MyApplication) myApplication).getInterstitialAdManager().setAdmobInterstitialAd(interstitialAd);
+                        }
+
+                        if (!activity.isFinishing() && !activity.isDestroyed()) {
+                            interstitialAd.setFullScreenContentCallback(new com.google.android.gms.ads.FullScreenContentCallback() {
+                                @Override
+                                public void onAdDismissedFullScreenContent() {
+                                    lastAdDismissedTime = System.currentTimeMillis();
+                                    if (myApplication instanceof Leaflet_MyApplication) {
+                                        ((Leaflet_MyApplication) myApplication).getInterstitialAdManager().setAdmobInterstitialAd(null);
+                                    }
+                                    onShowAdCompleteListener.onShowAdComplete();
+                                }
+                                @Override
+                                public void onAdFailedToShowFullScreenContent(AdError adError) {
+                                    onShowAdCompleteListener.onShowAdComplete();
+                                }
+                                @Override
+                                public void onAdClicked() {
+                                    super.onAdClicked();
+                                    setAdClickActive(true);
+                                }
+                            });
+                            interstitialAd.show(activity);
+                        } else {
+                            Log.d(LOG_TAG, "Splash activity already closed. Retained fallback interstitial for next screen click.");
+                            onShowAdCompleteListener.onShowAdComplete();
+                        }
                     }
 
                     @Override

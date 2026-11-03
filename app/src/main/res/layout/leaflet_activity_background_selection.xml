@@ -16,19 +16,21 @@
         <!-- Back Button -->
         <FrameLayout
             android:id="@+id/ic_back_container"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
-            android:background="@drawable/bg_circle_light_blue">
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_circle_button_flat"
+            android:clickable="true"
+            android:focusable="true">
             <ImageView
                 android:id="@+id/ic_back"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
                 android:layout_gravity="center"
-                android:src="@drawable/leaflet_ic_back"
-                app:tint="#0066FF" />
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#1E293B" />
         </FrameLayout>
 
         <!-- Title and Subtitle -->
@@ -127,25 +129,25 @@
     <RelativeLayout
         android:id="@+id/viewPagerLay"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="38dp"
         android:background="#F8F9FA"
-        android:layout_marginTop="15dp"
-        android:layout_marginBottom="5dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="10dp"
         android:layout_below="@+id/top_ly">
 
         <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip
             android:id="@+id/pagerSlidingTabStrip"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="38dp"
             android:textColor="@color/tab_text_color"
             app:pstsShouldExpand="false"
             app:pstsTextAllCaps="false"
             app:pstsDividerColor="@color/transparent"
             app:pstsIndicatorColor="@color/transparent"
             app:pstsIndicatorHeight="0dp"
-            app:pstsTabPaddingLeftRight="16dp"
+            app:pstsTabPaddingLeftRight="14dp"
             app:pstsDividerPadding="10dp"
-            android:clipToPadding="true"
+            android:clipToPadding="false"
             app:pstsUnderlineColor="@color/transparent" />
     </RelativeLayout>
 

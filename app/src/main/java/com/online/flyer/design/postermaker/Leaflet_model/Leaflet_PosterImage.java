@@ -7,6 +7,7 @@ public class Leaflet_PosterImage implements Serializable {
     int post_id;
     String post_thumb;
     String ratio;
+    private boolean isPremium = false;
 
     public Leaflet_PosterImage(String post_id, String post_thumb, String ratio, String cat_id) {
         this.post_id = Integer.parseInt(post_id);
@@ -45,5 +46,13 @@ public class Leaflet_PosterImage implements Serializable {
 
     public void setRatio(String ratio) {
         this.ratio = ratio;
+    }
+
+    public boolean isPremium() {
+        return isPremium;
+    }
+
+    public void setPremium(boolean isPremium) {
+        this.isPremium = isPremium;
     }
 }

@@ -18,10 +18,22 @@ import com.google.android.gms.ads.LoadAdError;
 
 public class Leaflet_LoadAds {
     public static void loadAdmobBannerAd(Activity activity, RelativeLayout mainLayout) {
+        loadAdmobBannerAd(activity, mainLayout, null);
+    }
+
+    public static void loadAdmobBannerAd(Activity activity, RelativeLayout mainLayout, String screenType) {
         if (activity == null || mainLayout == null) return;
         
         Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(activity);
-        String bannerId = pref.getAdsId("BannerAdunitID");
+        if (screenType != null && !pref.isBannerAdEnabled(screenType)) {
+            mainLayout.setVisibility(View.GONE);
+            return;
+        }
+
+        String bannerId = screenType != null ? pref.getBannerAdId(screenType) : pref.getAdsId("BannerAdunitID");
+        if (bannerId == null || bannerId.trim().isEmpty() || bannerId.equals("null")) {
+            bannerId = pref.getAdsId("BannerAdunitID");
+        }
         
         if (BuildConfig.DEBUG) {
             bannerId = "ca-app-pub-3940256099942544/6300978111";
@@ -88,6 +100,12 @@ public class Leaflet_LoadAds {
                 // User requested NOT to hide the box if AdMob fails, keep the loader spinning
                 adView.setVisibility(View.GONE);
                 shimmerView.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAdClicked() {
+                super.onAdClicked();
+                Leaflet_AppOpenManager.setAdClickActive(true);
             }
         });
 

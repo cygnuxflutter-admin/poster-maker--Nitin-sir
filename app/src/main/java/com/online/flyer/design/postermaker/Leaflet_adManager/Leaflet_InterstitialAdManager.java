@@ -18,15 +18,25 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback;
 public class Leaflet_InterstitialAdManager {
 
     private String admobInterstitialAdId;
+    private final String customAdUnitId;
     private final Context context;
     private final Leaflet_PreferenceClass preferenceClass;
     private InterstitialAd admobInterstitialAd;
     private OnAdLoadInterface onAdLoadInterface;
 
     public Leaflet_InterstitialAdManager(Context context) {
+        this(context, null);
+    }
+
+    public Leaflet_InterstitialAdManager(Context context, String customAdUnitId) {
         this.context = context;
+        this.customAdUnitId = customAdUnitId;
         preferenceClass = new Leaflet_PreferenceClass(this.context);
-        admobInterstitialAdId = preferenceClass.getAdsId("InterstitalAdunitID");
+        if (customAdUnitId != null && !customAdUnitId.trim().isEmpty() && !customAdUnitId.equals("null") && !customAdUnitId.contains("xxxx")) {
+            admobInterstitialAdId = customAdUnitId;
+        } else {
+            admobInterstitialAdId = preferenceClass.getAdsId("InterstitalAdunitID");
+        }
         
         if (BuildConfig.DEBUG) {
             admobInterstitialAdId = "ca-app-pub-3940256099942544/1033173712";
@@ -37,6 +47,17 @@ public class Leaflet_InterstitialAdManager {
     }
 
     public void fetchAdMobAd() {
+        if (customAdUnitId == null || customAdUnitId.trim().isEmpty()) {
+            if (preferenceClass != null) {
+                String rcId = preferenceClass.getGlobalInterstitialAdId();
+                if (rcId != null && !rcId.trim().isEmpty() && !rcId.equals("null") && !rcId.contains("xxxx")) {
+                    admobInterstitialAdId = rcId;
+                }
+            }
+        }
+        if (BuildConfig.DEBUG) {
+            admobInterstitialAdId = "ca-app-pub-3940256099942544/1033173712";
+        }
         if (admobInterstitialAdId == null || admobInterstitialAdId.trim().isEmpty() || admobInterstitialAdId.equals("null")) {
             return;
         }
@@ -62,6 +83,11 @@ public class Leaflet_InterstitialAdManager {
                 });
     }
 
+    public void setAdmobInterstitialAd(InterstitialAd admobInterstitialAd) {
+        this.admobInterstitialAd = admobInterstitialAd;
+        Log.d("AdManager", "Cached Interstitial Ad set externally (e.g. from splash fallback). Available: " + (admobInterstitialAd != null));
+    }
+
     public boolean isAdmobAdAvailable() {
         return admobInterstitialAd != null;
     }
@@ -77,9 +103,16 @@ public class Leaflet_InterstitialAdManager {
                 @Override
                 public void onAdDismissedFullScreenContent() {
                     admobInterstitialAd = null;
+                    Leaflet_AppOpenManager.setLastAdDismissedTime(System.currentTimeMillis());
                     if (Leaflet_InterstitialAdManager.this.onAdLoadInterface != null) {
                         Leaflet_InterstitialAdManager.this.onAdLoadInterface.onAdClose();
                     }
+                }
+
+                @Override
+                public void onAdClicked() {
+                    super.onAdClicked();
+                    Leaflet_AppOpenManager.setAdClickActive(true);
                 }
 
                 @Override
@@ -92,6 +125,7 @@ public class Leaflet_InterstitialAdManager {
             });
             admobInterstitialAd.show(activity);
         } else {
+            fetchAdMobAd();
             if (this.onAdLoadInterface != null) {
                 this.onAdLoadInterface.onAdClose();
             }

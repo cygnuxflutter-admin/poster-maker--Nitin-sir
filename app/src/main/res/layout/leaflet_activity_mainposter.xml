@@ -38,32 +38,43 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="24dp"
-                    android:paddingTop="48dp"
+                    android:paddingHorizontal="20dp"
+                    android:paddingTop="16dp"
                     android:gravity="center_vertical">
-                
+
+                    <!-- 3D Glossy App Brand 'P' Logo -->
+                    <ImageView
+                        android:id="@+id/img_app_brand_logo"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
+                        android:layout_marginEnd="12dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_app_brand_logo"
+                        android:contentDescription="@string/app_name" />
+
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_weight="1"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">
-                    
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Poster Maker"
-                        android:textColor="#111827"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
-                        
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Turn Ideas Into Posters."
-                        android:textColor="#6B7280"
-                        android:textSize="14sp"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Poster Maker"
+                            android:textColor="#111827"
+                            android:textSize="21sp"
+                            android:fontFamily="sans-serif-black"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Turn Ideas Into Posters."
+                            android:textColor="#6B7280"
+                            android:textSize="12.5sp"
+                            android:layout_marginTop="2dp" />
+                    </LinearLayout>
                 
                 <FrameLayout
                     android:id="@+id/btn_notification"
@@ -88,6 +99,50 @@
                         android:visibility="gone"/>
                 </FrameLayout>
             </LinearLayout>
+
+            <!-- Modern Search Bar with Animated Hint TextSwitcher -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_search_bar"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="14dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="16dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_search_modern"
+                        app:tint="#0066FF" />
+
+                    <TextSwitcher
+                        android:id="@+id/ts_search_hints"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="10dp"
+                        android:layout_marginEnd="8dp" />
+
+                    <ImageView
+                        android:id="@+id/iv_search_filter"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_search_tune_sliders"
+                        app:tint="#0066FF" />
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
 
             <!-- ============== HERO BANNER (Swipeable) ============== -->
             <androidx.cardview.widget.CardView
@@ -282,157 +337,378 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <RelativeLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:layout_marginHorizontal="20dp">
+                android:layout_marginHorizontal="20dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:src="@drawable/ic_header_category_grid" />
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
                     android:text="Browse by Category"
                     android:textColor="#111827"
                     android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_centerVertical="true"/>
-                <TextView
-                    android:id="@+id/category_see_all"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="See All →"
-                    android:textColor="#2563EB"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"/>
-            </RelativeLayout>
+                    android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
+            <!-- Modern Pastel Squircle Categories Horizontal Scroll -->
             <HorizontalScrollView
+                android:id="@+id/category_scroll_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="14dp"
                 android:scrollbars="none"
+                android:overScrollMode="always"
                 android:clipToPadding="false"
-                android:paddingHorizontal="20dp">
+                android:paddingHorizontal="16dp">
+
                 <LinearLayout
+                    android:id="@+id/category_container"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
-                    
+
+                    <!-- 1. Festival -->
                     <LinearLayout
                         android:id="@+id/cat_festival"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:paddingHorizontal="16dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_pill_lightindigo"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            app:tint="#4F46E5"
-                            android:src="@drawable/ic_cat_festival" />
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_festival">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_diya_festival" />
+                        </FrameLayout>
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginTop="6dp"
                             android:text="Festival"
-                            android:textColor="#4F46E5"
+                            android:textColor="#1F2937"
                             android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
                     </LinearLayout>
 
+                    <!-- 2. Wedding -->
+                    <LinearLayout
+                        android:id="@+id/cat_wedding"
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_wedding">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_rings_wedding" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Wedding"
+                            android:textColor="#1F2937"
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+
+                    <!-- 3. Sale -->
+                    <LinearLayout
+                        android:id="@+id/cat_sale"
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_sale">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_tag_sale" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Sale"
+                            android:textColor="#1F2937"
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+
+                    <!-- 4. Business -->
                     <LinearLayout
                         android:id="@+id/cat_business"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:paddingHorizontal="16dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_pill_lightblue"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_cat_business" />
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_business">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_bag_business" />
+                        </FrameLayout>
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginTop="6dp"
                             android:text="Business"
-                            android:textColor="#0284C7"
+                            android:textColor="#1F2937"
                             android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:id="@+id/cat_social"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:paddingHorizontal="16dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_pill_lightpurple"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_cat_social" />
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="Social Media"
-                            android:textColor="#9C27B0"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
+                    <!-- 5. Birthday -->
                     <LinearLayout
                         android:id="@+id/cat_birthday"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:paddingHorizontal="16dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_pill_lightpink"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_cat_birthday" />
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_birthday">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_cake_birthday" />
+                        </FrameLayout>
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginTop="6dp"
                             android:text="Birthday"
-                            android:textColor="#E11D48"
+                            android:textColor="#1F2937"
                             android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
                     </LinearLayout>
 
+                    <!-- 6. Food -->
                     <LinearLayout
-                        android:id="@+id/cat_event"
-                        android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:paddingHorizontal="16dp"
-                        android:layout_marginEnd="8dp"
-                        android:background="@drawable/bg_pill_lightblue"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:src="@drawable/ic_cat_event" />
+                        android:id="@+id/cat_food"
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_food">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_burger_food" />
+                        </FrameLayout>
+
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:text="Event"
-                            android:textColor="#2563EB"
+                            android:layout_marginTop="6dp"
+                            android:text="Food"
+                            android:textColor="#1F2937"
                             android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+
+                    <!-- 7. Education -->
+                    <LinearLayout
+                        android:id="@+id/cat_education"
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_education">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_cap_education" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Education"
+                            android:textColor="#1F2937"
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+
+                    <!-- 8. Party / Event -->
+                    <LinearLayout
+                        android:id="@+id/cat_event"
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_event">
+
+                            <ImageView
+                                android:layout_width="30dp"
+                                android:layout_height="30dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_party_event" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="Party"
+                            android:textColor="#1F2937"
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+
+                    <!-- 9. More (View All Categories) -->
+                    <LinearLayout
+                        android:id="@+id/cat_more"
+                        android:layout_width="66dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="4dp"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <FrameLayout
+                            android:layout_width="54dp"
+                            android:layout_height="54dp"
+                            android:background="@drawable/bg_cat_tile_more">
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_cat_more_grid" />
+                        </FrameLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:text="More"
+                            android:textColor="#4F46E5"
+                            android:textSize="12sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            android:ellipsize="end" />
                     </LinearLayout>
 
                 </LinearLayout>
@@ -444,24 +720,61 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
                 android:layout_marginHorizontal="20dp">
-                <TextView
+
+                <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Popular Templates"
-                    android:textColor="#111827"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:layout_centerVertical="true"/>
-                <TextView
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_header_popular_flame" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Popular Templates"
+                        android:textColor="#111827"
+                        android:textSize="18sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/popular_see_all"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="See All →"
-                    android:textColor="#2563EB"
-                    android:textSize="14sp"
-                    android:textStyle="bold"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingVertical="4dp"
+                    android:paddingHorizontal="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackgroundBorderless"
                     android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"/>
+                    android:layout_centerVertical="true">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="See All"
+                        android:textColor="#0066FF"
+                        android:textSize="14sp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold" />
+
+                    <ImageView
+                        android:id="@+id/iv_popular_see_all_arrow"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginStart="4dp"
+                        android:src="@drawable/ic_arrow_forward_nudge" />
+                </LinearLayout>
             </RelativeLayout>
 
             <!-- Shimmer Loader for Popular Templates -->
@@ -497,6 +810,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:background="#FFFFFF"
         android:orientation="vertical">
 
         <!-- Banner Ad Container -->
@@ -504,6 +818,9 @@
             android:id="@+id/banner_ad_container_home"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="#FFFFFF"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
             android:visibility="gone"/>
 
         <include layout="@layout/layout_bottom_nav" />

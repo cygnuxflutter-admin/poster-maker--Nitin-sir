@@ -262,18 +262,31 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
 
         tab.setPadding(tabPadding, 0, tabPadding, 0);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
-        int marginPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, getResources().getDisplayMetrics());
-        params.setMargins(marginPx, 0, marginPx, 0);
+        int marginPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
+        int outerMarginPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 14, getResources().getDisplayMetrics());
+        int leftMargin = (position == 0) ? outerMarginPx : marginPx;
+        params.setMargins(leftMargin, 0, marginPx, 0);
         tabsContainer.addView(tab, position, params);
     }
 
     private void updateTabStyles() {
+        int marginPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4, getResources().getDisplayMetrics());
+        int outerMarginPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 14, getResources().getDisplayMetrics());
+        int count = tabsContainer.getChildCount();
 
-        for (int i = 0; i < tabsContainer.getChildCount(); i++) {
+        for (int i = 0; i < count; i++) {
 
             View v = tabsContainer.getChildAt(i);
 
             v.setBackgroundResource(tabBackgroundResId);
+
+            if (v.getLayoutParams() instanceof LinearLayout.LayoutParams) {
+                LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) v.getLayoutParams();
+                int left = (i == 0) ? outerMarginPx : marginPx;
+                int right = (i == count - 1) ? outerMarginPx : marginPx;
+                lp.setMargins(left, 0, right, 0);
+                v.setLayoutParams(lp);
+            }
 
             if (v instanceof TextView) {
 //                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
@@ -311,10 +324,15 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
             return;
         }
 
-        int newScrollX = tabsContainer.getChildAt(position).getLeft() + offset;
+        int newScrollX;
+        if (position == 0 && offset == 0) {
+            newScrollX = 0;
+        } else {
+            newScrollX = tabsContainer.getChildAt(position).getLeft() + offset - scrollOffset;
+        }
 
-        if (position > 0 || offset > 0) {
-            newScrollX -= scrollOffset;
+        if (newScrollX < 0) {
+            newScrollX = 0;
         }
 
         if (newScrollX != lastScrollX) {

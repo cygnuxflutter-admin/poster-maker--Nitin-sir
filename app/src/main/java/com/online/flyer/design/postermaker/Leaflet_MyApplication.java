@@ -69,7 +69,11 @@ public class Leaflet_MyApplication extends android.app.Application {
     public static void showInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
         if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
-            final int targetCount = pref.getAdsStatus("interstitialAdStatus") <= 0 ? 1 : pref.getAdsStatus("interstitialAdStatus");
+            if (!pref.isGlobalInterstitialEnabled()) {
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
+            final int targetCount = pref.getGlobalInterstitialCount();
             
             
             interstitialClickCount++;
@@ -112,7 +116,11 @@ public class Leaflet_MyApplication extends android.app.Application {
     public static void showEditInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
         if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
-            final int targetCount = pref.getAdsStatus("EditScreenAdCount") <= 0 ? 1 : pref.getAdsStatus("EditScreenAdCount");
+            if (!pref.isGlobalInterstitialEnabled()) {
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
+            final int targetCount = pref.getEditScreenInterstitialCount();
             
             
             editInterstitialClickCount++;
@@ -137,6 +145,48 @@ public class Leaflet_MyApplication extends android.app.Application {
             } else {
                 if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
             }
+        } else {
+            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+        }
+    }
+
+    public static void showSearchInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
+        if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref =
+                    new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
+
+            // 1. Check Remote Config toggle
+            if (!pref.isSearchInterstitialEnabled()) {
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
+
+            // 2. Target interval from Remote Config
+            final int targetCount = pref.getSearchInterstitialCount();
+
+            // 3. Increment click count
+            int currentClickCount = pref.getInt("getSearchClickCount", 0) + 1;
+
+            Leaflet_InterstitialAdManager adManager = ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager();
+
+            // 4. SMART PRELOAD: 1 click before target, preload silently
+            int preloadTrigger = Math.max(1, targetCount - 1);
+            if (currentClickCount == preloadTrigger) {
+                adManager.fetchAdMobAd();
+            }
+
+            // 5. If target not reached yet, save count and proceed
+            if (currentClickCount < targetCount) {
+                pref.setInt("getSearchClickCount", currentClickCount);
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
+
+            // 6. Target reached -> reset count to 0 and show ad!
+            pref.setInt("getSearchClickCount", 0);
+            adManager.showInterstitialAd(activity, () -> {
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+            });
         } else {
             if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
         }
@@ -191,6 +241,9 @@ public class Leaflet_MyApplication extends android.app.Application {
 
         appOpenManager = new Leaflet_AppOpenManager(this);
         AudienceNetworkAds.initialize(this);
+
+        // Initialize FCM Notification Channel
+        com.online.flyer.design.postermaker.Leaflet_service.Leaflet_FirebaseMessagingService.createNotificationChannel(this);
 
         // OneSignal Initialization
         OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);

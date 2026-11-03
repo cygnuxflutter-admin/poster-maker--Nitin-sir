@@ -17,14 +17,15 @@
 
         <ImageView
             android:id="@+id/ic_back"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="12dp"
             android:padding="8dp"
-            android:src="@drawable/leaflet_ic_back"
-            app:tint="#0066FF"/>
+            android:background="@drawable/bg_circle_button_flat"
+            android:src="@drawable/ic_arrow_back"
+            app:tint="#1E293B"/>
 
         <LinearLayout
             android:id="@+id/ly_title"
@@ -82,8 +83,8 @@
 
             <ImageView
                 android:id="@+id/ic_search_close"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_marginEnd="16dp"
                 android:padding="12dp"
                 android:src="@drawable/leaflet_ic_close"
@@ -92,8 +93,8 @@
 
         <ImageView
             android:id="@+id/ic_search"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_marginEnd="16dp"

@@ -48,18 +48,22 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         super.onCreate(savedInstanceState);
         setContentView(R.layout.leaflet_activity_background_selection);
 
+        findByID();
+
         androidx.swiperefreshlayout.widget.SwipeRefreshLayout swipeRefresh = findViewById(R.id.swipe_refresh);
         if (swipeRefresh != null) {
             swipeRefresh.setOnRefreshListener(() -> {
-                finish();
-                startActivity(getIntent());
-                overridePendingTransition(0, 0);
+                if (bgSelectionController != null) {
+                    bgSelectionController.refreshData(true);
+                }
+                swipeRefresh.setRefreshing(false);
             });
         }
 
-        findByID();
-
-        findViewById(R.id.ic_back).setOnClickListener(v -> onBackPressed());
+        android.view.View backBtn = findViewById(R.id.ic_back);
+        if (backBtn != null) backBtn.setOnClickListener(v -> onBackPressed());
+        android.view.View backContainer = findViewById(R.id.ic_back_container);
+        if (backContainer != null) backContainer.setOnClickListener(v -> onBackPressed());
 
         findViewById(R.id.ic_gallery).setOnClickListener(v -> bgSelectionController.openPhotoGallery());
 
@@ -141,10 +145,10 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
         if (rl_ad != null) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
-            if (pref.getInt("show_banner_background", 1) == 1 && pref.getAdsId("BannerAdunitID") != null) {
+            if (pref.isBannerAdEnabled("backgrounds")) {
                 rl_ad.setVisibility(android.view.View.VISIBLE);
                 if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
-                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
+                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad, "backgrounds");
                 }
             } else {
                 rl_ad.setVisibility(android.view.View.GONE);
@@ -216,6 +220,15 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 2001 && resultCode == RESULT_OK && data != null) {
+            String bgUrl = data.getStringExtra("image_url");
+            boolean isPremium = data.getBooleanExtra("is_premium", false);
+            if (bgUrl != null && !bgUrl.isEmpty()) {
+                onPosterClick(bgUrl, isPremium);
+            }
+            return;
+        }
 
         if (requestCode == 1001 && resultCode == RESULT_OK && data != null) {
             String selectedCatName = data.getStringExtra("selected_category_name");

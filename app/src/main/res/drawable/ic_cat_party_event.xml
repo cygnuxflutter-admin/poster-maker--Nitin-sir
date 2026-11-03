@@ -1,0 +1,41 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp"
+    android:height="30dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Confetti Star (Top Right - Golden Yellow) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M24,5 L24.8,6.8 L27,7.5 L24.8,8.2 L24,10 L23.2,8.2 L21,7.5 L23.2,6.8 Z" />
+
+    <!-- Confetti Dot (Cyan) -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M16,5 C16,4.2 16.7,3.5 17.5,3.5 C18.3,3.5 19,4.2 19,5 C19,5.8 18.3,6.5 17.5,6.5 C16.7,6.5 16,5.8 16,5 Z" />
+
+    <!-- Confetti Dot (Green) -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M27,13 C27,12.2 27.7,11.5 28.5,11.5 C29.3,11.5 30,12.2 30,13 C30,13.8 29.3,14.5 28.5,14.5 C27.7,14.5 27,13.8 27,13 Z" />
+
+    <!-- Streamer Ribbon (Curved Violet) -->
+    <path
+        android:fillColor="#8B5CF6"
+        android:pathData="M12,7 C14,6 16,9 18,8 C17,10 15,9 13.5,11 Z" />
+
+    <!-- Party Popper Cone Main (Vibrant Pink/Magenta) -->
+    <path
+        android:fillColor="#EC4899"
+        android:pathData="M5,27 L18,22 L11,10 Z" />
+
+    <!-- Party Popper Stripes (Deep Rose) -->
+    <path
+        android:fillColor="#BE185D"
+        android:pathData="M13.5,14.5 L7.5,21.5 L9.5,23.5 L15.5,16.5 Z" />
+
+    <!-- Party Popper Mouth Burst Rim (Golden Amber) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M11,10 C13,8 16,15 18,22 C16,21 13,17 11,10 Z" />
+</vector>

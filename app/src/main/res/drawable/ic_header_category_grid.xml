@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp"
+    android:height="22dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Top-Left Tile (Blue) -->
+    <path
+        android:fillColor="#3B82F6"
+        android:pathData="M6,7 C6,5.3 7.3,4 9,4 L13,4 C14.7,4 16,5.3 16,7 L16,11 C16,12.7 14.7,14 13,14 L9,14 C7.3,14 6,12.7 6,11 Z" />
+
+    <!-- Top-Right Tile (Purple) -->
+    <path
+        android:fillColor="#8B5CF6"
+        android:pathData="M19,7 C19,5.3 20.3,4 22,4 L26,4 C27.7,4 29,5.3 29,7 L29,11 C29,12.7 27.7,14 26,14 L22,14 C20.3,14 19,12.7 19,11 Z" />
+
+    <!-- Bottom-Left Tile (Rose Pink) -->
+    <path
+        android:fillColor="#EC4899"
+        android:pathData="M6,20 C6,18.3 7.3,17 9,17 L13,17 C14.7,17 16,18.3 16,20 L16,24 C16,25.7 14.7,27 13,27 L9,27 C7.3,27 6,25.7 6,24 Z" />
+
+    <!-- Bottom-Right Tile (Golden Amber) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M19,20 C19,18.3 20.3,17 22,17 L26,17 C27.7,17 29,18.3 29,20 L29,24 C29,25.7 27.7,27 26,27 L22,27 C20.3,27 19,25.7 19,24 Z" />
+</vector>

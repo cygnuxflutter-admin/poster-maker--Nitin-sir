@@ -25,6 +25,7 @@ public class Leaflet_TemplatePagerAdapter extends FragmentStatePagerAdapter {
         Leaflet_TemplateFragment templateFragment = new Leaflet_TemplateFragment();
         Bundle bundle = new Bundle();
         bundle.putInt("catId", catId);
+        bundle.putString("cat_name", posterModels.get(position).getCat_name());
         bundle.putSerializable("posterDataLists", posterModels.get(position).getPoster_list());
         templateFragment.setArguments(bundle);
         return templateFragment;

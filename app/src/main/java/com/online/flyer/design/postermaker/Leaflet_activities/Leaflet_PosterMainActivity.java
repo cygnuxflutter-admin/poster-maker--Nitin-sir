@@ -19,6 +19,11 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.TextSwitcher;
+import android.util.TypedValue;
+import android.graphics.Color;
+import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -78,6 +83,19 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
     private Runnable autoScrollRunnable;
     private static final long AUTO_SCROLL_DELAY = 3000; // 3 seconds
 
+    // Animated Search Bar
+    private TextSwitcher tsSearchHints;
+    private Handler searchHintHandler;
+    private Runnable searchHintRunnable;
+    private int currentSearchHintIndex = 0;
+    private final String[] searchHints = {
+            "Festival Posters \uD83E\uDE94",
+            "Birthday Wishes \uD83C\uDF82",
+            "Business Flyers \uD83D\uDCBC",
+            "Sale & Offers \uD83D\uDD25",
+            "Social Media Posts \uD83D\uDCF1"
+    };
+
     // Popular Posters
     private RecyclerView popularPostersRv;
     private Leaflet_PopularPosterAdapter popularPosterAdapter;
@@ -120,6 +138,29 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         OneSignal.setAppId("35b6d659-eeda-4729-b2c0-ebef7ac69e3e");
         OneSignal.promptForPushNotifications();
 
+        // FCM Global Topic Subscription
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().subscribeToTopic("all_users")
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Log.d("FCM", "Subscribed to all_users topic from MainActivity");
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e("FCM", "Error subscribing to all_users topic", e);
+        }
+
+        // Android 13+ Notification Permission Check
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
+
+        handleNotificationIntent(getIntent());
+
         android.view.View btnNotification = findViewById(R.id.btn_notification);
         if (btnNotification != null) {
             btnNotification.setOnClickListener(v -> {
@@ -141,7 +182,12 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 
         preferenceClass = new Leaflet_PreferenceClass(this);
 
+        // Preload templates & backgrounds in the background so opening them is instantaneous (0s loader)
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().preloadTemplatesSilently(this, preferenceClass);
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().preloadBackgroundsSilently(this, preferenceClass);
+
         findByID();
+        setupAnimatedSearchBar();
 
         findViewById(R.id.lay_poster).setOnClickListener(v -> {
             activityIndex = 1;
@@ -221,10 +267,13 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             String catName = "";
             int id = v.getId();
             if (id == R.id.cat_festival) catName = "Festival";
+            else if (id == R.id.cat_wedding) catName = "Wedding";
+            else if (id == R.id.cat_sale) catName = "Sale";
             else if (id == R.id.cat_business) catName = "Business";
-            else if (id == R.id.cat_social) catName = "Social";
             else if (id == R.id.cat_birthday) catName = "Birthday";
-            else if (id == R.id.cat_event) catName = "Event";
+            else if (id == R.id.cat_food) catName = "Food";
+            else if (id == R.id.cat_education) catName = "Education";
+            else if (id == R.id.cat_event) catName = "Party";
 
             String finalCatName = catName;
             Leaflet_MyApplication.showInterstitialAd(this, () -> {
@@ -234,26 +283,105 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             });
         };
 
-        findViewById(R.id.cat_festival).setOnClickListener(catClickListener);
-        findViewById(R.id.cat_business).setOnClickListener(catClickListener);
-        findViewById(R.id.cat_social).setOnClickListener(catClickListener);
-        findViewById(R.id.cat_birthday).setOnClickListener(catClickListener);
-        findViewById(R.id.cat_event).setOnClickListener(catClickListener);
+        int[] catIds = {
+            R.id.cat_festival, R.id.cat_wedding, R.id.cat_sale,
+            R.id.cat_business, R.id.cat_birthday, R.id.cat_food,
+            R.id.cat_education, R.id.cat_event
+        };
 
-        // Setup Hero Banner and Popular Posters
-        setupHeroBanner();
-        setupPopularPosters();
-        
-        // Category See All click listener
-        findViewById(R.id.category_see_all).setOnClickListener(v -> {
+        for (int catId : catIds) {
+            View catView = findViewById(catId);
+            if (catView != null) {
+                catView.setOnClickListener(catClickListener);
+                applyTouchBounceEffect(catView);
+            }
+        }
+
+        // More & See All click listener
+        android.view.View.OnClickListener moreClickListener = v -> {
             Leaflet_MyApplication.showInterstitialAd(this, () -> {
                 Intent intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
                 intent.putExtra("show_all_categories", true);
                 startActivity(intent);
             });
+        };
+
+        // Note: category_see_all removed in favor of modern cat_more tile in scrollview
+
+        View catMoreView = findViewById(R.id.cat_more);
+        if (catMoreView != null) {
+            catMoreView.setOnClickListener(moreClickListener);
+            applyTouchBounceEffect(catMoreView);
+        }
+
+        // Trigger entrance animations for categories
+        animateCategoryEntrance();
+
+        // Setup Hero Banner and Popular Posters
+        setupHeroBanner();
+        setupPopularPosters();
+    }
+
+
+    
+    private void startArrowNudgeAnimation(View arrow) {
+        if (arrow == null) return;
+        float density = getResources().getDisplayMetrics().density;
+        float nudgeDistance = 5f * density;
+        android.animation.ObjectAnimator nudge = android.animation.ObjectAnimator.ofFloat(arrow, "translationX", 0f, nudgeDistance, 0f);
+        nudge.setDuration(1000);
+        nudge.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+        nudge.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        nudge.setRepeatMode(android.animation.ValueAnimator.RESTART);
+        nudge.start();
+    }
+
+    private void applyTouchBounceEffect(View view) {
+        if (view == null) return;
+        view.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    v.animate().scaleX(0.92f).scaleY(0.92f).setDuration(100).setInterpolator(new android.view.animation.DecelerateInterpolator()).start();
+                    break;
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(250).setInterpolator(new android.view.animation.OvershootInterpolator(2.5f)).start();
+                    break;
+            }
+            return false;
         });
     }
 
+    private void animateCategoryEntrance() {
+        LinearLayout categoryContainer = findViewById(R.id.category_container);
+        if (categoryContainer == null) return;
+
+        for (int i = 0; i < categoryContainer.getChildCount(); i++) {
+            View child = categoryContainer.getChildAt(i);
+            child.setAlpha(0f);
+            child.setTranslationX(60f);
+            child.animate()
+                    .alpha(1f)
+                    .translationX(0f)
+                    .setDuration(350)
+                    .setStartDelay(i * 35L)
+                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                    .start();
+        }
+
+        // Gentle pulse on "More" after entrance finishes
+        View catMore = findViewById(R.id.cat_more);
+        if (catMore != null) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                catMore.animate()
+                        .scaleX(1.08f)
+                        .scaleY(1.08f)
+                        .setDuration(220)
+                        .withEndAction(() -> catMore.animate().scaleX(1.0f).scaleY(1.0f).setDuration(220).start())
+                        .start();
+            }, 550);
+        }
+    }
 
     private void findByID() {
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.setupBottomNav(this, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.TAB_HOME);
@@ -332,6 +460,29 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleNotificationIntent(intent);
+    }
+
+    private void handleNotificationIntent(Intent intent) {
+        if (intent != null && intent.hasExtra("launch_url")) {
+            String launchUrl = intent.getStringExtra("launch_url");
+            if (launchUrl != null && !launchUrl.trim().isEmpty()) {
+                if (launchUrl.startsWith("http://") || launchUrl.startsWith("https://")) {
+                    try {
+                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(launchUrl));
+                        startActivity(browserIntent);
+                    } catch (Exception e) {
+                        Log.e("Leaflet_PosterMainActivity", "Error handling notification launch url", e);
+                    }
+                }
+            }
+        }
+    }
+
     private void loadHeroBannersFromApi() {
         String requestUrl = "https://cygnux.in/postermaker/api/v1/poster/hero";
         String key = preferenceClass.getDataType("field_0");
@@ -386,27 +537,53 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
     }
 
     private void setupBannerIndicators(int count) {
+        if (bannerIndicatorLayout == null) return;
         bannerIndicatorLayout.removeAllViews();
+        if (count <= 1) return;
+
+        int activeWidth = (int) (22 * getResources().getDisplayMetrics().density);
+        int dotSize = (int) (6 * getResources().getDisplayMetrics().density);
+        int margin = (int) (3 * getResources().getDisplayMetrics().density);
+
         for (int i = 0; i < count; i++) {
             ImageView dot = new ImageView(this);
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+                    (i == 0) ? activeWidth : dotSize,
+                    dotSize
             );
-            params.setMargins(6, 0, 6, 0);
+            params.setMargins(margin, 0, margin, 0);
             dot.setLayoutParams(params);
-            dot.setImageResource(R.drawable.bg_banner_indicator_inactive);
+            dot.setImageResource((i == 0) ? R.drawable.bg_banner_indicator_active : R.drawable.bg_banner_indicator_inactive);
             bannerIndicatorLayout.addView(dot);
         }
     }
 
     private void updateBannerIndicator(int position) {
+        if (bannerIndicatorLayout == null) return;
+        int activeWidth = (int) (22 * getResources().getDisplayMetrics().density);
+        int dotSize = (int) (6 * getResources().getDisplayMetrics().density);
+        int margin = (int) (3 * getResources().getDisplayMetrics().density);
+
         for (int i = 0; i < bannerIndicatorLayout.getChildCount(); i++) {
             ImageView dot = (ImageView) bannerIndicatorLayout.getChildAt(i);
+            if (dot == null) continue;
+            LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) dot.getLayoutParams();
             if (i == position) {
                 dot.setImageResource(R.drawable.bg_banner_indicator_active);
+                if (params != null && params.width != activeWidth) {
+                    params.width = activeWidth;
+                    params.height = dotSize;
+                    params.setMargins(margin, 0, margin, 0);
+                    dot.setLayoutParams(params);
+                }
             } else {
                 dot.setImageResource(R.drawable.bg_banner_indicator_inactive);
+                if (params != null && params.width != dotSize) {
+                    params.width = dotSize;
+                    params.height = dotSize;
+                    params.setMargins(margin, 0, margin, 0);
+                    dot.setLayoutParams(params);
+                }
             }
         }
     }
@@ -454,12 +631,21 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             });
         });
 
-        // See All click
-        findViewById(R.id.popular_see_all).setOnClickListener(v -> {
-            Leaflet_MyApplication.showInterstitialAd(this, () -> {
-                startActivity(new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class));
+        // See All click with Touch Bounce and Arrow Nudge Animation
+        View popularSeeAll = findViewById(R.id.popular_see_all);
+        if (popularSeeAll != null) {
+            applyTouchBounceEffect(popularSeeAll);
+            popularSeeAll.setOnClickListener(v -> {
+                Leaflet_MyApplication.showInterstitialAd(this, () -> {
+                    startActivity(new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class));
+                });
             });
-        });
+        }
+
+        View arrowView = findViewById(R.id.iv_popular_see_all_arrow);
+        if (arrowView != null) {
+            startArrowNudgeAnimation(arrowView);
+        }
     }
 
     private void loadPopularPostersFromApi() {
@@ -513,17 +699,69 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         Volley.newRequestQueue(this).add(stringRequest);
     }
 
+    private void setupAnimatedSearchBar() {
+        View cardSearchBar = findViewById(R.id.card_search_bar);
+        tsSearchHints = findViewById(R.id.ts_search_hints);
+        if (tsSearchHints != null) {
+            tsSearchHints.setFactory(() -> {
+                TextView tv = new TextView(this);
+                tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13.5f);
+                tv.setTextColor(Color.parseColor("#6B7280"));
+                tv.setMaxLines(1);
+                tv.setEllipsize(TextUtils.TruncateAt.END);
+                return tv;
+            });
+            tsSearchHints.setInAnimation(this, R.anim.spawner_hint_slide_in_bottom);
+            tsSearchHints.setOutAnimation(this, R.anim.spawner_hint_slide_out_top);
+            tsSearchHints.setCurrentText(searchHints[0]);
+        }
+
+        if (cardSearchBar != null) {
+            cardSearchBar.setOnClickListener(v -> {
+                Intent intent = new Intent(this, Leaflet_SearchActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        searchHintHandler = new Handler(Looper.getMainLooper());
+        searchHintRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (tsSearchHints != null && !isFinishing() && !isDestroyed()) {
+                    currentSearchHintIndex = (currentSearchHintIndex + 1) % searchHints.length;
+                    tsSearchHints.setText(searchHints[currentSearchHintIndex]);
+                    searchHintHandler.postDelayed(this, 2800);
+                }
+            }
+        };
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         startAutoScroll();
         updateNotificationBadge();
+        if (searchHintHandler != null && searchHintRunnable != null) {
+            searchHintHandler.removeCallbacks(searchHintRunnable);
+            searchHintHandler.postDelayed(searchHintRunnable, 2800);
+        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         stopAutoScroll();
+        if (searchHintHandler != null && searchHintRunnable != null) {
+            searchHintHandler.removeCallbacks(searchHintRunnable);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (searchHintHandler != null && searchHintRunnable != null) {
+            searchHintHandler.removeCallbacks(searchHintRunnable);
+        }
     }
 
 //    private void openActivity(Class<? extends Activity> activity) {

@@ -1,0 +1,24 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Drop Shadow -->
+    <path
+        android:fillColor="#33000000"
+        android:pathData="M9.5,2.5 C8.67,2.5 8,3.17 8,4 v9.24 l-2.93,-0.62 c-0.1,-0.02 -0.21,-0.03 -0.32,-0.03 c-0.4,0 -0.76,0.16 -1.02,0.42 l-0.63,0.64 4.5,4.5 C8.02,20.57 8.56,21 9.15,21 h6.2 C16.27,21 17,20.27 17.15,19.35 l0.68,-4.76 c0.02,-0.1 0.03,-0.18 0.03,-0.27 0,-0.69 -0.42,-1.29 -1.01,-1.54 l-4.12,-2.05 c-0.15,-0.06 -0.32,-0.1 -0.48,-0.1 H11 V4 c0,-0.83 -0.67,-1.5 -1.5,-1.5 z" />
+    <!-- White Hand with dark slate border -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#1E293B"
+        android:strokeWidth="1.2"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round"
+        android:pathData="M9,1.5 C8.17,1.5 7.5,2.17 7.5,3 v9.24 l-2.93,-0.62 c-0.1,-0.02 -0.21,-0.03 -0.32,-0.03 c-0.4,0 -0.76,0.16 -1.02,0.42 l-0.63,0.64 4.5,4.5 C7.52,19.57 8.06,20 8.65,20 h6.2 C15.77,20 16.5,19.27 16.65,18.35 l0.68,-4.76 c0.02,-0.1 0.03,-0.18 0.03,-0.27 0,-0.69 -0.42,-1.29 -1.01,-1.54 l-4.12,-2.05 c-0.15,-0.06 -0.32,-0.1 -0.48,-0.1 H10.5 V3 c0,-0.83 -0.67,-1.5 -1.5,-1.5 z" />
+    <!-- Subtle Inner Highlight line on index finger -->
+    <path
+        android:strokeColor="#E2E8F0"
+        android:strokeWidth="0.8"
+        android:strokeLineCap="round"
+        android:pathData="M9,3.5 V10" />
+</vector>

@@ -25,6 +25,7 @@ public class Leaflet_BackgroundPagerAdapter extends FragmentStatePagerAdapter {
         Leaflet_BackgroundFragment backgroundFragment = new Leaflet_BackgroundFragment();
         Bundle bundle = new Bundle();
         bundle.putSerializable("posterDataLists", posterDataLists.get(position).getCategory_list());
+        bundle.putString("category_name", posterDataLists.get(position).getCategory_name());
         backgroundFragment.setArguments(bundle);
         return backgroundFragment;
     }

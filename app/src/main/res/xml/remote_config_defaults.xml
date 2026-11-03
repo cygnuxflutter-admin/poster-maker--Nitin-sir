@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defaultsMap>
+    <entry>
+        <key>search</key>
+        <value>{
+  "enabled": true,
+  "count": 3
+}</value>
+    </entry>
+    <entry>
+        <key>search_interstitial_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>search_interstitial_count</key>
+        <value>3</value>
+    </entry>
+    <entry>
+        <key>premium_poster_lock</key>
+        <value>{
+  "enabled": true,
+  "blur_enabled": true,
+  "reward_popup_enabled": true,
+  "native_ad_enabled": true,
+  "ad_type": "reward"
+}</value>
+    </entry>
+    <entry>
+        <key>reward_dialog</key>
+        <value>{
+  "native_ad": {
+    "enabled": true,
+    "ad_id": "ca-app-pub-5706123402805812/8186296336"
+  }
+}</value>
+    </entry>
+    <entry>
+        <key>show_reward_dialog_native_ad</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>show_template_reward_native_ad</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>show_background_reward_native_ad</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>premium_poster_lock_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>premium_poster_blur_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>premium_reward_popup_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>undo_redo</key>
+        <value>{
+  "enabled": true,
+  "free_actions_allowed": 0,
+  "ad_type": "reward",
+  "ad_id": "ca-app-pub-5706123402805812/6490071289"
+}</value>
+    </entry>
+    <entry>
+        <key>reward_timer</key>
+        <value>{
+  "enabled": true,
+  "timer_seconds": 50,
+  "ad_id": "ca-app-pub-5706123402805812/6490071289"
+}</value>
+    </entry>
+    <entry>
+        <key>interstitial_ad</key>
+        <value>{
+  "enabled": true,
+  "count": 2,
+  "edit_count": 3,
+  "ad_id": "ca-app-pub-5706123402805812/1594372797"
+}</value>
+    </entry>
+    <entry>
+        <key>interstitial_ad_count</key>
+        <value>2</value>
+    </entry>
+    <entry>
+        <key>interstitialAdCount</key>
+        <value>2</value>
+    </entry>
+    <entry>
+        <key>interstitialAdStatus</key>
+        <value>2</value>
+    </entry>
+    <entry>
+        <key>EditScreenAdCount</key>
+        <value>3</value>
+    </entry>
+    <entry>
+        <key>loading_screen</key>
+        <value>{
+  "enabled": true,
+  "show_after_splash": true,
+  "show_after_onboarding": true,
+  "timer_seconds": 10,
+  "native_ad": {
+    "enabled": true,
+    "height": 280,
+    "type": "video",
+    "ad_id": "ca-app-pub-5706123402805812/8186296336"
+  }
+}</value>
+    </entry>
+    <entry>
+        <key>splash</key>
+        <value>{
+  "timer_seconds": 4,
+  "app_open_ad": {
+    "enabled": true,
+    "ad_id": "ca-app-pub-5706123402805812/2933969658"
+  },
+  "fallback_interstitial_ad": {
+    "enabled": true,
+    "ad_id": "ca-app-pub-5706123402805812/1594372797"
+  }
+}</value>
+    </entry>
+    <entry>
+        <key>foreground_app_open</key>
+        <value>{
+  "enabled": true,
+  "ad_id": "ca-app-pub-5706123402805812/2933969658",
+  "cooldown_seconds": 2,
+  "gallery_cooldown_seconds": 0,
+  "suppress_on_intent": false,
+  "suppress_on_ad_click": false
+}</value>
+    </entry>
+    <entry>
+        <key>templates</key>
+        <value>{
+  "banner_ad": {
+    "enabled": true,
+    "ad_id": "ca-app-pub-5706123402805812/4821766396"
+  },
+  "preview_native_ad": {
+    "enabled": true,
+    "ad_type": "compact",
+    "height": 100,
+    "ad_id": "ca-app-pub-5706123402805812/8186296336"
+  },
+  "native_ad": {
+    "enabled": true,
+    "first_ad_after": 6,
+    "repeat_ad_after": 6,
+    "ad_id": "ca-app-pub-5706123402805812/8186296336",
+    "native_show_shimmer_on_fail": false
+  },
+  "native_show_shimmer_on_fail": false
+}</value>
+    </entry>
+    <entry>
+        <key>backgrounds</key>
+        <value>{
+  "banner_ad": {
+    "enabled": true,
+    "ad_id": "ca-app-pub-5706123402805812/4821766396"
+  },
+  "preview_native_ad": {
+    "enabled": true,
+    "ad_type": "compact",
+    "height": 100,
+    "ad_id": "ca-app-pub-5706123402805812/8186296336"
+  },
+  "native_ad": {
+    "enabled": true,
+    "first_ad_after": 6,
+    "repeat_ad_after": 6,
+    "ad_id": "ca-app-pub-5706123402805812/8186296336",
+    "native_show_shimmer_on_fail": false
+  },
+  "native_show_shimmer_on_fail": false
+}</value>
+    </entry>
+    <entry>
+        <key>home</key>
+        <value>{
+  "banner_ad": {
+    "enabled": true,
+    "ad_id": "ca-app-pub-5706123402805812/4821766396"
+  }
+}</value>
+    </entry>
+    <entry>
+        <key>exit_dialog</key>
+        <value>{
+  "native_ad": {
+    "enabled": true,
+    "ad_id": "ca-app-pub-5706123402805812/8186296336",
+    "native_show_shimmer_on_fail": false
+  }
+}</value>
+    </entry>
+    <entry>
+        <key>show_banner_home</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_native_exit</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_app_open_ad</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_splash_app_open</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_banner_background</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_banner_templates</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_banner_share</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_fallback_interstitial</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>show_reward_on_save</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>splashscreen</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>native_show_shimmer_on_fail</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>template_ad_interval</key>
+        <value>6</value>
+    </entry>
+    <entry>
+        <key>background_ad_interval</key>
+        <value>6</value>
+    </entry>
+    <entry>
+        <key>rv_count</key>
+        <value>6</value>
+    </entry>
+    <entry>
+        <key>show_grid_native_ad</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>native_ad_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>download_reward_ad</key>
+        <value>{
+  "enabled": true,
+  "free_downloads": 0,
+  "remove_watermark": true,
+  "ad_type": "reward",
+  "native_ad": {
+    "enabled": true
+  }
+}</value>
+    </entry>
+    <entry>
+        <key>download_reward_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>free_download_count</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>download_remove_watermark</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>show_download_reward_native_ad</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>loading_native_ad_height</key>
+        <value>280</value>
+    </entry>
+    <entry>
+        <key>onboarding_native_height</key>
+        <value>220</value>
+    </entry>
+    <entry>
+        <key>onboarding</key>
+        <value>{
+  "is_interstitial_enabled": true,
+  "native_ad": {
+    "enabled": true,
+    "height": 220,
+    "ad_type": "medium"
+  },
+  "onboarding_1": {
+    "show_native_ad": true,
+    "height": 220,
+    "ad_type": "medium",
+    "next_interstitial": true
+  },
+  "onboarding_2": {
+    "show_native_ad": true,
+    "height": 220,
+    "ad_type": "medium",
+    "next_interstitial": true
+  },
+  "onboarding_3": {
+    "show_native_ad": true,
+    "height": 220,
+    "ad_type": "medium",
+    "next_interstitial": false
+  }
+}</value>
+    </entry>
+</defaultsMap>

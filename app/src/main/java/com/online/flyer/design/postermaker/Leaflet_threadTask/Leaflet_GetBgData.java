@@ -50,15 +50,22 @@ public class Leaflet_GetBgData extends AsyncTask<Void, Void, String> {
         ArrayList<Leaflet_BgImage> bgImageArrayList = new ArrayList<>();
         try {
             JSONArray field_42 = arrayJSONObject.getJSONArray(preferenceClass.getDataType("field_42"));
+            int firstAdAfter = preferenceClass.getGridFirstAdAfter("backgrounds");
+            int repeatAdAfter = preferenceClass.getGridRepeatAdAfter("backgrounds");
+            boolean adEnabled = preferenceClass.isGridAdEnabled("backgrounds");
+
             for (int j = 0; j < field_42.length(); j++) {
                 JSONObject textJSONObject = field_42.getJSONObject(j);
                 int field_43 = textJSONObject.getInt(preferenceClass.getDataType("field_43"));
                 String field_44 = textJSONObject.getString(preferenceClass.getDataType("field_44"));
                 String field_45 = textJSONObject.getString(preferenceClass.getDataType("field_45"));
 
-                int rvCount = preferenceClass.getInt("rv_count", 4);
-                if (rvCount > 0 && j % rvCount == 0) {
-                    bgImageArrayList.add(null);
+                if (adEnabled && firstAdAfter > 0) {
+                    if (j == firstAdAfter) {
+                        bgImageArrayList.add(null);
+                    } else if (repeatAdAfter > 0 && j > firstAdAfter && (j - firstAdAfter) % repeatAdAfter == 0) {
+                        bgImageArrayList.add(null);
+                    }
                 }
 
                 bgImageArrayList.add(new Leaflet_BgImage(field_43, field_44, field_45));

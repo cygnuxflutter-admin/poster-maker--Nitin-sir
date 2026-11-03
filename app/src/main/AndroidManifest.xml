@@ -60,6 +60,21 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="@string/admob_app_id" />
 
+        <meta-data
+            android:name="com.google.android.gms.ads.flag.NATIVE_AD_DEBUGGER_ENABLED"
+            android:value="false" />
+
+        <activity
+            android:name=".Leaflet_activities.Leaflet_OnboardingActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme1" />
+
+        <activity
+            android:name=".Leaflet_activities.Leaflet_LoadingActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme1" />
+
         <activity
             android:name=".Leaflet_activities.Leaflet_MyCreationActivity"
             android:screenOrientation="portrait" />
@@ -90,6 +105,11 @@
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme" />
+        <activity
+            android:name=".Leaflet_activities.Leaflet_SearchActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.PosterMaker"
+            android:windowSoftInputMode="adjustResize|stateVisible" />
         <activity
             android:name=".Leaflet_activities.Leaflet_SettingsActivity"
             android:launchMode="singleTop"
@@ -144,6 +164,26 @@
             android:value="subject_segment" />
         <meta-data android:name="com.onesignal.NotificationServiceExtension" android:value="com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NotificationExtender" />
             <activity android:name=".Leaflet_activities.Leaflet_NotificationActivity" android:screenOrientation="portrait" android:theme="@style/Theme.PosterMaker" android:exported="false" />
+            <activity
+            android:name=".Leaflet_activities.ItemPreviewActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.PosterMaker"
+            android:exported="true" />
+        <!-- Firebase Cloud Messaging (FCM HTTP v1) Service -->
+        <service
+            android:name=".Leaflet_service.Leaflet_FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="postermaker_general" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
     </application>
 
 </manifest>

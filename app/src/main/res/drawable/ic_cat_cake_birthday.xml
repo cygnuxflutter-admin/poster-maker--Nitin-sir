@@ -1,0 +1,51 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp"
+    android:height="30dp"
+    android:viewportWidth="32"
+    android:viewportHeight="32">
+
+    <!-- Cake Base / Plate (Light gray/lavender) -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M5,26 C5,25.5 6,25 7.5,25 L24.5,25 C26,25 27,25.5 27,26 C27,26.5 26,27 24.5,27 L7.5,27 C6,27 5,26.5 5,26 Z" />
+
+    <!-- Cake Lower Layer (Warm Pink/Red) -->
+    <path
+        android:fillColor="#F43F5E"
+        android:pathData="M6.5,19 L25.5,19 L25,25.5 L7,25.5 Z" />
+
+    <!-- Cake Upper Layer / Frosting Body (Soft Rose Pink) -->
+    <path
+        android:fillColor="#FB7185"
+        android:pathData="M6.5,15.5 L25.5,15.5 L25.5,20 L6.5,20 Z" />
+
+    <!-- White Icing Drips -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M6.5,15.5 L25.5,15.5 L25.5,17.5 C25,18.5 24,18 23,17 C22,18.5 21,18.5 20,17 C19,19 18,18.5 17,17 C16,18.5 15,19 14,17.5 C13,19 12,18.5 11,17 C10,18.5 9,18 8,17 C7.5,17.5 7,18 6.5,17.5 Z" />
+
+    <!-- 3 Candles -->
+    <!-- Candle 1 (Left - Yellow) -->
+    <path
+        android:fillColor="#FBBF24"
+        android:pathData="M10,10.5 L12,10.5 L12,15.5 L10,15.5 Z" />
+    <!-- Candle 2 (Middle - Cyan) -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M15,9.5 L17,9.5 L17,15.5 L15,15.5 Z" />
+    <!-- Candle 3 (Right - Rose/Orange) -->
+    <path
+        android:fillColor="#FB923C"
+        android:pathData="M20,10.5 L22,10.5 L22,15.5 L20,15.5 Z" />
+
+    <!-- 3 Candle Flames (Golden Yellow with Glow) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M11,5.5 C11,5.5 9.5,8 9.5,9 C9.5,9.8 10.2,10.5 11,10.5 C11.8,10.5 12.5,9.8 12.5,9 C12.5,8 11,5.5 11,5.5 Z" />
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M16,4.5 C16,4.5 14.5,7 14.5,8 C14.5,8.8 15.2,9.5 16,9.5 C16.8,9.5 17.5,8.8 17.5,8 C17.5,7 16,4.5 16,4.5 Z" />
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M21,5.5 C21,5.5 19.5,8 19.5,9 C19.5,9.8 20.2,10.5 21,10.5 C21.8,10.5 22.5,9.8 22.5,9 C22.5,8 21,5.5 21,5.5 Z" />
+</vector>

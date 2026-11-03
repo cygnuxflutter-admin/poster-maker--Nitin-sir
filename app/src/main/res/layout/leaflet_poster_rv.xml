@@ -5,131 +5,90 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
-    android:layout_margin="8dp"
+    android:layout_margin="4dp"
     app:cardBackgroundColor="#FFFFFF"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp">
 
     <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:id="@+id/content_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
 
-        <RelativeLayout
-            android:id="@+id/content_layout"
+        <ProgressBar
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:indeterminateTint="@color/selected" />
 
-            <ProgressBar
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:indeterminateTint="@color/selected" />
-
-            <ImageView
-                android:id="@+id/iv_image"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center"
-                android:scaleType="centerCrop" />
-
-            <ImageView
-                android:id="@+id/iv_rate_us"
-                android:layout_width="25dp"
-                android:layout_height="25dp"
-                android:layout_gravity="bottom"
-                android:layout_marginStart="5dp"
-                android:layout_marginBottom="5dp"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/iv_lock"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentStart="true"
-                android:layout_alignParentTop="true"
-                android:background="@drawable/bg_pro_badge"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:paddingTop="2dp"
-                android:paddingBottom="2dp"
-                android:text="👑 AD"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp"
-                android:fontFamily="@font/leaflet_visbyroundcf_bold"
-                android:visibility="visible" />
-
-            <ImageView
-                android:id="@+id/iv_like"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_alignParentEnd="true"
-                android:layout_alignParentTop="true"
-                android:layout_margin="8dp"
-                android:padding="6dp"
-                android:background="@drawable/bg_circle_white"
-                android:src="@drawable/ic_heart_outline"
-                android:visibility="visible" />
-
-        </RelativeLayout>
-
-        <RelativeLayout
-            android:id="@+id/ad_layout"
+        <ImageView
+            android:id="@+id/iv_image"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:gravity="center">
+            android:layout_gravity="center"
+            android:scaleType="centerCrop" />
 
-            <RelativeLayout
-                android:id="@+id/native_banner_ad_container"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="#FFFFFF"
-                android:gravity="center"
-                android:visibility="visible">
+        <!-- Frost / Dark tint overlay for locked posters -->
+        <View
+            android:id="@+id/view_blur_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#26000000"
+            android:visibility="gone" />
 
+        <!-- Center Circular Golden Lock Badge -->
+        <FrameLayout
+            android:id="@+id/fl_center_lock"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_centerInParent="true"
+            android:background="@drawable/bg_lock_circle_gold"
+            android:visibility="gone">
 
-                <com.facebook.shimmer.ShimmerFrameLayout
-                    android:id="@+id/shimmer_view_container"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    app:shimmer_auto_start="true"
-                    app:shimmer_duration="1200">
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_poster_center_lock" />
+        </FrameLayout>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:padding="8dp">
+        <ImageView
+            android:id="@+id/iv_rate_us"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_gravity="bottom"
+            android:layout_marginStart="5dp"
+            android:layout_marginBottom="5dp"
+            android:visibility="gone" />
 
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="0dp"
-                            android:layout_weight="1"
-                            android:background="#E0E0E0" />
+        <TextView
+            android:id="@+id/iv_lock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:background="@drawable/bg_pro_badge"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:text="👑 AD"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:fontFamily="@font/leaflet_visbyroundcf_bold"
+            android:visibility="visible" />
 
-                        <View
-                            android:layout_width="120dp"
-                            android:layout_height="16dp"
-                            android:layout_marginTop="8dp"
-                            android:background="#E0E0E0" />
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="12dp"
-                            android:layout_marginTop="8dp"
-                            android:background="#E0E0E0" />
-
-                        <View
-                            android:layout_width="match_parent"
-                            android:layout_height="36dp"
-                            android:layout_marginTop="12dp"
-                            android:background="#E0E0E0" />
-                    </LinearLayout>
-                </com.facebook.shimmer.ShimmerFrameLayout>
-
-
-            </RelativeLayout>
-
-        </RelativeLayout>
+        <ImageView
+            android:id="@+id/iv_like"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:layout_margin="4dp"
+            android:padding="6dp"
+            android:background="@drawable/bg_circle_white"
+            android:src="@drawable/ic_heart_outline"
+            android:visibility="visible" />
 
     </RelativeLayout>
 

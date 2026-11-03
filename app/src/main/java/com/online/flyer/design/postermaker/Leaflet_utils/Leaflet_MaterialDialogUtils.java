@@ -131,19 +131,28 @@ public class Leaflet_MaterialDialogUtils {
     }
 
     public void rewardDialog(Activity activity, String title, String message, Leaflet_DialogClickListener positiveButton, Leaflet_DialogClickListener negativeButton) {
-//        MaterialDialog materialDialog = new MaterialDialog.Builder(activity)
-//                .customView(R.layout.reward_dialog, false)
-//                .contentColor(Color.TRANSPARENT)
-//                .backgroundColor(Color.TRANSPARENT)
-//                .cancelable(false)
-//                .build();
+        String itemType = (title != null && title.toLowerCase().contains("background")) ? "backgrounds" : "templates";
+        rewardDialog(activity, title, message, itemType, positiveButton, negativeButton);
+    }
+
+    public void rewardDialog(Activity activity, String title, String message, String itemType, Leaflet_DialogClickListener positiveButton, Leaflet_DialogClickListener negativeButton) {
+        if (activity == null || activity.isFinishing()) return;
 
         @SuppressLint("ResourceType")
         Dialog materialDialog = new Dialog(activity, 16974126);
         materialDialog.requestWindowFeature(1);
         materialDialog.setContentView(R.layout.leaflet_reward_dialog);
-        materialDialog.setCancelable(false);
+        materialDialog.setCancelable(true);
+        materialDialog.setCanceledOnTouchOutside(true);
 
+        if (materialDialog.getWindow() != null) {
+            materialDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            materialDialog.getWindow().setLayout(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            materialDialog.getWindow().setGravity(android.view.Gravity.CENTER);
+        }
 
         materialDialog.show();
 
@@ -153,16 +162,20 @@ public class Leaflet_MaterialDialogUtils {
         TextView button1 = materialDialog.findViewById(R.id.button1);
         TextView button2 = materialDialog.findViewById(R.id.button2);
 
-        tv_title.setText(title);
-        tv_description.setText(message);
+        if (tv_title != null) tv_title.setText(title);
+        if (tv_description != null) tv_description.setText(message);
 
-        button2.setOnClickListener(v -> positiveButton.onClick(materialDialog));
-        button1.setOnClickListener(v -> negativeButton.onClick(materialDialog));
+        if (button2 != null) button2.setOnClickListener(v -> positiveButton.onClick(materialDialog));
+        if (button1 != null) button1.setOnClickListener(v -> negativeButton.onClick(materialDialog));
 
         RelativeLayout native_banner_ad_container = materialDialog.findViewById(R.id.native_banner_ad_containers);
-
-        loadNativeAd(native_banner_ad_container, activity);
-
+        if (native_banner_ad_container != null) {
+            com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_NativeAdUtil.loadRewardDialogNativeAd(
+                    native_banner_ad_container,
+                    activity,
+                    itemType
+            );
+        }
     }
 
     @SuppressLint("SetTextI18n")

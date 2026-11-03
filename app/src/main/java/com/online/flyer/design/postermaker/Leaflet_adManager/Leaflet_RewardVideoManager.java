@@ -30,10 +30,24 @@ public class Leaflet_RewardVideoManager {
 
 
     public static void showRewardVideoAd(final Activity context, Leaflet_InterstitialAdManager.OnRewardAdLoadInterface onAdLoadInterface) {
+        showRewardVideoAd(context, null, onAdLoadInterface);
+    }
+
+    public static void showRewardVideoAd(final Activity context, String customUnitId, Leaflet_InterstitialAdManager.OnRewardAdLoadInterface onAdLoadInterface) {
         if (preferenceClass == null) {
             preferenceClass = new Leaflet_PreferenceClass(context);
         }
-        AD_google_Rw = preferenceClass.getAdsId("RewardVideoUnitID");
+        if (customUnitId != null && !customUnitId.trim().isEmpty() && !customUnitId.equals("null") && !customUnitId.contains("xxxx")) {
+            AD_google_Rw = customUnitId;
+        } else {
+            AD_google_Rw = preferenceClass.getAdsId("RewardVideoUnitID");
+            if (AD_google_Rw == null || AD_google_Rw.trim().isEmpty() || AD_google_Rw.equals("null")) {
+                AD_google_Rw = preferenceClass.getAdsId("AdxRewardVideoUnitID");
+            }
+            if (AD_google_Rw == null || AD_google_Rw.trim().isEmpty() || AD_google_Rw.equals("null")) {
+                AD_google_Rw = preferenceClass.getAdsId("google_Rw_ID");
+            }
+        }
         if (AD_google_Rw == null || AD_google_Rw.trim().isEmpty() || AD_google_Rw.equals("null")) {
             AD_google_Rw = preferenceClass.getAdsId("AdxRewardVideoUnitID");
         }
@@ -81,19 +95,34 @@ public class Leaflet_RewardVideoManager {
                         }
                     }
                     if (mRewardedAd != null) {
+                        final boolean[] isRewardEarned = {false};
                         mRewardedAd.show(context, rewardItem -> {
+                            isRewardEarned[0] = true;
                         });
                         mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                             @Override
                             public void onAdDismissedFullScreenContent() {
                                 super.onAdDismissedFullScreenContent();
-                                onAdLoadInterface.onAdClose();
+                                Leaflet_AppOpenManager.setLastAdDismissedTime(System.currentTimeMillis());
+                                if (isRewardEarned[0]) {
+                                    if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                                } else {
+                                    android.widget.Toast.makeText(context, "Please watch the full ad to save", android.widget.Toast.LENGTH_SHORT).show();
+                                }
+                                mRewardedAd = null;
                             }
 
                             @Override
                             public void onAdFailedToShowFullScreenContent(@NonNull AdError adError) {
                                 super.onAdFailedToShowFullScreenContent(adError);
-                                onAdLoadInterface.onAdClose();
+                                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                                mRewardedAd = null;
+                            }
+
+                            @Override
+                            public void onAdClicked() {
+                                super.onAdClicked();
+                                Leaflet_AppOpenManager.setAdClickActive(true);
                             }
                         });
                     }
