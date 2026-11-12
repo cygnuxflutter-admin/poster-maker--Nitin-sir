@@ -6,7 +6,7 @@
     android:paddingStart="16dp"
     android:paddingTop="6dp"
     android:paddingEnd="16dp"
-    android:paddingBottom="0dp">
+    android:paddingBottom="10dp">
 
     <androidx.cardview.widget.CardView
         android:id="@+id/cardPreview"
@@ -130,14 +130,20 @@
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
                 android:layout_alignParentTop="true"
+                android:layout_marginStart="10dp"
+                android:layout_marginTop="10dp"
                 android:background="@drawable/bg_pro_badge"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:drawableStart="@drawable/ic_crown_white"
+                android:drawablePadding="5dp"
+                android:gravity="center_vertical"
+                android:paddingStart="8dp"
+                android:paddingEnd="10dp"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
-                android:text="👑 AD"
+                android:text="AD"
                 android:textColor="#FFFFFF"
                 android:textSize="12sp"
+                android:textStyle="bold"
                 android:fontFamily="@font/leaflet_visbyroundcf_bold"
                 android:elevation="4dp"
                 android:visibility="gone" />

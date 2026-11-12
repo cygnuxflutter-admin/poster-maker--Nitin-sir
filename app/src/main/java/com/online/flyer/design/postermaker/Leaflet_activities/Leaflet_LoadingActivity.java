@@ -26,6 +26,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -56,6 +57,7 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
 
     private static final String TAG = "LoadingActivity";
 
+    private LinearLayout llProgressSection;
     private ProgressBar progressLoading;
     private TextView tvProgressPercent;
     private TextView tvLoadingSubtitle;
@@ -135,6 +137,7 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        llProgressSection = findViewById(R.id.ll_progress_section);
         progressLoading = findViewById(R.id.progress_loading);
         tvProgressPercent = findViewById(R.id.tv_progress_percent);
         tvLoadingSubtitle = findViewById(R.id.tv_loading_subtitle);
@@ -443,11 +446,37 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
     }
 
     /**
+     * Dynamically position the progress section:
+     * - When ad is visible: pinned right above the native ad container (16dp margin)
+     * - When ad is gone (disabled or load failed): pinned to bottom of the screen (36dp margin),
+     *   allowing the upper illustration hub to fill and vertically center across the full display.
+     */
+    private void setNativeAdContainerVisible(boolean visible) {
+        if (flNativeAdContainer == null || llProgressSection == null) return;
+
+        RelativeLayout.LayoutParams progressLp = (RelativeLayout.LayoutParams) llProgressSection.getLayoutParams();
+        if (progressLp == null) return;
+
+        if (visible) {
+            flNativeAdContainer.setVisibility(View.VISIBLE);
+            progressLp.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            progressLp.addRule(RelativeLayout.ABOVE, R.id.fl_native_ad_container);
+            progressLp.bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
+        } else {
+            flNativeAdContainer.setVisibility(View.GONE);
+            progressLp.removeRule(RelativeLayout.ABOVE);
+            progressLp.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            progressLp.bottomMargin = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 36, getResources().getDisplayMetrics());
+        }
+        llProgressSection.setLayoutParams(progressLp);
+    }
+
+    /**
      * Load Bottom Native Ad based on Remote Config json settings
      */
     private void loadNativeAdIfEnabled() {
         if (!preferenceClass.isLoadingNativeAdEnabled()) {
-            flNativeAdContainer.setVisibility(View.GONE);
+            setNativeAdContainerVisible(false);
             return;
         }
 
@@ -469,9 +498,12 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
         }
 
         if (adUnitId == null || adUnitId.trim().isEmpty() || adUnitId.equals("null")) {
-            flNativeAdContainer.setVisibility(View.GONE);
+            setNativeAdContainerVisible(false);
             return;
         }
+
+        // Show container with shimmer while waiting for native ad
+        setNativeAdContainerVisible(true);
 
         try {
             AdLoader.Builder builder = new AdLoader.Builder(this, adUnitId);
@@ -494,7 +526,7 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
                 flNativeAdContainer.addView(adView, new RelativeLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT));
-                flNativeAdContainer.setVisibility(View.VISIBLE);
+                setNativeAdContainerVisible(true);
             });
 
             VideoOptions videoOptions = new VideoOptions.Builder().setStartMuted(true).build();
@@ -505,8 +537,13 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
                 @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                     Log.e(TAG, "Native ad failed to load: " + loadAdError.getMessage());
-                    flNativeAdContainer.removeAllViews();
-                    flNativeAdContainer.setVisibility(View.GONE);
+                    boolean showShimmerOnFail = preferenceClass.shouldShowNativeShimmerOnFail("loading_screen");
+                    if (!showShimmerOnFail) {
+                        flNativeAdContainer.removeAllViews();
+                        setNativeAdContainerVisible(false);
+                    } else {
+                        setNativeAdContainerVisible(true);
+                    }
                 }
 
                 @Override
@@ -521,7 +558,7 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
 
         } catch (Exception e) {
             Log.e(TAG, "Error loading native ad: " + e.getMessage());
-            flNativeAdContainer.setVisibility(View.GONE);
+            setNativeAdContainerVisible(false);
         }
     }
 

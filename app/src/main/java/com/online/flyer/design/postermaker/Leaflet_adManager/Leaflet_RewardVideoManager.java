@@ -5,6 +5,8 @@ import android.content.Context;
 import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -30,10 +32,14 @@ public class Leaflet_RewardVideoManager {
 
 
     public static void showRewardVideoAd(final Activity context, Leaflet_InterstitialAdManager.OnRewardAdLoadInterface onAdLoadInterface) {
-        showRewardVideoAd(context, null, onAdLoadInterface);
+        showRewardVideoAd(context, null, null, onAdLoadInterface);
     }
 
     public static void showRewardVideoAd(final Activity context, String customUnitId, Leaflet_InterstitialAdManager.OnRewardAdLoadInterface onAdLoadInterface) {
+        showRewardVideoAd(context, customUnitId, null, onAdLoadInterface);
+    }
+
+    public static void showRewardVideoAd(final Activity context, String customUnitId, String skipToastMsg, Leaflet_InterstitialAdManager.OnRewardAdLoadInterface onAdLoadInterface) {
         if (preferenceClass == null) {
             preferenceClass = new Leaflet_PreferenceClass(context);
         }
@@ -83,11 +89,32 @@ public class Leaflet_RewardVideoManager {
             }
         }
 
+        final int timeoutSec = (preferenceClass != null) ? preferenceClass.getRewardAdTimeoutSeconds() : 10;
+        final boolean[] hasCompleted = {false};
+        final Handler timeoutHandler = new Handler(Looper.getMainLooper());
+        final Runnable timeoutRunnable = () -> {
+            if (!hasCompleted[0]) {
+                hasCompleted[0] = true;
+                Log.w("RewardVideoManager", "Rewarded ad load timed out after " + timeoutSec + "s from Remote Config");
+                if (alertDialog != null && alertDialog.isShowing()) {
+                    try {
+                        alertDialog.dismiss();
+                    } catch (Exception ignored) {}
+                }
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+            }
+        };
+        timeoutHandler.postDelayed(timeoutRunnable, Math.max(1, timeoutSec) * 1000L);
+
         try {
             AdRequest adRequest = new AdRequest.Builder().build();
             RewardedAd.load(context, AD_google_Rw, adRequest, new RewardedAdLoadCallback() {
                 @Override
                 public void onAdLoaded(@NonNull RewardedAd ad) {
+                    if (hasCompleted[0]) return;
+                    hasCompleted[0] = true;
+                    timeoutHandler.removeCallbacks(timeoutRunnable);
+
                     mRewardedAd = ad;
                     if (alertDialog != null) {
                         if (alertDialog.isShowing()) {
@@ -96,9 +123,6 @@ public class Leaflet_RewardVideoManager {
                     }
                     if (mRewardedAd != null) {
                         final boolean[] isRewardEarned = {false};
-                        mRewardedAd.show(context, rewardItem -> {
-                            isRewardEarned[0] = true;
-                        });
                         mRewardedAd.setFullScreenContentCallback(new FullScreenContentCallback() {
                             @Override
                             public void onAdDismissedFullScreenContent() {
@@ -107,7 +131,11 @@ public class Leaflet_RewardVideoManager {
                                 if (isRewardEarned[0]) {
                                     if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
                                 } else {
-                                    android.widget.Toast.makeText(context, "Please watch the full ad to save", android.widget.Toast.LENGTH_SHORT).show();
+                                    String toastMsg = (skipToastMsg != null && !skipToastMsg.trim().isEmpty())
+                                            ? skipToastMsg
+                                            : "Please watch the full ad to unlock pro template";
+                                    android.widget.Toast.makeText(context, toastMsg, android.widget.Toast.LENGTH_SHORT).show();
+                                    if (onAdLoadInterface != null) onAdLoadInterface.onAdFailedToEarnReward();
                                 }
                                 mRewardedAd = null;
                             }
@@ -125,12 +153,19 @@ public class Leaflet_RewardVideoManager {
                                 Leaflet_AppOpenManager.setAdClickActive(true);
                             }
                         });
+                        mRewardedAd.show(context, rewardItem -> {
+                            isRewardEarned[0] = true;
+                        });
                     }
                 }
 
                 @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                     super.onAdFailedToLoad(loadAdError);
+                    if (hasCompleted[0]) return;
+                    hasCompleted[0] = true;
+                    timeoutHandler.removeCallbacks(timeoutRunnable);
+
                     if (alertDialog != null && alertDialog.isShowing()) {
                         alertDialog.dismiss();
                     }
@@ -138,10 +173,14 @@ public class Leaflet_RewardVideoManager {
                 }
             });
         } catch (Exception e) {
-            if (alertDialog != null && alertDialog.isShowing()) {
-                alertDialog.dismiss();
+            if (!hasCompleted[0]) {
+                hasCompleted[0] = true;
+                timeoutHandler.removeCallbacks(timeoutRunnable);
+                if (alertDialog != null && alertDialog.isShowing()) {
+                    alertDialog.dismiss();
+                }
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
             }
-            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
         }
 
 

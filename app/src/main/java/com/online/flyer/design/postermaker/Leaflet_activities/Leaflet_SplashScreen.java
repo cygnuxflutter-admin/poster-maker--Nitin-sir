@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -27,6 +28,8 @@ import com.online.flyer.design.postermaker.R;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_MaterialDialogUtils;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass;
+import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AdBlockerDetector;
+import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_InstallReferrerHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -99,8 +102,43 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
             return;
         }
 
-        // 100% Remote Config Powered Initialization
-        initFirebaseRemoteConfig();
+        // Fetch backend API metadata (field_0..field_48) in background
+        fetchBackendApiMetadata();
+
+        // 1. Resolve Install Attribution (Paid vs Organic with 2000ms watchdog / 0ms returning user bypass)
+        Leaflet_InstallReferrerHelper.resolveAttribution(this, acquisitionType -> {
+            Log.d(TAG, "Install Attribution Resolved: " + acquisitionType);
+            // 2. 100% Remote Config Powered Initialization (Loading poster_maker_paid or poster_maker_organic)
+            initFirebaseRemoteConfig();
+        });
+    }
+
+    
+    private void fetchBackendApiMetadata() {
+        try {
+            com.google.firebase.database.FirebaseDatabase.getInstance().getReference("all_data").child("datas")
+                    .addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+                        @Override
+                        public void onDataChange(@androidx.annotation.NonNull com.google.firebase.database.DataSnapshot snapshot) {
+                            if (snapshot != null && snapshot.exists()) {
+                                for (int i = 0; i <= 48; i++) {
+                                    String fieldName = "field_" + i;
+                                    if (snapshot.hasChild(fieldName) && snapshot.child(fieldName).getValue() != null) {
+                                        preferenceClass.setDataType(fieldName, snapshot.child(fieldName).getValue().toString());
+                                    }
+                                }
+                                Log.d(TAG, "Backend API metadata updated from Realtime Database.");
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@androidx.annotation.NonNull com.google.firebase.database.DatabaseError error) {
+                            Log.w(TAG, "Realtime DB metadata onCancelled: " + error.getMessage());
+                        }
+                    });
+        } catch (Exception e) {
+            Log.e(TAG, "Realtime DB metadata fetch error: " + e.getMessage());
+        }
     }
 
     private void initFirebaseRemoteConfig() {
@@ -135,6 +173,43 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         if (isProceeded) return;
         isProceeded = true;
 
+        // Log & Show which Remote Config is loaded
+        String masterJson = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass.getMasterConfigJson(com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance(), this);
+        String activeKey = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass.activeConfigKey;
+        String activeOrigin = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass.activeConfigOrigin;
+        String acqType = preferenceClass.getAcquisitionType();
+
+        android.util.Log.i("REMOTE_CONFIG_STATUS", "===============================================================");
+        android.util.Log.i("REMOTE_CONFIG_STATUS", "🚀 [FIREBASE REMOTE CONFIG DEBUG INFO]");
+        android.util.Log.i("REMOTE_CONFIG_STATUS", "👉 User Attribution : " + acqType.toUpperCase());
+        android.util.Log.i("REMOTE_CONFIG_STATUS", "👉 Active Config Key: " + activeKey + " (" + activeOrigin + ")");
+        android.util.Log.i("REMOTE_CONFIG_STATUS", "👉 JSON Length      : " + (masterJson != null ? masterJson.length() : 0) + " chars");
+        android.util.Log.i("REMOTE_CONFIG_STATUS", "===============================================================");
+
+
+        Leaflet_MyApplication.applyScreenshotSecurity(this);
+
+        checkAdBlockerAndContinue();
+    }
+
+    private void checkAdBlockerAndContinue() {
+        if (preferenceClass != null && preferenceClass.isAdBlockerDetectionEnabled()) {
+            Leaflet_AdBlockerDetector.detect(this, isBlocked -> {
+                if (isFinishing() || isDestroyed()) return;
+                if (isBlocked) {
+                    Leaflet_AdBlockerDetector.showAdBlockerDialog(this, this::continueSplashFlow);
+                } else {
+                    continueSplashFlow();
+                }
+            });
+        } else {
+            continueSplashFlow();
+        }
+    }
+
+    private void continueSplashFlow() {
+        if (isFinishing() || isDestroyed()) return;
+
         // Save first launch date
         if (preferenceClass.getFirstDate() == null) {
             @SuppressLint("SimpleDateFormat")
@@ -147,14 +222,132 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
             preferenceClass.setFirstTimeLaunch(false);
         }
 
-        // Check for App Update (Directly from Remote Config)
-        int updateType = preferenceClass.getInt("UpdateAvailable", 0);
-        int forceUpdate = preferenceClass.getInt("force_update", 0);
-        String serverVersion = preferenceClass.getDataType("UpdateVersionName", BuildConfig.VERSION_NAME);
-        boolean isNewVersion = isVersionGreater(serverVersion, BuildConfig.VERSION_NAME);
+        // Check for App Update (Directly from Remote Config JSON or keys)
+        boolean hasUpdate = false;
+        boolean isForced = false;
+        String customTitle = null;
+        String customMessage = null;
+        try {
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
 
-        if (updateType == 1 && isNewVersion) {
-            showUpdateDialog(forceUpdate == 1);
+            // 1. app_update JSON object
+            String appUpdateJson = rc.getString("app_update");
+            if (appUpdateJson != null && appUpdateJson.trim().startsWith("{")) {
+                org.json.JSONObject updateObj = new org.json.JSONObject(appUpdateJson);
+                boolean updateAvailable = parseBooleanOrInt(updateObj, "update_available", "UpdateAvailable");
+                boolean forceUpdate = parseBooleanOrInt(updateObj, "force_update", "ForceUpdate");
+                String serverVersion = parseString(updateObj, "update_version_name", "UpdateVersionName");
+                if (serverVersion == null) serverVersion = BuildConfig.VERSION_NAME;
+                int serverCode = parseInt(updateObj, "update_version_code", "UpdateVersionCode");
+                customTitle = parseString(updateObj, "update_title", "UpdateTitle");
+                customMessage = parseString(updateObj, "update_message", "UpdateMessage", "update_description", "UpdateDescription", "description");
+
+                if (updateAvailable && (serverCode > BuildConfig.VERSION_CODE || isVersionGreater(serverVersion, BuildConfig.VERSION_NAME))) {
+                    hasUpdate = true;
+                    isForced = forceUpdate;
+                    Log.i(TAG, "Update detected via app_update JSON: serverVer=" + serverVersion + ", serverCode=" + serverCode);
+                }
+            }
+
+            // 2. Master Config JSON / ad_data (from poster_maker_organic or poster_maker_paid)
+            if (!hasUpdate) {
+                org.json.JSONObject rootObj = preferenceClass.getRootAdConfigJson();
+                if (rootObj != null) {
+                    org.json.JSONObject adData = rootObj.optJSONObject("ad_data");
+                    org.json.JSONObject src = adData != null ? adData : rootObj;
+                    boolean updateAvailable = parseBooleanOrInt(src, "update_available", "UpdateAvailable");
+                    boolean forceUpdate = parseBooleanOrInt(src, "force_update", "ForceUpdate");
+                    String serverVersion = parseString(src, "update_version_name", "UpdateVersionName");
+                    if (serverVersion == null) serverVersion = BuildConfig.VERSION_NAME;
+                    int serverCode = parseInt(src, "update_version_code", "UpdateVersionCode");
+                    String t = parseString(src, "update_title", "UpdateTitle");
+                    if (t != null) customTitle = t;
+                    String m = parseString(src, "update_message", "UpdateMessage", "update_description", "UpdateDescription", "description");
+                    if (m != null) customMessage = m;
+
+                    Log.i("APP_UPDATE_CHECK", "Checking Root JSON: updateAvailable=" + updateAvailable
+                            + ", forceUpdate=" + forceUpdate
+                            + ", serverVersion=" + serverVersion + " (app=" + BuildConfig.VERSION_NAME + ")"
+                            + ", serverCode=" + serverCode + " (app=" + BuildConfig.VERSION_CODE + ")");
+
+                    if (updateAvailable && (serverCode > BuildConfig.VERSION_CODE || isVersionGreater(serverVersion, BuildConfig.VERSION_NAME))) {
+                        hasUpdate = true;
+                        isForced = forceUpdate;
+                        Log.i(TAG, "Update detected via Root JSON: serverVer=" + serverVersion + ", serverCode=" + serverCode);
+                    }
+                }
+            }
+
+            // 3. Direct individual Remote Config keys
+            if (!hasUpdate) {
+                boolean updateAvailable = false;
+                String rcAvail = rc.getString("update_available");
+                String rcAvail2 = rc.getString("UpdateAvailable");
+                if ("1".equals(rcAvail) || "true".equalsIgnoreCase(rcAvail) || "1".equals(rcAvail2) || "true".equalsIgnoreCase(rcAvail2)) {
+                    updateAvailable = true;
+                }
+                if (!updateAvailable) {
+                    updateAvailable = preferenceClass.getInt("update_available", preferenceClass.getInt("UpdateAvailable", 0)) == 1
+                            || preferenceClass.getBoolean("update_available", preferenceClass.getBoolean("UpdateAvailable", false));
+                }
+
+                boolean forceUpdate = false;
+                String rcForce = rc.getString("force_update");
+                String rcForce2 = rc.getString("ForceUpdate");
+                if ("1".equals(rcForce) || "true".equalsIgnoreCase(rcForce) || "1".equals(rcForce2) || "true".equalsIgnoreCase(rcForce2)) {
+                    forceUpdate = true;
+                }
+                if (!forceUpdate) {
+                    forceUpdate = preferenceClass.getInt("force_update", preferenceClass.getInt("ForceUpdate", 0)) == 1
+                            || preferenceClass.getBoolean("force_update", preferenceClass.getBoolean("ForceUpdate", false));
+                }
+
+                String serverVersion = rc.getString("update_version_name");
+                if (serverVersion == null || serverVersion.isEmpty() || serverVersion.equals("null")) {
+                    serverVersion = rc.getString("UpdateVersionName");
+                }
+                if (serverVersion == null || serverVersion.isEmpty() || serverVersion.equals("null")) {
+                    serverVersion = preferenceClass.getDataType("update_version_name", preferenceClass.getDataType("UpdateVersionName", BuildConfig.VERSION_NAME));
+                }
+
+                int serverCode = 0;
+                try {
+                    String scStr = rc.getString("update_version_code");
+                    if (scStr != null && !scStr.isEmpty() && !scStr.equals("null")) {
+                        serverCode = Integer.parseInt(scStr.trim());
+                    }
+                } catch (Exception ignored) {}
+                if (serverCode <= 0) {
+                    serverCode = preferenceClass.getInt("update_version_code", preferenceClass.getInt("UpdateVersionCode", 0));
+                }
+
+                String rcMsg = rc.getString("update_message");
+                if (rcMsg == null || rcMsg.isEmpty() || rcMsg.equals("null")) rcMsg = rc.getString("update_description");
+                if (rcMsg == null || rcMsg.isEmpty() || rcMsg.equals("null")) rcMsg = rc.getString("UpdateMessage");
+                if (rcMsg == null || rcMsg.isEmpty() || rcMsg.equals("null")) rcMsg = rc.getString("UpdateDescription");
+                if (rcMsg != null && !rcMsg.isEmpty() && !rcMsg.equals("null")) customMessage = rcMsg;
+
+                String rcTitle = rc.getString("update_title");
+                if (rcTitle == null || rcTitle.isEmpty() || rcTitle.equals("null")) rcTitle = rc.getString("UpdateTitle");
+                if (rcTitle != null && !rcTitle.isEmpty() && !rcTitle.equals("null")) customTitle = rcTitle;
+
+                Log.i("APP_UPDATE_CHECK", "Checking Direct RC Keys: updateAvailable=" + updateAvailable
+                        + ", forceUpdate=" + forceUpdate
+                        + ", serverVersion=" + serverVersion + " (app=" + BuildConfig.VERSION_NAME + ")"
+                        + ", serverCode=" + serverCode + " (app=" + BuildConfig.VERSION_CODE + ")");
+
+                if (updateAvailable && (serverCode > BuildConfig.VERSION_CODE || isVersionGreater(serverVersion, BuildConfig.VERSION_NAME))) {
+                    hasUpdate = true;
+                    isForced = forceUpdate;
+                    Log.i(TAG, "Update detected via Direct RC keys: serverVer=" + serverVersion + ", serverCode=" + serverCode);
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error checking update: " + e.getMessage(), e);
+        }
+
+        if (hasUpdate) {
+            showUpdateDialog(isForced, customTitle, customMessage);
         } else {
             // Splash timer completely controlled by Remote Config (e.g. splash.timer_seconds)
             int timerSeconds = preferenceClass.getSplashTimerSeconds();
@@ -165,7 +358,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         }
     }
 
-    private void showUpdateDialog(boolean isForceUpdate) {
+    private void showUpdateDialog(boolean isForceUpdate, String customTitle, String customMessage) {
         dialog = new Dialog(this);
         dialog.setContentView(R.layout.leaflet_dialog_app_info);
         dialog.setCancelable(false);
@@ -179,13 +372,25 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         descriptionTextView.setTextColor(getResources().getColor(R.color.black));
         msgTextView.setTextColor(getResources().getColor(R.color.black));
 
+        if (customTitle != null && !customTitle.trim().isEmpty()) {
+            msgTextView.setText(customTitle);
+        } else {
+            msgTextView.setText(isForceUpdate ? "Update Required" : "Update Available");
+        }
+
+        if (customMessage != null && !customMessage.trim().isEmpty()) {
+            descriptionTextView.setText(customMessage);
+        } else {
+            if (isForceUpdate) {
+                descriptionTextView.setText("A mandatory new version of the app is available. Please update now to continue using the app.");
+            } else {
+                descriptionTextView.setText("There is a newer version of the app available. Please update it now.");
+            }
+        }
+
         if (isForceUpdate) {
-            msgTextView.setText("Update Required");
-            descriptionTextView.setText("A mandatory new version of the app is available. Please update now to continue using the app.");
             cancelBtn.setVisibility(View.GONE);
         } else {
-            msgTextView.setText("Update Available");
-            descriptionTextView.setText("There is a newer version of the app available. Please update it now.");
             cancelBtn.setVisibility(View.VISIBLE);
             cancelBtn.setText("Later");
             cancelBtn.setOnClickListener(view -> {
@@ -219,7 +424,11 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
     }
 
     private void startIntent() {
-        if (preferenceClass.getInt("splashscreen", 1) == 1) {
+        boolean isSplashAdEnabled = preferenceClass.getInt("splashscreen", 1) == 1
+                && preferenceClass.getBoolean("splashscreen", true)
+                && (preferenceClass.isSplashAppOpenEnabled() || preferenceClass.isSplashFallbackInterstitialEnabled());
+
+        if (isSplashAdEnabled) {
             callStartActivity();
         } else {
             callMainActivity();
@@ -231,12 +440,15 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         ((Leaflet_MyApplication) application).showAdIfAvailable(Leaflet_SplashScreen.this, () -> {
             Leaflet_MyApplication.isAdsSplash = false;
 
-            // Preload interstitial if target count is 1
-            if (preferenceClass.getAdsStatus("interstitialAdStatus") == 1) {
-                ((Leaflet_MyApplication) application).getInterstitialAdManager().fetchAdMobAd();
-            }
-            if (preferenceClass.getAdsStatus("EditScreenAdCount") == 1) {
-                ((Leaflet_MyApplication) application).getInterstitialAdManager().fetchAdMobAd();
+            boolean isOnboardingDone = preferenceClass.getBoolean("isOnboardingDone", false);
+            int showOnboarding = preferenceClass.getInt("show_onboarding", 1);
+            boolean isNextOnboarding = (showOnboarding == 1 && !isOnboardingDone);
+
+            // Preload interstitial only if not going to onboarding and enabled in config
+            if (!isNextOnboarding && preferenceClass.isGlobalInterstitialEnabled()) {
+                if (preferenceClass.getAdsStatus("interstitialAdStatus") == 1 || preferenceClass.getAdsStatus("EditScreenAdCount") == 1) {
+                    ((Leaflet_MyApplication) application).getInterstitialAdManager().fetchAdMobAd();
+                }
             }
 
             openNextScreen();
@@ -246,12 +458,14 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
     public void callMainActivity() {
         Leaflet_MyApplication.isAdsSplash = false;
 
-        // Preload interstitial if target count is 1
-        if (preferenceClass.getAdsStatus("interstitialAdStatus") == 1) {
-            ((Leaflet_MyApplication) getApplicationContext()).getInterstitialAdManager().fetchAdMobAd();
-        }
-        if (preferenceClass.getAdsStatus("EditScreenAdCount") == 1) {
-            ((Leaflet_MyApplication) getApplicationContext()).getInterstitialAdManager().fetchAdMobAd();
+        boolean isOnboardingDoneMain = preferenceClass.getBoolean("isOnboardingDone", false);
+        int showOnboardingMain = preferenceClass.getInt("show_onboarding", 1);
+        boolean isNextOnboardingMain = (showOnboardingMain == 1 && !isOnboardingDoneMain);
+
+        if (!isNextOnboardingMain && preferenceClass.isGlobalInterstitialEnabled()) {
+            if (preferenceClass.getAdsStatus("interstitialAdStatus") == 1 || preferenceClass.getAdsStatus("EditScreenAdCount") == 1) {
+                ((Leaflet_MyApplication) getApplicationContext()).getInterstitialAdManager().fetchAdMobAd();
+            }
         }
 
         ((Leaflet_MyApplication) getApplicationContext()).sendRequest();
@@ -264,7 +478,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         int showOnboarding = preferenceClass.getInt("show_onboarding", 1);
         Intent intent;
         if (showOnboarding == 1 && !isOnboardingDone) {
-            intent = new Intent(getApplicationContext(), Leaflet_OnboardingActivity.class);
+            intent = new Intent(getApplicationContext(), Leaflet_OnboardingStep1Activity.class);
         } else {
             if (preferenceClass.isLoadingScreenEnabled() && preferenceClass.isShowLoadingAfterSplash()) {
                 intent = new Intent(getApplicationContext(), Leaflet_LoadingActivity.class);
@@ -299,4 +513,46 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
             return !serverVer.equals(appVer);
         }
     }
+
+    private boolean parseBooleanOrInt(org.json.JSONObject obj, String... keys) {
+        if (obj == null) return false;
+        for (String key : keys) {
+            if (key != null && obj.has(key)) {
+                Object val = obj.opt(key);
+                if (val instanceof Boolean) return (Boolean) val;
+                if (val instanceof Number) return ((Number) val).intValue() == 1;
+                if (val instanceof String) {
+                    String s = ((String) val).trim();
+                    return "1".equals(s) || "true".equalsIgnoreCase(s);
+                }
+            }
+        }
+        return false;
+    }
+
+    private String parseString(org.json.JSONObject obj, String... keys) {
+        if (obj == null) return null;
+        for (String k : keys) {
+            if (obj.has(k)) {
+                String v = obj.optString(k, "").trim();
+                if (!v.isEmpty() && !v.equals("null")) return v;
+            }
+        }
+        return null;
+    }
+
+    private int parseInt(org.json.JSONObject obj, String... keys) {
+        if (obj == null) return 0;
+        for (String k : keys) {
+            if (obj.has(k)) {
+                Object val = obj.opt(k);
+                if (val instanceof Number) return ((Number) val).intValue();
+                if (val instanceof String) {
+                    try { return Integer.parseInt(((String) val).trim()); } catch (Exception ignored) {}
+                }
+            }
+        }
+        return 0;
+    }
+
 }

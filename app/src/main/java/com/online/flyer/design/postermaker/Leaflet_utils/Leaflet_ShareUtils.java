@@ -5,12 +5,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 
+import com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager;
 import com.online.flyer.design.postermaker.R;
 
 public class Leaflet_ShareUtils {
 
     public static void onShare(Context context) {
-
+        Leaflet_AppOpenManager.setExternalIntentActive(true);
         String shareBody = "I'm using amazing Poster maker App, I just created a new poster within 2 min and it's completely free. I recommend you to try this app. \n\n" +
                 "https://play.google.com/store/apps/details?id=" + context.getApplicationContext().getPackageName();
 
@@ -22,6 +23,7 @@ public class Leaflet_ShareUtils {
     }
 
     public static void rateUs(Context context) {
+        Leaflet_AppOpenManager.setExternalIntentActive(true);
         try {
             context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + context.getApplicationContext().getPackageName())));
         } catch (ActivityNotFoundException e) {
@@ -31,8 +33,7 @@ public class Leaflet_ShareUtils {
 
 
     public static void onPrivacyPolicy(Context context) {
-
+        Leaflet_AppOpenManager.setExternalIntentActive(true);
         context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://postermakerapppolicy.blogspot.com/2023/08/poster-maker-privacy-policy.html")));
-
     }
 }

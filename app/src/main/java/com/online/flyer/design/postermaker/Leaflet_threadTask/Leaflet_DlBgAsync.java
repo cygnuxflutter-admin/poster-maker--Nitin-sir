@@ -45,36 +45,43 @@ public class Leaflet_DlBgAsync extends AsyncTask<String, String, String> {
     protected String doInBackground(String... strings) {
         try {
             for (int i = 0; i < stringArrayList.size(); i++) {
+                String uri = stringArrayList.get(i);
+                if (uri == null || uri.trim().isEmpty()) continue;
+
                 File dir = Leaflet_FileUtils.getRootPath(activity);
                 dir.mkdirs();
-                File file = new File(dir, Leaflet_FileUtils.getFileName(stringArrayList.get(i)));
+                File file = new File(dir, Leaflet_FileUtils.getFileName(uri));
 
-                URL url = new URL(stringArrayList.get(i));
-                URLConnection urlConnection = url.openConnection();
-                urlConnection.connect();
+                if (!file.exists() || file.length() == 0) {
+                    URL url = new URL(uri);
+                    URLConnection urlConnection = url.openConnection();
+                    urlConnection.setConnectTimeout(10000);
+                    urlConnection.setReadTimeout(15000);
+                    urlConnection.connect();
 
-                file.createNewFile();
-                String PATH = file.getPath();
-                Log.e("PATH", "==" + PATH);
-                File folder = new File(PATH);
-                if (!folder.exists()) {
-                    folder.mkdir();
-                }
-                InputStream input = new BufferedInputStream(url.openStream());
-                OutputStream output = new FileOutputStream(file);
-                byte[] data = new byte[1024];
-                while (true) {
-                    int count = input.read(data);
-                    if (count == -1) {
-                        break;
+                    InputStream input = new BufferedInputStream(url.openStream());
+                    File tempFile = new File(dir, Leaflet_FileUtils.getFileName(uri) + ".tmp");
+                    OutputStream output = new FileOutputStream(tempFile);
+                    byte[] data = new byte[1024];
+                    while (true) {
+                        int count = input.read(data);
+                        if (count == -1) {
+                            break;
+                        }
+                        output.write(data, 0, count);
                     }
-                    output.write(data, 0, count);
-                }
-                output.flush();
-                output.close();
-                input.close();
-            }
+                    output.flush();
+                    output.close();
+                    input.close();
 
+                    if (tempFile.exists() && tempFile.length() > 0) {
+                        if (file.exists()) {
+                            file.delete();
+                        }
+                        tempFile.renameTo(file);
+                    }
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return "error";

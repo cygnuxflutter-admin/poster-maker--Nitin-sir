@@ -8,6 +8,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -57,6 +59,10 @@ Boolean rateSubmit = false;
 
         ic_back.setOnClickListener(v -> onBackPressed());
 
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_CelebrationHelper.showSaveCelebration(Leaflet_ShareActivity.this);
+        }, 350);
+
         ic_print_ll.setOnClickListener(this);
         iv_whatsapp.setOnClickListener(this);
         iv_facebook.setOnClickListener(this);
@@ -84,6 +90,12 @@ Boolean rateSubmit = false;
 //        Leaflet_MyApplication.getInstance().appReview(Leaflet_ShareActivity.this);
 
 //        rate_buttonNext();
+
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_RatingManager.checkAndShowRatingDialog(Leaflet_ShareActivity.this, "share");
+            }
+        }, 600);
     }
 
     private void findByID() {
@@ -132,6 +144,7 @@ Boolean rateSubmit = false;
     @Override
     public void onResume() {
         super.onResume();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "share_poster");
     }
 
     @Override
@@ -146,6 +159,7 @@ Boolean rateSubmit = false;
 
     @Override
     public void onBackPressed() {
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "share_poster", "back_button");
         com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
             @Override
             public void onAdClose() {
@@ -188,10 +202,25 @@ Boolean rateSubmit = false;
     }
 
     private void printImage() {
-        PrintHelper photoPrinter = new PrintHelper(this);
-        photoPrinter.setScaleMode(PrintHelper.SCALE_MODE_FIT);
-        Bitmap bitmap = Leaflet_Constant.bitmap;
-        photoPrinter.printBitmap("poster_maker.jpg", bitmap);
+        try {
+            androidx.print.PrintHelper photoPrinter = new androidx.print.PrintHelper(this);
+            photoPrinter.setScaleMode(androidx.print.PrintHelper.SCALE_MODE_FIT);
+            Bitmap bitmap = null;
+            if (imagePath != null && new File(imagePath).exists()) {
+                bitmap = BitmapFactory.decodeFile(imagePath);
+            }
+            if (bitmap == null) {
+                bitmap = Leaflet_Constant.bitmap;
+            }
+            if (bitmap != null) {
+                photoPrinter.printBitmap("Poster_" + System.currentTimeMillis() + ".jpg", bitmap);
+            } else {
+                Toast.makeText(this, "Poster image not found for printing!", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Failed to start printing: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     public void shareIntent(String package_name, String error_msg, boolean more) {

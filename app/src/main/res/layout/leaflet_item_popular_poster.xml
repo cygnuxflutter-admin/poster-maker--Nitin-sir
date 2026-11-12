@@ -21,15 +21,33 @@
             android:scaleType="centerCrop"
             android:visibility="gone" />
 
-        <!-- Placeholder centered icon when no API image -->
+        <!-- Shimmer Skeleton while image is loading -->
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/poster_shimmer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:shimmer_auto_start="true"
+            app:shimmer_duration="1000"
+            app:shimmer_base_alpha="0.55"
+            app:shimmer_highlight_alpha="0.95"
+            android:visibility="visible">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_shimmer_rounded_card" />
+
+        </com.facebook.shimmer.ShimmerFrameLayout>
+
+        <!-- Placeholder centered icon when no API image or on failure -->
         <LinearLayout
             android:id="@+id/poster_placeholder"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:gravity="center"
-            android:background="#1E293B"
-            android:visibility="visible">
+            android:background="@drawable/bg_popular_card"
+            android:visibility="gone">
 
             <ImageView
                 android:layout_width="36dp"

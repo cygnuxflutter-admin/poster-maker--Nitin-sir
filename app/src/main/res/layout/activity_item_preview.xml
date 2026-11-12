@@ -12,32 +12,39 @@
         android:layout_width="match_parent"
         android:layout_height="56dp"
         android:layout_alignParentTop="true"
+        android:layout_marginTop="4dp"
         android:gravity="center_vertical"
         android:paddingStart="12dp"
         android:paddingEnd="12dp">
 
-        <!-- Back Button -->
-        <ImageView
-            android:id="@+id/ivBack"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+        <!-- Back Button with Circular Background (Matches App Design) -->
+        <FrameLayout
+            android:id="@+id/flBack"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_alignParentStart="true"
             android:layout_centerVertical="true"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/bg_circle_button_flat"
             android:clickable="true"
-            android:focusable="true"
-            android:padding="8dp"
-            android:src="@drawable/leaflet_ic_back"
-            app:tint="#0066FF" />
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/ivBack"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#1E293B" />
+        </FrameLayout>
 
         <!-- Title & Subtitle ("Abstract", "Background 2 of 20") -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="12dp"
             android:layout_marginEnd="8dp"
-            android:layout_toEndOf="@id/ivBack"
+            android:layout_toEndOf="@id/flBack"
             android:orientation="vertical">
 
             <TextView
@@ -80,6 +87,15 @@
         android:gravity="center"
         android:orientation="horizontal">
 
+        <ProgressBar
+            android:id="@+id/pbBtnLoader"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="8dp"
+            android:indeterminateTint="#FFFFFF"
+            android:indeterminateTintMode="src_in"
+            android:visibility="gone" />
+
         <ImageView
             android:id="@+id/ivBtnIcon"
             android:layout_width="18dp"
@@ -107,7 +123,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginTop="6dp"
-        android:layout_marginBottom="12dp"
+        android:layout_marginBottom="10dp"
         android:background="@drawable/bg_preview_ad_card_light"
         android:visibility="gone">
 
@@ -135,8 +151,9 @@
         android:id="@+id/viewPagerPreview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@id/rl_preview_native_ad"
+        android:layout_above="@id/btnUseTemplate"
         android:layout_below="@id/rlTopBar"
+        android:layout_marginBottom="16dp"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:orientation="vertical"

@@ -33,6 +33,10 @@ public class Leaflet_FavoritesActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.leaflet_activity_favorites);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            getWindow().setStatusBarColor(android.graphics.Color.WHITE);
+        }
 
         if (getSupportActionBar() != null) {
             getSupportActionBar().hide();
@@ -51,6 +55,20 @@ public class Leaflet_FavoritesActivity extends AppCompatActivity {
         loadData();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadData();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (System.currentTimeMillis() - com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.getLastAdDismissedTime() < 800) {
+            return;
+        }
+        super.onBackPressed();
+    }
+
     private void loadData() {
         int cellWidth = (int) (getResources().getDisplayMetrics().widthPixels - (24 * getResources().getDisplayMetrics().density)) / 2;
         int cellHeight = (700 * cellWidth) / 507;
@@ -65,7 +83,7 @@ public class Leaflet_FavoritesActivity extends AppCompatActivity {
                 txtNoData.setVisibility(View.GONE);
                 recyclerView.setVisibility(View.VISIBLE);
                 
-                Leaflet_PosterGroupChildAdapter adapter = new Leaflet_PosterGroupChildAdapter(this, likedPosters, 0, cellWidth, cellHeight, (cat_id, post_id, premium) -> {
+                Leaflet_PosterGroupChildAdapter adapter = new Leaflet_PosterGroupChildAdapter(this, likedPosters, 0, "Liked Posters", cellWidth, cellHeight, (cat_id, post_id, premium) -> {
                     android.content.Intent intent = new android.content.Intent(this, Leaflet_TemplateSelectionActivity.class);
                     intent.putExtra("auto_load", true);
                     intent.putExtra("cat_id", cat_id);
@@ -85,7 +103,7 @@ public class Leaflet_FavoritesActivity extends AppCompatActivity {
                 txtNoData.setVisibility(View.GONE);
                 recyclerView.setVisibility(View.VISIBLE);
 
-                Leaflet_BackgroundChildAdapter adapter = new Leaflet_BackgroundChildAdapter(this, likedBackgrounds, cellWidth, cellWidth, (path, premium) -> {
+                Leaflet_BackgroundChildAdapter adapter = new Leaflet_BackgroundChildAdapter(this, likedBackgrounds, "Liked Backgrounds", cellWidth, cellHeight, (path, premium) -> {
                     android.content.Intent intent = new android.content.Intent(this, Leaflet_BackgroundSelectionActivity.class);
                     intent.putExtra("auto_load", true);
                     com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass preferenceClass = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);

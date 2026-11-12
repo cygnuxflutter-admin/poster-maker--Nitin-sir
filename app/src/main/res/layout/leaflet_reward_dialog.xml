@@ -15,8 +15,8 @@
         android:layout_gravity="center"
         app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="20dp"
-        app:cardElevation="8dp"
-        app:cardPreventCornerOverlap="false">
+        app:cardElevation="0dp"
+        app:cardPreventCornerOverlap="true">
 
         <ScrollView
             android:layout_width="match_parent"

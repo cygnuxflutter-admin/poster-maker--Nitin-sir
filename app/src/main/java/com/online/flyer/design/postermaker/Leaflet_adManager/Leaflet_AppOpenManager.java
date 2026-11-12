@@ -27,6 +27,7 @@ import java.util.Date;
 public class Leaflet_AppOpenManager implements LifecycleObserver, Application.ActivityLifecycleCallbacks {
 
     private static final String LOG_TAG = "AppOpenManager";
+    private static boolean isLoadingAd = false;
     private AppOpenAd appOpenAd = null;
     private AppOpenAd.AppOpenAdLoadCallback loadCallback;
     private final Leaflet_MyApplication myApplication;
@@ -64,6 +65,10 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
         lastAdDismissedTime = time;
     }
 
+    public static long getLastAdDismissedTime() {
+        return lastAdDismissedTime;
+    }
+
     /**
      * Constructor
      */
@@ -77,13 +82,31 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
      * Request a foreground App Open ad
      */
     public void fetchAd() {
-        if (isAdAvailable()) {
+        if (preferenceClass == null) {
+            preferenceClass = new Leaflet_PreferenceClass(myApplication);
+        }
+        
+        // 1. If Foreground App Open is disabled, NEVER send any ad request!
+        if (!preferenceClass.isForegroundAppOpenEnabled()) {
+            Log.d(LOG_TAG, "fetchAd: Foreground App Open is disabled in Remote Config. Skipping fetch.");
             return;
         }
 
+        AD_UNIT_ID1 = preferenceClass.getForegroundAppOpenAdId();
+        if (AD_UNIT_ID1 == null || AD_UNIT_ID1.trim().isEmpty() || AD_UNIT_ID1.equals("null")) {
+            Log.d(LOG_TAG, "fetchAd: Foreground App Open ID is null or empty. Skipping fetch.");
+            return;
+        }
+
+        if (isLoadingAd || isAdAvailable()) {
+            return;
+        }
+
+        isLoadingAd = true;
         loadCallback = new AppOpenAd.AppOpenAdLoadCallback() {
             @Override
             public void onAdLoaded(AppOpenAd ad) {
+                isLoadingAd = false;
                 Leaflet_AppOpenManager.this.appOpenAd = ad;
                 Leaflet_AppOpenManager.this.loadTime = (new Date()).getTime();
                 Log.d(LOG_TAG, "fetchAd: AppOpen loaded successfully.");
@@ -91,24 +114,10 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
 
             @Override
             public void onAdFailedToLoad(LoadAdError loadAdError) {
+                isLoadingAd = false;
                 Log.d(LOG_TAG, "fetchAd: AppOpen failed to load - " + loadAdError.getMessage());
             }
         };
-
-        if (preferenceClass == null) {
-            preferenceClass = new Leaflet_PreferenceClass(myApplication);
-        }
-        
-        if (!preferenceClass.isForegroundAppOpenEnabled()) {
-            Log.d(LOG_TAG, "fetchAd: Foreground App Open is disabled.");
-            return;
-        }
-
-        AD_UNIT_ID1 = preferenceClass.getForegroundAppOpenAdId();
-
-        if (AD_UNIT_ID1 == null || AD_UNIT_ID1.trim().isEmpty() || AD_UNIT_ID1.equals("null")) {
-            return;
-        }
 
         if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
             AD_UNIT_ID1 = "ca-app-pub-3940256099942544/9257395921";
@@ -265,9 +274,19 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             preferenceClass = new Leaflet_PreferenceClass(myApplication);
         }
 
+        if (preferenceClass.getInt("splashscreen", 1) == 0 || !preferenceClass.getBoolean("splashscreen", true)) {
+            Log.d(LOG_TAG, "showAdIfSplashAvailable: Splash ads disabled via splashscreen=0.");
+            onShowAdCompleteListener.onShowAdComplete();
+            return;
+        }
+
         if (!preferenceClass.isSplashAppOpenEnabled()) {
-            Log.d(LOG_TAG, "showAdIfSplashAvailable: Splash App Open is disabled via Remote Config/Database.");
-            loadFallbackInterstitial(activity, onShowAdCompleteListener);
+            Log.d(LOG_TAG, "showAdIfSplashAvailable: Splash App Open is disabled via Remote Config.");
+            if (preferenceClass.isSplashFallbackInterstitialEnabled() && preferenceClass.isGlobalInterstitialEnabled()) {
+                loadFallbackInterstitial(activity, onShowAdCompleteListener);
+            } else {
+                onShowAdCompleteListener.onShowAdComplete();
+            }
             return;
         }
 
@@ -475,8 +494,8 @@ public class Leaflet_AppOpenManager implements LifecycleObserver, Application.Ac
             preferenceClass = new Leaflet_PreferenceClass(myApplication);
         }
 
-        if (!preferenceClass.isSplashFallbackInterstitialEnabled()) {
-            Log.d(LOG_TAG, "Fallback Interstitial is disabled via Remote Config/Database.");
+        if (!preferenceClass.isSplashFallbackInterstitialEnabled() || !preferenceClass.isGlobalInterstitialEnabled()) {
+            Log.d(LOG_TAG, "Fallback Interstitial is disabled via Remote Config.");
             onShowAdCompleteListener.onShowAdComplete();
             return;
         }

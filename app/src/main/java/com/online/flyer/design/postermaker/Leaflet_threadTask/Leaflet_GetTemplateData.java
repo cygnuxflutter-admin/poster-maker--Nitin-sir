@@ -56,6 +56,7 @@ public class Leaflet_GetTemplateData extends AsyncTask<Void, Void, String> {
             int firstAdAfter = preferenceClass.getGridFirstAdAfter("templates");
             int repeatAdAfter = preferenceClass.getGridRepeatAdAfter("templates");
             boolean adEnabled = preferenceClass.isGridAdEnabled("templates");
+            int premiumPostCount = preferenceClass.getPremiumPosterInterval("templates");
 
             for (int j = 0; j < field_7.length(); j++) {
                 JSONObject jsonObject = field_7.getJSONObject(j);
@@ -71,7 +72,13 @@ public class Leaflet_GetTemplateData extends AsyncTask<Void, Void, String> {
                     }
                 }
 
-                posterThumbFullArrayList.add(new Leaflet_PosterImage(field_10, field_11, field_8, cat_id));
+                Leaflet_PosterImage posterImage = new Leaflet_PosterImage(field_10, field_11, field_8, cat_id);
+                if (premiumPostCount > 0) {
+                    posterImage.setPremium((j + 1) % premiumPostCount == 0);
+                } else {
+                    posterImage.setPremium(false);
+                }
+                posterThumbFullArrayList.add(posterImage);
             }
             return posterThumbFullArrayList;
         } catch (Exception e) {

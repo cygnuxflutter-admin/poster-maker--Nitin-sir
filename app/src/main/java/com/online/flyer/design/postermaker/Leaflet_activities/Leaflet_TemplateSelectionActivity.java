@@ -48,6 +48,7 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     private boolean isRewarded = false;
     private Leaflet_PreferenceClass preferenceClass;
     private ArrayList<Leaflet_PosterModel> allCategories;
+    private boolean isLoadingPoster = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,14 +68,18 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         }
 
         android.view.View backBtn = findViewById(R.id.ic_back);
-        if (backBtn != null) backBtn.setOnClickListener(v -> onBackPressed());
+        if (backBtn != null) backBtn.setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            onBackPressed();
+        });
         android.view.View backContainer = findViewById(R.id.ic_back_container);
-        if (backContainer != null) backContainer.setOnClickListener(v -> onBackPressed());
+        if (backContainer != null) backContainer.setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            onBackPressed();
+        });
         deleteFromExternalStorage();
 
         if (getIntent().getBooleanExtra("auto_load", false)) {
-            findViewById(R.id.viewPager).setVisibility(android.view.View.GONE);
-            findViewById(R.id.pagerSlidingTabStrip).setVisibility(android.view.View.GONE);
             int catId = getIntent().getIntExtra("cat_id", 0);
             int postId = getIntent().getIntExtra("post_id", 0);
             boolean isPremium = getIntent().getBooleanExtra("auto_open_premium", false);
@@ -84,38 +89,79 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 
     private ArrayList<Leaflet_PosterModel> currentTabList;
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        selectTargetCategory();
+    }
+
+    private void selectTargetCategory() {
+        if (allCategories == null || currentTabList == null) return;
+        String targetCat = getIntent().getStringExtra("category_name");
+        String targetCatId = getIntent().getStringExtra("category_id");
+        if (targetCat == null && targetCatId == null) return;
+
+        androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
+        if (vp == null) return;
+
+        int targetIndex = -1;
+        // 1. Match by ID
+        if (targetCatId != null && !targetCatId.trim().isEmpty()) {
+            for (int i = 0; i < allCategories.size(); i++) {
+                if (String.valueOf(allCategories.get(i).getCat_id()).equals(targetCatId.trim())) {
+                    targetIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // 2. Exact match by name (case-insensitive)
+        if (targetIndex == -1 && targetCat != null && !targetCat.trim().isEmpty()) {
+            String cleanTarget = targetCat.trim().toLowerCase();
+            for (int i = 0; i < allCategories.size(); i++) {
+                String catName = allCategories.get(i).getCat_name();
+                if (catName != null && catName.trim().equalsIgnoreCase(cleanTarget)) {
+                    targetIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // 3. Partial match (contains)
+        if (targetIndex == -1 && targetCat != null && !targetCat.trim().isEmpty()) {
+            String cleanTarget = targetCat.trim().toLowerCase();
+            for (int i = 0; i < allCategories.size(); i++) {
+                String catName = allCategories.get(i).getCat_name();
+                if (catName != null) {
+                    String cleanCat = catName.trim().toLowerCase();
+                    if (cleanCat.contains(cleanTarget) || cleanTarget.contains(cleanCat)) {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (targetIndex != -1) {
+            while (currentTabList.size() <= targetIndex) {
+                currentTabList.add(allCategories.get(currentTabList.size()));
+            }
+            if (vp.getAdapter() != null) {
+                vp.getAdapter().notifyDataSetChanged();
+            }
+            com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
+            if (tabs != null) tabs.notifyDataSetChanged();
+            vp.setCurrentItem(targetIndex);
+        }
+    }
+
     public void onCategoriesLoaded(ArrayList<Leaflet_PosterModel> categories, ArrayList<Leaflet_PosterModel> tabList) {
         this.allCategories = categories;
         this.currentTabList = tabList;
         
         androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
-
-        String targetCat = getIntent().getStringExtra("category_name");
-        String targetCatId = getIntent().getStringExtra("category_id");
-        if ((targetCat != null || targetCatId != null) && vp != null) {
-            int targetIndex = -1;
-            for (int i = 0; i < allCategories.size(); i++) {
-                if (targetCatId != null && String.valueOf(allCategories.get(i).getCat_id()).equals(targetCatId)) {
-                    targetIndex = i;
-                    break;
-                }
-                if (targetCat != null && allCategories.get(i).getCat_name().toLowerCase().contains(targetCat.toLowerCase())) {
-                    targetIndex = i;
-                    break;
-                }
-            }
-            if (targetIndex != -1) {
-                while (currentTabList.size() <= targetIndex) {
-                    currentTabList.add(allCategories.get(currentTabList.size()));
-                }
-                if (vp.getAdapter() != null) {
-                    vp.getAdapter().notifyDataSetChanged();
-                }
-                com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
-                if (tabs != null) tabs.notifyDataSetChanged();
-                vp.setCurrentItem(targetIndex);
-            }
-        }
+        selectTargetCategory();
         
         if (getIntent().getBooleanExtra("show_all_categories", false)) {
             openAllCategories();
@@ -225,12 +271,14 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                     com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad, "templates");
                 }
             } else {
+                rl_ad.removeAllViews();
                 rl_ad.setVisibility(android.view.View.GONE);
             }
         }
     }
 
     public void openAllCategories() {
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
         if (allCategories == null) return;
         java.util.ArrayList<String> catNames = new java.util.ArrayList<>();
         for (Leaflet_PosterModel model : allCategories) {
@@ -324,7 +372,17 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "template_selection");
+    }
+
+    @Override
     public void onBackPressed() {
+        if (System.currentTimeMillis() - com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.getLastAdDismissedTime() < 800) {
+            return;
+        }
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "template_selection", "back_button");
         if (getIntent().getBooleanExtra("auto_load", false)) {
             com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
                 @Override
@@ -349,6 +407,8 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 
     @Override
     public void onPosterClick(int cat_id, int post_id, boolean premium) {
+        if (isLoadingPoster || com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logTemplateSelected(this, String.valueOf(post_id), String.valueOf(cat_id), !premium, "template_click");
         if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 //                if (checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PERMISSION_GRANTED || checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PERMISSION_GRANTED) {
@@ -368,7 +428,9 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                 this.cat_id = cat_id;
                 this.post_id = post_id;
 
+                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogShown(this, "template_unlock");
                 Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, "Use Template(One Time)", "Use premium template by watching Ads", materialDialog -> {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "template_unlock", "watch_video");
                     if (materialDialog != null && materialDialog.isShowing())
                         materialDialog.dismiss();
                     Leaflet_PreferenceClass preferenceClass = new Leaflet_PreferenceClass(this);
@@ -376,21 +438,40 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                         Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_TemplateSelectionActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
                             @Override
                             public void onAdClose() {
+                                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(Leaflet_TemplateSelectionActivity.this, "template_unlock");
                                 isRewarded = true;
                                 templateSelectionController.startMaterialDialog();
                                 loadPoster(preferenceClass.getDataType("field_0"), cat_id, post_id);
                             }
+
+                            @Override
+                            public void onAdFailedToEarnReward() {
+                                if (getIntent().getBooleanExtra("auto_load", false)) {
+                                    finish();
+                                }
+                            }
                         });
                     } else {
-                        Leaflet_MyApplication.showInterstitialAdWithOutCount(Leaflet_TemplateSelectionActivity.this, () ->
-                        {
-                            isRewarded = true;
-                            templateSelectionController.startMaterialDialog();
-                            loadPoster(preferenceClass.getDataType("field_0"), cat_id, post_id);
+                        Leaflet_MyApplication.showUnlockInterstitialAd(Leaflet_TemplateSelectionActivity.this, new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+                            @Override
+                            public void onAdClose() {
+                                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(Leaflet_TemplateSelectionActivity.this, "template_unlock");
+                                isRewarded = true;
+                                templateSelectionController.startMaterialDialog();
+                                loadPoster(preferenceClass.getDataType("field_0"), cat_id, post_id);
+                            }
 
+                            @Override
+                            public void onAdFailedToEarnReward() {
+                                if (getIntent().getBooleanExtra("auto_load", false)) {
+                                    finish();
+                                }
+                            }
                         });
                     }
                 }, materialDialog -> {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "template_unlock", "cancel");
+                    isLoadingPoster = false;
                     if (materialDialog != null && materialDialog.isShowing())
                         materialDialog.dismiss();
                     if (getIntent().getBooleanExtra("auto_load", false)) {
@@ -411,7 +492,10 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     }
 
     public void loadPoster(String key, final int cat_id, final int pos_id) {
+        if (isLoadingPoster) return;
+        isLoadingPoster = true;
         if (cat_id == 0) {
+            isLoadingPoster = false;
             templateSelectionController.dismissMaterialDialog();
             Leaflet_MaterialDialogUtils.getInstance().errorDialog2(Leaflet_TemplateSelectionActivity.this, "This liked poster is from an older version. Please re-like it from the Templates screen!");
             return;
@@ -424,6 +508,7 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                 JSONObject jsonObject = new JSONObject(response);
                 int error = jsonObject.getInt(preferenceClass.getDataType("field_3"));
                 if (error == 0 || error == 404) {
+                    isLoadingPoster = false;
                     templateSelectionController.dismissMaterialDialog();
                     Leaflet_MaterialDialogUtils.getInstance().errorDialog2(Leaflet_TemplateSelectionActivity.this, getResources().getString(R.string.something_went_wrong));
                     return;
@@ -451,7 +536,10 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 
                                 if (preferenceClass.getInt("download") == 0) {
                                     for (int i = 0; i < text_model.size(); i++) {
-                                        stringArrayList.add(preferenceClass.getDataType("field_37") + text_model.get(i).getFont_family());
+                                        String fontFamily = text_model.get(i).getFont_family();
+                                        if (fontFamily != null && !fontFamily.trim().isEmpty() && !com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_FileUtils.isAssetExists(fontFamily, Leaflet_TemplateSelectionActivity.this)) {
+                                            stringArrayList.add(preferenceClass.getDataType("field_37") + fontFamily);
+                                        }
                                     }
                                 }
 
@@ -474,6 +562,7 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 
                                     @Override
                                     public void onError() {
+                                        isLoadingPoster = false;
                                         templateSelectionController.dismissMaterialDialog();
                                         Leaflet_MaterialDialogUtils.getInstance().errorDialog3(Leaflet_TemplateSelectionActivity.this, getResources().getString(R.string.something_went_wrong));
                                     }
@@ -514,18 +603,22 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     }
 
     private void startIntent() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            Intent intent = new Intent(this, Leaflet_PosterEditActivity.class);
-            intent.putParcelableArrayListExtra("template", templateModels);
-            intent.putParcelableArrayListExtra("sticker", sticker_model);
-            intent.putParcelableArrayListExtra("text", text_model);
-            intent.putExtra("loadUserFrame", false);
-            intent.putExtra("Temp_Type", "MY_TEMP");
-            startActivity(intent);
-            templateSelectionController.dismissMaterialDialog();
-            if (getIntent().getBooleanExtra("auto_load", false)) {
-                finish();
-            }
-        }, 1200);
+        isLoadingPoster = false;
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+        Intent intent = new Intent(this, Leaflet_PosterEditActivity.class);
+        intent.putParcelableArrayListExtra("template", templateModels);
+        intent.putParcelableArrayListExtra("sticker", sticker_model);
+        intent.putParcelableArrayListExtra("text", text_model);
+        intent.putExtra("loadUserFrame", false);
+        intent.putExtra("Temp_Type", "MY_TEMP");
+        if (isRewarded) {
+            intent.putExtra("show_celebration", true);
+            intent.putExtra("celebration_message", "🎉 Template Unlocked!");
+        }
+        startActivity(intent);
+        templateSelectionController.dismissMaterialDialog();
+        if (getIntent().getBooleanExtra("auto_load", false)) {
+            finish();
+        }
     }
 }

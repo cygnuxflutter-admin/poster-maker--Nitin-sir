@@ -60,7 +60,21 @@ public class Leaflet_NavUtils {
         navBackgrounds.setOnClickListener(v -> navigate(activity, activeTab, TAB_BACKGROUNDS, Leaflet_BackgroundSelectionActivity.class));
         navSettings.setOnClickListener(v -> navigate(activity, activeTab, TAB_SETTINGS, Leaflet_SettingsActivity.class));
 
+        navFab.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    v.animate().scaleX(0.90f).scaleY(0.90f).setDuration(100).start();
+                    break;
+                case android.view.MotionEvent.ACTION_UP:
+                case android.view.MotionEvent.ACTION_CANCEL:
+                    v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(220).setInterpolator(new android.view.animation.OvershootInterpolator(2.0f)).start();
+                    break;
+            }
+            return false;
+        });
+
         navFab.setOnClickListener(v -> {
+            if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             Intent intent = new Intent(activity, com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_CreateCustomActivity.class);
             activity.startActivity(intent);
         });
@@ -68,6 +82,7 @@ public class Leaflet_NavUtils {
 
     private static void navigate(Activity currentActivity, int currentTab, int targetTab, Class<?> targetClass) {
         if (currentTab == targetTab) return;
+        if (Leaflet_ClickUtils.isFastDoubleClick(600)) return;
 
         Leaflet_MyApplication.showInterstitialAd(currentActivity, () -> {
             Intent intent = new Intent(currentActivity, targetClass);

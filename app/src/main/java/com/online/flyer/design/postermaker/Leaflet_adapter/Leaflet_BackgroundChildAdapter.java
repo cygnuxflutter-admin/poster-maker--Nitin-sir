@@ -50,6 +50,16 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
         this.preferenceClass = new Leaflet_PreferenceClass(activity);
     }
 
+    private int getActualBgIndex(int adapterPosition) {
+        int count = 0;
+        for (int i = 0; i < adapterPosition && i < bgImages.size(); i++) {
+            if (bgImages.get(i) != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     @Override
     public int getItemViewType(int position) {
         if (bgImages.get(position) == null) {
@@ -74,6 +84,26 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
     public void onBindViewHolder(@NonNull final RecyclerView.ViewHolder holder, final int position) {
         if (getItemViewType(position) == TYPE_AD) {
             AdViewHolder adHolder = (AdViewHolder) holder;
+            if (!preferenceClass.isGridAdEnabled("backgrounds")) {
+                adHolder.itemView.setVisibility(View.GONE);
+                if (adHolder.itemView.getLayoutParams() != null) {
+                    adHolder.itemView.getLayoutParams().height = 0;
+                    adHolder.itemView.requestLayout();
+                }
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        adHolder.itemView.post(() -> {
+                            int currentPos = adHolder.getAdapterPosition();
+                            if (currentPos != RecyclerView.NO_POSITION && currentPos < bgImages.size() && bgImages.get(currentPos) == null) {
+                                bgImages.remove(currentPos);
+                                notifyItemRemoved(currentPos);
+                                notifyItemRangeChanged(currentPos, bgImages.size() - currentPos);
+                            }
+                        });
+                    });
+                }
+                return;
+            }
             adHolder.itemView.setVisibility(View.VISIBLE);
             adHolder.native_banner_ad_container.setVisibility(View.VISIBLE);
             String adId = preferenceClass.getGridNativeAdId("backgrounds");
@@ -123,9 +153,19 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
         bgHolder.iv_image.getLayoutParams().height = cellHeight;
         bgHolder.iv_image.invalidate();
 
-        int premiumPostCount = preferenceClass.getInt("PremiumPostCount", 3);
-        boolean isPremium = (premiumPostCount > 0 && position > 0 && position % premiumPostCount == 0);
-        bgImage.setPremium(isPremium);
+        int premiumPostCount = preferenceClass.getPremiumPosterInterval("backgrounds");
+        boolean isLikedList = "Liked Backgrounds".equalsIgnoreCase(categoryName);
+        boolean isPremium;
+        if (isLikedList) {
+            isPremium = bgImage.isPremium();
+        } else if (premiumPostCount > 0) {
+            int actualBgIndex = getActualBgIndex(position);
+            isPremium = ((actualBgIndex + 1) % premiumPostCount == 0);
+            bgImage.setPremium(isPremium);
+        } else {
+            isPremium = false;
+            bgImage.setPremium(false);
+        }
         boolean isLockFeatureEnabled = preferenceClass.isPremiumPosterLockEnabled();
         boolean isBlurEnabled = preferenceClass.isPremiumPosterBlurEnabled();
         boolean showLockVisuals = isPremium && isLockFeatureEnabled;
@@ -133,7 +173,7 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
         if (showLockVisuals) {
             bgHolder.iv_lock.setVisibility(View.VISIBLE);
             if (bgHolder.fl_center_lock != null) {
-                bgHolder.fl_center_lock.setVisibility(View.VISIBLE);
+                bgHolder.fl_center_lock.setVisibility(isBlurEnabled ? View.VISIBLE : View.GONE);
             }
             if (bgHolder.view_blur_overlay != null) {
                 bgHolder.view_blur_overlay.setVisibility(isBlurEnabled ? View.VISIBLE : View.GONE);
@@ -182,12 +222,14 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
                 Leaflet_FavoritesManager.removeLikedBackground(activity, bgId);
                 bgHolder.iv_like.setImageResource(R.drawable.ic_heart_outline);
             } else {
+                bgImage.setPremium(isPremium);
                 Leaflet_FavoritesManager.addLikedBackground(activity, bgImage);
                 bgHolder.iv_like.setImageResource(R.drawable.ic_heart_filled);
             }
         });
 
         View.OnClickListener bgClickListener = v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             if (bgHolder.iv_image.getDrawable() == null) {
                 return;
             }
@@ -202,11 +244,10 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
             intent.putExtra(com.online.flyer.design.postermaker.Leaflet_activities.ItemPreviewActivity.EXTRA_CATEGORY_NAME, categoryName);
             intent.putExtra("target_bg_id", bgImage.getId());
 
-            int pCount = preferenceClass.getInt("PremiumPostCount", 3);
-            boolean isPrem = (pCount > 0 && clickPos > 0 && clickPos % pCount == 0);
+            boolean isPrem = bgImage.isPremium();
             intent.putExtra("target_is_premium", isPrem);
             boolean lockEnabled = preferenceClass.isPremiumPosterLockEnabled();
-            boolean showPopup = preferenceClass.isPremiumRewardPopupEnabled();
+            boolean showPopup = preferenceClass.isProOpenPopupEnabled("backgrounds");
 
             if (isPrem && lockEnabled && showPopup) {
                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_MaterialDialogUtils.getInstance().rewardDialog(
@@ -225,7 +266,7 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
                                     }
                                 });
                             } else {
-                                com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAdWithOutCount(activity, () -> {
+                                com.online.flyer.design.postermaker.Leaflet_MyApplication.showUnlockInterstitialAd(activity, () -> {
                                     intent.putExtra("is_unlocked_by_reward", true);
                                     activity.startActivityForResult(intent, 2001);
                                 });

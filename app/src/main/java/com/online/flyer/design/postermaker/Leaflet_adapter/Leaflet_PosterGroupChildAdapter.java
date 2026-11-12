@@ -49,6 +49,16 @@ public class Leaflet_PosterGroupChildAdapter extends RecyclerView.Adapter<Recycl
         this.preferenceClass = new Leaflet_PreferenceClass(activity);
     }
 
+    private int getActualPosterIndex(int adapterPosition) {
+        int count = 0;
+        for (int i = 0; i < adapterPosition && i < posterThumbLists.size(); i++) {
+            if (posterThumbLists.get(i) != null) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     @Override
     public int getItemViewType(int position) {
         if (posterThumbLists.get(position) == null) {
@@ -73,6 +83,26 @@ public class Leaflet_PosterGroupChildAdapter extends RecyclerView.Adapter<Recycl
     public void onBindViewHolder(@NonNull final RecyclerView.ViewHolder holder, final int position) {
         if (getItemViewType(position) == TYPE_AD) {
             AdViewHolder adHolder = (AdViewHolder) holder;
+            if (!preferenceClass.isGridAdEnabled("templates")) {
+                adHolder.itemView.setVisibility(View.GONE);
+                if (adHolder.itemView.getLayoutParams() != null) {
+                    adHolder.itemView.getLayoutParams().height = 0;
+                    adHolder.itemView.requestLayout();
+                }
+                if (activity != null) {
+                    activity.runOnUiThread(() -> {
+                        adHolder.itemView.post(() -> {
+                            int currentPos = adHolder.getAdapterPosition();
+                            if (currentPos != RecyclerView.NO_POSITION && currentPos < posterThumbLists.size() && posterThumbLists.get(currentPos) == null) {
+                                posterThumbLists.remove(currentPos);
+                                notifyItemRemoved(currentPos);
+                                notifyItemRangeChanged(currentPos, posterThumbLists.size() - currentPos);
+                            }
+                        });
+                    });
+                }
+                return;
+            }
             adHolder.itemView.setVisibility(View.VISIBLE);
             adHolder.native_banner_ad_container.setVisibility(View.VISIBLE);
             String adId = preferenceClass.getGridNativeAdId("templates");
@@ -122,9 +152,19 @@ public class Leaflet_PosterGroupChildAdapter extends RecyclerView.Adapter<Recycl
         posterHolder.iv_image.getLayoutParams().height = cellHeight;
         posterHolder.iv_image.invalidate();
 
-        int premiumPostCount = preferenceClass.getInt("PremiumPostCount", 3);
-        boolean isPremium = (premiumPostCount > 0 && position > 0 && position % premiumPostCount == 0);
-        posterImage.setPremium(isPremium);
+        int premiumPostCount = preferenceClass.getPremiumPosterInterval("templates");
+        boolean isLikedList = "Liked Posters".equalsIgnoreCase(catName);
+        boolean isPremium;
+        if (isLikedList) {
+            isPremium = posterImage.isPremium();
+        } else if (premiumPostCount > 0) {
+            int actualPosterIndex = getActualPosterIndex(position);
+            isPremium = ((actualPosterIndex + 1) % premiumPostCount == 0);
+            posterImage.setPremium(isPremium);
+        } else {
+            isPremium = false;
+            posterImage.setPremium(false);
+        }
         boolean isLockFeatureEnabled = preferenceClass.isPremiumPosterLockEnabled();
         boolean isBlurEnabled = preferenceClass.isPremiumPosterBlurEnabled();
         boolean showLockVisuals = isPremium && isLockFeatureEnabled;
@@ -132,7 +172,7 @@ public class Leaflet_PosterGroupChildAdapter extends RecyclerView.Adapter<Recycl
         if (showLockVisuals) {
             posterHolder.iv_lock.setVisibility(View.VISIBLE);
             if (posterHolder.fl_center_lock != null) {
-                posterHolder.fl_center_lock.setVisibility(View.VISIBLE);
+                posterHolder.fl_center_lock.setVisibility(isBlurEnabled ? View.VISIBLE : View.GONE);
             }
             if (posterHolder.view_blur_overlay != null) {
                 posterHolder.view_blur_overlay.setVisibility(isBlurEnabled ? View.VISIBLE : View.GONE);
@@ -181,12 +221,14 @@ public class Leaflet_PosterGroupChildAdapter extends RecyclerView.Adapter<Recycl
                 Leaflet_FavoritesManager.removeLikedPoster(activity, posterId);
                 posterHolder.iv_like.setImageResource(R.drawable.ic_heart_outline);
             } else {
+                posterImage.setPremium(isPremium);
                 Leaflet_FavoritesManager.addLikedPoster(activity, posterImage);
                 posterHolder.iv_like.setImageResource(R.drawable.ic_heart_filled);
             }
         });
 
         View.OnClickListener posterClickListener = v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             if (posterHolder.iv_image.getDrawable() == null) {
                 return;
             }
@@ -199,15 +241,15 @@ public class Leaflet_PosterGroupChildAdapter extends RecyclerView.Adapter<Recycl
             intent.putExtra(com.online.flyer.design.postermaker.Leaflet_activities.ItemPreviewActivity.EXTRA_POSTER_IMAGES, posterThumbLists);
             intent.putExtra(com.online.flyer.design.postermaker.Leaflet_activities.ItemPreviewActivity.EXTRA_INITIAL_POSITION, clickPos);
             intent.putExtra(com.online.flyer.design.postermaker.Leaflet_activities.ItemPreviewActivity.EXTRA_CATEGORY_NAME, catName);
-            intent.putExtra(com.online.flyer.design.postermaker.Leaflet_activities.ItemPreviewActivity.EXTRA_SINGLE_CAT_ID, cat_id);
-            intent.putExtra("extra_cat_id", cat_id);
+            int resolvedCatId = posterImage.getCat_id() != 0 ? posterImage.getCat_id() : cat_id;
+            intent.putExtra(com.online.flyer.design.postermaker.Leaflet_activities.ItemPreviewActivity.EXTRA_SINGLE_CAT_ID, resolvedCatId);
+            intent.putExtra("extra_cat_id", resolvedCatId);
             intent.putExtra("target_post_id", posterImage.getPost_id());
 
-            int pCount = preferenceClass.getInt("PremiumPostCount", 3);
-            boolean isPrem = (pCount > 0 && clickPos > 0 && clickPos % pCount == 0);
+            boolean isPrem = posterImage.isPremium();
             intent.putExtra("target_is_premium", isPrem);
             boolean lockEnabled = preferenceClass.isPremiumPosterLockEnabled();
-            boolean showPopup = preferenceClass.isPremiumRewardPopupEnabled();
+            boolean showPopup = preferenceClass.isProOpenPopupEnabled("templates");
 
             if (isPrem && lockEnabled && showPopup) {
                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_MaterialDialogUtils.getInstance().rewardDialog(
@@ -226,7 +268,7 @@ public class Leaflet_PosterGroupChildAdapter extends RecyclerView.Adapter<Recycl
                                     }
                                 });
                             } else {
-                                com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAdWithOutCount(activity, () -> {
+                                com.online.flyer.design.postermaker.Leaflet_MyApplication.showUnlockInterstitialAd(activity, () -> {
                                     intent.putExtra("is_unlocked_by_reward", true);
                                     activity.startActivityForResult(intent, 2002);
                                 });

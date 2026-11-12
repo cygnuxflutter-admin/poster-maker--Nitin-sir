@@ -152,6 +152,7 @@ public class Leaflet_MyCreationAdapter extends RecyclerView.Adapter<Leaflet_MyCr
                 holder.btn_share.setOnClickListener(v -> {
                     String shareBody = "I'm using amazing Poster maker App, I just created a new poster within 2 min and it's completely free. I recommend you to try this app. \n\n" +
                             "https://play.google.com/store/apps/details?id=" + activity.getApplicationContext().getPackageName();
+                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
                     Intent shareIntent = new Intent(Intent.ACTION_SEND);
                     shareIntent.setType("image/*");
                     shareIntent.putExtra(Intent.EXTRA_TEXT, shareBody);

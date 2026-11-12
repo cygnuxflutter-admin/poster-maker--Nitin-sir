@@ -48,10 +48,6 @@ import com.google.android.gms.ads.nativead.NativeAd;
 import com.google.android.gms.ads.nativead.NativeAdOptions;
 import com.google.android.gms.ads.nativead.NativeAdView;
 import com.google.firebase.analytics.FirebaseAnalytics;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.online.flyer.design.postermaker.BuildConfig;
 import com.online.flyer.design.postermaker.Leaflet_threadTask.Leaflet_DlBgAsync;
@@ -132,6 +128,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
     private LinearLayout btnUseTemplate;
     private ImageView ivBtnIcon;
     private TextView tvBtnText;
+    private android.widget.ProgressBar pbBtnLoader;
 
     private ViewPager2 viewPagerPreview;
     private PreviewPagerAdapter pagerAdapter;
@@ -172,6 +169,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
         // Light Status Bar with dark icons
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(Color.WHITE);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -191,15 +189,43 @@ public class ItemPreviewActivity extends AppCompatActivity {
         setupListeners();
         setupViewPager();
         loadRemoteConfigAndNativeAd();
+        if (getIntent().getBooleanExtra("is_unlocked_by_reward", false)) {
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_CelebrationHelper.showCelebration(
+                        ItemPreviewActivity.this,
+                        MODE_BACKGROUND.equals(previewMode) ? "✨ Background Unlocked!" : "🎉 Template Unlocked!"
+                );
+            }, 350);
+        }
     }
 
     private void initViews() {
+        View rootLayout = findViewById(R.id.root_preview_layout);
+        if (rootLayout != null) {
+            int statusBarHeight = 0;
+            int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+            if (resourceId > 0) {
+                statusBarHeight = getResources().getDimensionPixelSize(resourceId);
+            }
+            final int minTopPadding = statusBarHeight;
+
+            androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, windowInsets) -> {
+                androidx.core.graphics.Insets insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+                int topInset = insets.top > 0 ? insets.top : Math.max(windowInsets.getSystemWindowInsetTop(), minTopPadding);
+                int bottomInset = insets.bottom > 0 ? insets.bottom : windowInsets.getSystemWindowInsetBottom();
+                v.setPadding(0, topInset, 0, bottomInset);
+                return windowInsets;
+            });
+            androidx.core.view.ViewCompat.requestApplyInsets(rootLayout);
+        }
+
         ivBack = findViewById(R.id.ivBack);
         tvTitle = findViewById(R.id.tvTitle);
         tvSubtitle = findViewById(R.id.tvSubtitle);
         btnUseTemplate = findViewById(R.id.btnUseTemplate);
         ivBtnIcon = findViewById(R.id.ivBtnIcon);
         tvBtnText = findViewById(R.id.tvBtnText);
+        pbBtnLoader = findViewById(R.id.pbBtnLoader);
 
         viewPagerPreview = findViewById(R.id.viewPagerPreview);
 
@@ -237,12 +263,14 @@ public class ItemPreviewActivity extends AppCompatActivity {
                 Serializable s = intent.getSerializableExtra(EXTRA_POSTER_IMAGES);
                 if (s instanceof List) {
                     List<Leaflet_PosterImage> posterList = (List<Leaflet_PosterImage>) s;
-                    int premiumInterval = preferenceClass.getInt("PremiumPostCount", 3);
+                    int premiumInterval = preferenceClass.getPremiumPosterInterval("templates");
                     int rawInitialPosition = intent.getIntExtra("initialPosition", intent.getIntExtra(EXTRA_INITIAL_POSITION, 0));
                     int extraCatId = intent.getIntExtra(EXTRA_SINGLE_CAT_ID, intent.getIntExtra("extra_cat_id", 0));
                     int targetPostId = intent.getIntExtra("target_post_id", -1);
                     boolean targetIsPremium = intent.getBooleanExtra("target_is_premium", false);
                     int targetItemIndex = -1;
+                    int actualPosterCount = 0;
+                    boolean isLikedList = "Liked Posters".equalsIgnoreCase(categoryName);
                     for (int i = 0; i < posterList.size(); i++) {
                         Leaflet_PosterImage img = posterList.get(i);
                         if (img == null) continue;
@@ -258,13 +286,18 @@ public class ItemPreviewActivity extends AppCompatActivity {
                         if (isThisTheTarget && targetItemIndex == -1) {
                             targetItemIndex = previewItemList.size();
                         }
-                        boolean isPremium = img.isPremium();
-                        if (!isPremium && premiumInterval > 0 && i > 0 && i % premiumInterval == 0) {
-                            isPremium = true;
+                        boolean isPremium;
+                        isPremium = img.isPremium();
+                        if (isLikedList) {
+                            isPremium = img.isPremium();
+                        } else if (premiumInterval > 0) {
+                            isPremium = isPremium || ((actualPosterCount + 1) % premiumInterval == 0);
                         }
                         if (isThisTheTarget && targetIsPremium) {
                             isPremium = true;
                         }
+                        img.setPremium(isPremium);
+                        actualPosterCount++;
                         PreviewItem pi = PreviewItem.fromPosterImage(img, categoryName, isPremium);
                         if (pi != null) {
                             if (pi.getCatId() == 0 && extraCatId != 0) {
@@ -291,11 +324,13 @@ public class ItemPreviewActivity extends AppCompatActivity {
                 Serializable s = intent.getSerializableExtra(EXTRA_BG_IMAGES);
                 if (s instanceof List) {
                     List<Leaflet_BgImage> bgList = (List<Leaflet_BgImage>) s;
-                    int premiumInterval = preferenceClass.getInt("PremiumPostCount", 3);
+                    int premiumInterval = preferenceClass.getPremiumPosterInterval("backgrounds");
                     int rawInitialPosition = intent.getIntExtra("initialPosition", intent.getIntExtra(EXTRA_INITIAL_POSITION, 0));
                     int targetBgId = intent.getIntExtra("target_bg_id", -1);
                     boolean targetIsPremium = intent.getBooleanExtra("target_is_premium", false);
                     int targetItemIndex = -1;
+                    int actualBgCount = 0;
+                    boolean isLikedList = "Liked Backgrounds".equalsIgnoreCase(categoryName);
                     for (int i = 0; i < bgList.size(); i++) {
                         Leaflet_BgImage bg = bgList.get(i);
                         if (bg == null) continue;
@@ -308,13 +343,19 @@ public class ItemPreviewActivity extends AppCompatActivity {
                         if (isThisTheTarget && targetItemIndex == -1) {
                             targetItemIndex = previewItemList.size();
                         }
-                        boolean isPremium = bg.isPremium();
-                        if (!isPremium && premiumInterval > 0 && i > 0 && i % premiumInterval == 0) {
-                            isPremium = true;
+                        boolean isPremium;
+                        if (isLikedList) {
+                            isPremium = bg.isPremium();
+                        } else if (premiumInterval > 0) {
+                            isPremium = ((actualBgCount + 1) % premiumInterval == 0);
+                        } else {
+                            isPremium = false;
                         }
                         if (isThisTheTarget && targetIsPremium) {
                             isPremium = true;
                         }
+                        bg.setPremium(isPremium);
+                        actualBgCount++;
                         PreviewItem pi = new PreviewItem(
                                 String.valueOf(bg.getId()),
                                 categoryName != null ? categoryName : "Background",
@@ -424,9 +465,23 @@ public class ItemPreviewActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        ivBack.setOnClickListener(v -> onBackPressed());
+        View flBack = findViewById(R.id.flBack);
+        if (flBack != null) {
+            flBack.setOnClickListener(v -> {
+                if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+                onBackPressed();
+            });
+        }
 
-        btnUseTemplate.setOnClickListener(v -> onActionClicked());
+        ivBack.setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            onBackPressed();
+        });
+
+        btnUseTemplate.setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            onActionClicked();
+        });
     }
 
     private void setupViewPager() {
@@ -434,7 +489,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
         viewPagerPreview.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
 
         final int initPos = currentPosition;
-        pagerAdapter = new PreviewPagerAdapter(this, previewItemList, previewMode, initPos, (position, isLiked) -> {
+        pagerAdapter = new PreviewPagerAdapter(this, previewItemList, previewMode, categoryName, initPos, (position, isLiked) -> {
             // Heart clicked callback
             toggleLike(position);
         }, position -> {
@@ -507,6 +562,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
             currentlyLiked = Leaflet_FavoritesManager.isBackgroundLiked(this, itemId);
             if (!currentlyLiked) {
                 Leaflet_BgImage bg = new Leaflet_BgImage(item.getPostId(), item.getImageUrl(), item.getImageUrl());
+                bg.setPremium(item.isPremium());
                 Leaflet_FavoritesManager.addLikedBackground(this, bg);
             } else {
                 Leaflet_FavoritesManager.removeLikedBackground(this, itemId);
@@ -520,6 +576,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
                         item.getRatio(),
                         String.valueOf(item.getCatId())
                 );
+                pImg.setPremium(item.isPremium());
                 Leaflet_FavoritesManager.addLikedPoster(this, pImg);
             } else {
                 Leaflet_FavoritesManager.removeLikedPoster(this, itemId);
@@ -532,42 +589,43 @@ public class ItemPreviewActivity extends AppCompatActivity {
     }
 
     private void showLoadingDialog() {
-        try {
-            if (loadingDialog == null) {
-                loadingDialog = Leaflet_MaterialDialogUtils.getInstance().createAnimationDialog(this);
-                if (loadingDialog.getWindow() != null) {
-                    loadingDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-                }
-                loadingDialog.setCancelable(false);
-            }
-            if (!isFinishing() && !loadingDialog.isShowing()) {
-                loadingDialog.show();
-            }
-        } catch (Exception ignored) {}
+        setButtonLoadingState(true);
     }
 
     private void dismissLoadingDialog() {
-        try {
-            if (loadingDialog != null && loadingDialog.isShowing()) {
-                loadingDialog.dismiss();
+        setButtonLoadingState(false);
+    }
+
+    private void setButtonLoadingState(boolean isLoading) {
+        runOnUiThread(() -> {
+            if (btnUseTemplate != null) {
+                btnUseTemplate.setEnabled(!isLoading);
             }
-        } catch (Exception ignored) {}
+            if (isLoading) {
+                if (ivBtnIcon != null) ivBtnIcon.setVisibility(View.GONE);
+                if (pbBtnLoader != null) pbBtnLoader.setVisibility(View.VISIBLE);
+                if (tvBtnText != null) tvBtnText.setText("Opening...");
+            } else {
+                if (pbBtnLoader != null) pbBtnLoader.setVisibility(View.GONE);
+                if (ivBtnIcon != null) ivBtnIcon.setVisibility(View.VISIBLE);
+                if (tvBtnText != null) {
+                    if (MODE_BACKGROUND.equals(previewMode)) {
+                        tvBtnText.setText("Use Background");
+                    } else {
+                        tvBtnText.setText("Edit Template");
+                    }
+                }
+            }
+        });
     }
 
     private void resetButtonState() {
-        updateButtonStateForPosition(currentPosition);
+        setButtonLoadingState(false);
     }
 
     private void updateButtonStateForPosition(int position) {
         if (position < 0 || position >= previewItemList.size()) return;
-        runOnUiThread(() -> {
-            btnUseTemplate.setEnabled(true);
-            if (MODE_BACKGROUND.equals(previewMode)) {
-                tvBtnText.setText("Use Background");
-            } else {
-                tvBtnText.setText("Edit Template");
-            }
-        });
+        setButtonLoadingState(false);
     }
 
     private void promptUnlockPreview(final int position) {
@@ -575,8 +633,9 @@ public class ItemPreviewActivity extends AppCompatActivity {
         final PreviewItem item = previewItemList.get(position);
         if (!item.isPremium() || item.isPreviewUnlocked()) return;
 
+        String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
         boolean lockEnabled = preferenceClass.isPremiumPosterLockEnabled();
-        boolean showPopup = preferenceClass.isPremiumRewardPopupEnabled();
+        boolean showPopup = preferenceClass.isProEditPopupEnabled(itemType);
         if (!lockEnabled || !showPopup) {
             item.setPreviewUnlocked(true);
             if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
@@ -585,7 +644,6 @@ public class ItemPreviewActivity extends AppCompatActivity {
 
         String title = MODE_BACKGROUND.equals(previewMode) ? "Use Background (One Time)" : "Use Template (One Time)";
         String desc = MODE_BACKGROUND.equals(previewMode) ? "Watch a short video ad to unlock and use this premium background." : "Watch a short video ad to unlock and use this premium template.";
-        String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
 
         Leaflet_MaterialDialogUtils.getInstance().rewardDialog(
                 this,
@@ -602,10 +660,11 @@ public class ItemPreviewActivity extends AppCompatActivity {
                                 item.setPreviewUnlocked(true);
                                 if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
                                 Toast.makeText(ItemPreviewActivity.this, "Unlocked!", Toast.LENGTH_SHORT).show();
+                                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_CelebrationHelper.showCelebration(ItemPreviewActivity.this, MODE_BACKGROUND.equals(previewMode) ? "✨ Background Unlocked!" : "🎉 Template Unlocked!");
                             }
                         });
                     } else {
-                        Leaflet_MyApplication.showInterstitialAdWithOutCount(ItemPreviewActivity.this, () -> {
+                        Leaflet_MyApplication.showUnlockInterstitialAd(ItemPreviewActivity.this, () -> {
                             item.setPreviewUnlocked(true);
                             if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
                             Toast.makeText(ItemPreviewActivity.this, "Unlocked!", Toast.LENGTH_SHORT).show();
@@ -621,13 +680,14 @@ public class ItemPreviewActivity extends AppCompatActivity {
     private void promptEditUnlock(final int position, final Runnable onUnlockedCallback) {
         if (position < 0 || position >= previewItemList.size()) return;
         final PreviewItem item = previewItemList.get(position);
-        if (!item.isPremium()) {
+        if (!item.isPremium() || item.isPreviewUnlocked()) {
             if (onUnlockedCallback != null) onUnlockedCallback.run();
             return;
         }
 
+        String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
         boolean lockEnabled = preferenceClass.isPremiumPosterLockEnabled();
-        boolean showPopup = preferenceClass.isPremiumRewardPopupEnabled();
+        boolean showPopup = preferenceClass.isProEditPopupEnabled(itemType);
         if (!lockEnabled || !showPopup) {
             if (onUnlockedCallback != null) onUnlockedCallback.run();
             return;
@@ -635,27 +695,32 @@ public class ItemPreviewActivity extends AppCompatActivity {
 
         String title = MODE_BACKGROUND.equals(previewMode) ? "Use Background (One Time)" : "Use Template (One Time)";
         String desc = MODE_BACKGROUND.equals(previewMode) ? "Watch a short video ad to unlock and use this premium background." : "Watch a short video ad to unlock and use this premium template.";
-        String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
 
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogShown(this, "preview_unlock");
         Leaflet_MaterialDialogUtils.getInstance().rewardDialog(
                 this,
                 title,
                 desc,
                 itemType,
                 dialog -> {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "preview_unlock", "watch_video");
                     if (dialog != null && dialog.isShowing()) dialog.dismiss();
                     String adType = preferenceClass.getPremiumPosterAdType();
                     if ("Reward".equalsIgnoreCase(adType)) {
                         Leaflet_RewardVideoManager.showRewardVideoAd(ItemPreviewActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
                             @Override
                             public void onAdClose() {
+                                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(ItemPreviewActivity.this, "preview_unlock");
+                                isRewarded = true;
                                 item.setPreviewUnlocked(true);
                                 if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
                                 if (onUnlockedCallback != null) onUnlockedCallback.run();
                             }
                         });
                     } else {
-                        Leaflet_MyApplication.showInterstitialAdWithOutCount(ItemPreviewActivity.this, () -> {
+                        Leaflet_MyApplication.showUnlockInterstitialAd(ItemPreviewActivity.this, () -> {
+                            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(ItemPreviewActivity.this, "preview_unlock");
+                            isRewarded = true;
                             item.setPreviewUnlocked(true);
                             if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
                             if (onUnlockedCallback != null) onUnlockedCallback.run();
@@ -663,6 +728,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
                     }
                 },
                 dialog -> {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "preview_unlock", "cancel");
                     if (dialog != null && dialog.isShowing()) dialog.dismiss();
                     resetButtonState();
                 }
@@ -676,9 +742,11 @@ public class ItemPreviewActivity extends AppCompatActivity {
         PreviewItem item = previewItemList.get(actualPos);
 
         if (MODE_BACKGROUND.equals(previewMode)) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackgroundSelected(this, item.getImageUrl(), item.isPremium() ? "premium" : "free");
             // Apply / Use Background
             handleUseBackground(item, actualPos);
         } else {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logTemplateSelected(this, item.getId(), item.getTitle(), !item.isPremium(), "preview_edit");
             // Edit Template
             handleEditTemplate(item, actualPos);
         }
@@ -696,7 +764,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
             return;
         }
 
-        if (item.isPremium() && preferenceClass.isPremiumPosterLockEnabled() && preferenceClass.isPremiumRewardPopupEnabled()) {
+        if (item.isPremium() && preferenceClass.isPremiumPosterLockEnabled() && preferenceClass.isProEditPopupEnabled("backgrounds")) {
             promptEditUnlock(position, () -> downloadAndOpenBackground(bgUrl));
         } else {
             downloadAndOpenBackground(bgUrl);
@@ -720,6 +788,10 @@ public class ItemPreviewActivity extends AppCompatActivity {
                 intent.putExtra("bg_path", localPath);
                 intent.putExtra("loadUserFrame", true);
                 intent.putExtra("Temp_Type", "MY_TEMP");
+                if (isRewarded) {
+                    intent.putExtra("show_celebration", true);
+                    intent.putExtra("celebration_message", "✨ Background Unlocked!");
+                }
                 startActivity(intent);
                 finish();
             }
@@ -753,7 +825,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
         final int finalCatId = catId;
         final int finalPostId = postId;
 
-        if (item.isPremium() && preferenceClass.isPremiumPosterLockEnabled() && preferenceClass.isPremiumRewardPopupEnabled()) {
+        if (item.isPremium() && preferenceClass.isPremiumPosterLockEnabled() && preferenceClass.isProEditPopupEnabled("templates")) {
             promptEditUnlock(position, () -> {
                 isRewarded = true;
                 startLoadingAndOpenTemplate(finalCatId, finalPostId);
@@ -807,7 +879,10 @@ public class ItemPreviewActivity extends AppCompatActivity {
 
                                 if (preferenceClass.getInt("download") == 0) {
                                     for (int i = 0; i < text_model.size(); i++) {
-                                        templateDownloadList.add(preferenceClass.getDataType("field_37") + text_model.get(i).getFont_family());
+                                        String fontFamily = text_model.get(i).getFont_family();
+                                        if (fontFamily != null && !fontFamily.trim().isEmpty() && !com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_FileUtils.isAssetExists(fontFamily, ItemPreviewActivity.this)) {
+                                            templateDownloadList.add(preferenceClass.getDataType("field_37") + fontFamily);
+                                        }
                                     }
                                 }
 
@@ -871,16 +946,18 @@ public class ItemPreviewActivity extends AppCompatActivity {
     }
 
     private void startPosterEditIntent() {
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            Intent intent = new Intent(ItemPreviewActivity.this, Leaflet_PosterEditActivity.class);
-            intent.putParcelableArrayListExtra("template", templateModels);
-            intent.putParcelableArrayListExtra("sticker", sticker_model);
-            intent.putParcelableArrayListExtra("text", text_model);
-            intent.putExtra("loadUserFrame", false);
-            intent.putExtra("Temp_Type", "MY_TEMP");
-            startActivity(intent);
-            finish();
-        }, 300);
+        Intent intent = new Intent(ItemPreviewActivity.this, Leaflet_PosterEditActivity.class);
+        intent.putParcelableArrayListExtra("template", templateModels);
+        intent.putParcelableArrayListExtra("sticker", sticker_model);
+        intent.putParcelableArrayListExtra("text", text_model);
+        intent.putExtra("loadUserFrame", false);
+        intent.putExtra("Temp_Type", "MY_TEMP");
+        if (isRewarded) {
+            intent.putExtra("show_celebration", true);
+            intent.putExtra("celebration_message", "🎉 Template Unlocked!");
+        }
+        startActivity(intent);
+        finish();
     }
 
     // =========================================================================
@@ -888,14 +965,24 @@ public class ItemPreviewActivity extends AppCompatActivity {
     // =========================================================================
 
     private void loadRemoteConfigAndNativeAd() {
-        adEnabled = true;
+        String screenKey = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
+        adEnabled = preferenceClass.isPreviewNativeAdEnabled(screenKey);
         adType = "compact";
-        adHeightDp = 95;
+        adHeightDp = preferenceClass.getPreviewNativeAdHeight();
         adUnitId = BuildConfig.DEBUG ? "ca-app-pub-3940256099942544/2247696110" : preferenceClass.getAdsId("NativeUnitID");
+
+        if (!preferenceClass.getBoolean("show_grid_native_ad", true)
+                || preferenceClass.getInt("show_grid_native_ad", 1) == 0
+                || !preferenceClass.isGridAdEnabled(screenKey)) {
+            adEnabled = false;
+        }
+
+        if (!BuildConfig.DEBUG && (adUnitId == null || adUnitId.trim().isEmpty() || "null".equals(adUnitId.trim()))) {
+            adEnabled = false;
+        }
 
         // 1. Firebase Remote Config
         try {
-            String screenKey = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
             JSONObject screenObj = preferenceClass.getScreenAdConfigJson(screenKey);
             if (screenObj != null && screenObj.has("preview_native_ad")) {
                 parsePreviewAdJson(screenObj);
@@ -906,42 +993,6 @@ public class ItemPreviewActivity extends AppCompatActivity {
                     parsePreviewAdJson(new JSONObject(configJson));
                 }
             }
-        } catch (Exception ignored) {}
-
-        // 2. Firebase Realtime Database
-        try {
-            FirebaseDatabase.getInstance().getReference("all_data").child("preview_screen").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists()) {
-                        try {
-                            Object raw = snapshot.getValue();
-                            if (raw instanceof String) {
-                                parsePreviewAdJson(new JSONObject((String) raw));
-                            } else if (snapshot.hasChild("preview_native_ad")) {
-                                DataSnapshot adSnap = snapshot.child("preview_native_ad");
-                                if (adSnap.hasChild("enabled")) {
-                                    adEnabled = "true".equalsIgnoreCase(String.valueOf(adSnap.child("enabled").getValue()));
-                                }
-                                if (adSnap.hasChild("ad_type")) {
-                                    adType = String.valueOf(adSnap.child("ad_type").getValue());
-                                }
-                                if (adSnap.hasChild("height")) {
-                                    adHeightDp = Integer.parseInt(String.valueOf(adSnap.child("height").getValue()));
-                                }
-                                if (adSnap.hasChild("ad_id")) {
-                                    String id = String.valueOf(adSnap.child("ad_id").getValue());
-                                    if (!id.isEmpty() && !id.contains("xxxx")) adUnitId = id;
-                                }
-                                applyAdConfigAndFetch();
-                            }
-                        } catch (Exception ignored) {}
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {}
-            });
         } catch (Exception ignored) {}
 
         applyAdConfigAndFetch();
@@ -972,16 +1023,34 @@ public class ItemPreviewActivity extends AppCompatActivity {
         }
     }
 
+    private void updateViewPagerBottomAnchor(boolean isAdVisible) {
+        if (viewPagerPreview == null) return;
+        RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) viewPagerPreview.getLayoutParams();
+        if (lp != null) {
+            float density = getResources().getDisplayMetrics().density;
+            if (isAdVisible) {
+                lp.addRule(RelativeLayout.ABOVE, R.id.rl_preview_native_ad);
+                lp.bottomMargin = (int) (6 * density);
+            } else {
+                lp.addRule(RelativeLayout.ABOVE, R.id.btnUseTemplate);
+                lp.bottomMargin = (int) (16 * density);
+            }
+            viewPagerPreview.setLayoutParams(lp);
+        }
+    }
+
     private void applyAdConfigAndFetch() {
         runOnUiThread(() -> {
             if (!adEnabled) {
                 if (shimmerNativeAd != null) shimmerNativeAd.stopShimmer();
                 rlPreviewNativeAd.setVisibility(View.GONE);
+                updateViewPagerBottomAnchor(false);
                 return;
             }
 
             if (isAdLoaded && loadedNativeAd != null) {
                 rlPreviewNativeAd.setVisibility(View.VISIBLE);
+                updateViewPagerBottomAnchor(true);
                 return;
             }
 
@@ -991,6 +1060,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
             rlPreviewNativeAd.setLayoutParams(lp);
 
             rlPreviewNativeAd.setVisibility(View.VISIBLE);
+            updateViewPagerBottomAnchor(true);
             shimmerNativeAd.setVisibility(View.VISIBLE);
             shimmerNativeAd.startShimmer();
 
@@ -1001,7 +1071,9 @@ public class ItemPreviewActivity extends AppCompatActivity {
     private void fetchNativeAd() {
         String finalAdId = BuildConfig.DEBUG ? "ca-app-pub-3940256099942544/2247696110" : adUnitId;
         if (finalAdId == null || finalAdId.trim().isEmpty() || finalAdId.equals("null")) {
-            finalAdId = "ca-app-pub-3940256099942544/2247696110";
+            rlPreviewNativeAd.setVisibility(View.GONE);
+            updateViewPagerBottomAnchor(false);
+            return;
         }
 
         try {
@@ -1033,13 +1105,20 @@ public class ItemPreviewActivity extends AppCompatActivity {
 
             builder.withAdListener(new AdListener() {
                 @Override
+                public void onAdLoaded() {
+                    updateViewPagerBottomAnchor(true);
+                }
+
+                @Override
                 public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
                     boolean showShimmerOnFail = preferenceClass.shouldShowNativeShimmerOnFail(MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates");
                     if (!showShimmerOnFail) {
                         if (shimmerNativeAd != null) shimmerNativeAd.stopShimmer();
                         rlPreviewNativeAd.setVisibility(View.GONE);
+                        updateViewPagerBottomAnchor(false);
                     } else {
                         rlPreviewNativeAd.setVisibility(View.VISIBLE);
+                        updateViewPagerBottomAnchor(true);
                     }
                 }
             });
@@ -1104,7 +1183,17 @@ public class ItemPreviewActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "item_preview", MODE_BACKGROUND.equals(previewMode) ? "background" : "template");
+    }
+
+    @Override
     public void onBackPressed() {
+        if (System.currentTimeMillis() - com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.getLastAdDismissedTime() < 800) {
+            return;
+        }
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "item_preview", "back_button");
         dismissLoadingDialog();
         Leaflet_MyApplication.showInterstitialAd(this, new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
             @Override
@@ -1148,6 +1237,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
         private final Context context;
         private final List<PreviewItem> items;
         private final String previewMode;
+        private final String categoryName;
         private final int initialPosition;
         private final OnLikeClickListener onLikeClickListener;
         private final OnSwipePromptClickListener onSwipePromptClickListener;
@@ -1155,12 +1245,13 @@ public class ItemPreviewActivity extends AppCompatActivity {
         private final Leaflet_PreferenceClass pref;
         private boolean hasUserSwiped = false;
 
-        public PreviewPagerAdapter(Context context, List<PreviewItem> items, String previewMode, int initialPosition,
+        public PreviewPagerAdapter(Context context, List<PreviewItem> items, String previewMode, String categoryName, int initialPosition,
                                    OnLikeClickListener listener, OnSwipePromptClickListener swipeListener,
                                    OnItemUnlockClickListener unlockListener) {
             this.context = context;
             this.items = items;
             this.previewMode = previewMode;
+            this.categoryName = categoryName;
             this.initialPosition = initialPosition;
             this.onLikeClickListener = listener;
             this.onSwipePromptClickListener = swipeListener;
@@ -1186,6 +1277,50 @@ public class ItemPreviewActivity extends AppCompatActivity {
         public void onBindViewHolder(@NonNull PreviewViewHolder holder, int position) {
             PreviewItem item = items.get(position);
 
+            // Responsive Aspect Ratio: Keep card at natural flyer/poster proportions (507:700 = 1:1.38)
+            // Centered cleanly in ViewPager so it never blows up into an elongated slab or touches the bottom button
+            holder.itemView.post(() -> {
+                int totalHeight = holder.itemView.getHeight();
+                int totalWidth = holder.itemView.getWidth();
+                if (totalHeight > 0 && totalWidth > 0) {
+                    float density = context.getResources().getDisplayMetrics().density;
+                    int horizontalPadding = (int) (32 * density); // 16dp start + 16dp end
+                    int verticalPadding = (int) (16 * density);   // 6dp top + 10dp bottom
+                    int availableWidth = totalWidth - horizontalPadding;
+                    int availableHeight = totalHeight - verticalPadding;
+
+                    int targetCardHeight;
+                    boolean isBackground = MODE_BACKGROUND.equals(previewMode)
+                            || (item.getSubtitle() != null && item.getSubtitle().toLowerCase().contains("background"));
+                    if (isBackground) {
+                        // Backgrounds fill the full preview card area, matching templates
+                        targetCardHeight = availableHeight;
+                    } else {
+                        float ratioMultiplier = 1.38f;
+                        String ratioStr = item.getRatio();
+                        if (ratioStr != null && !ratioStr.isEmpty()) {
+                            if (ratioStr.contains(":")) {
+                                String[] parts = ratioStr.split(":");
+                                try {
+                                    float w = Float.parseFloat(parts[0].trim());
+                                    float h = Float.parseFloat(parts[1].trim());
+                                    if (w > 0) ratioMultiplier = h / w;
+                                } catch (Exception ignored) {}
+                            }
+                        }
+
+                        int maxCardHeight = (int) (availableWidth * ratioMultiplier);
+                        targetCardHeight = Math.min(availableHeight, maxCardHeight);
+                    }
+
+                    ViewGroup.LayoutParams lp = holder.cardPreview.getLayoutParams();
+                    if (lp != null && lp.height != targetCardHeight) {
+                        lp.height = targetCardHeight;
+                        holder.cardPreview.setLayoutParams(lp);
+                    }
+                }
+            });
+
             holder.progressBarLoading.setVisibility(View.VISIBLE);
 
             boolean isPremium = item.isPremium();
@@ -1204,7 +1339,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
             // Lock and blur overlay only if locked and preview NOT yet unlocked
             boolean showLockVisuals = isPremium && isLockFeatureEnabled && !isPreviewUnlocked;
             if (holder.fl_center_lock != null) {
-                holder.fl_center_lock.setVisibility(showLockVisuals ? View.VISIBLE : View.GONE);
+                holder.fl_center_lock.setVisibility((showLockVisuals && isBlurEnabled) ? View.VISIBLE : View.GONE);
                 holder.fl_center_lock.setOnClickListener(v -> {
                     if (onItemUnlockClickListener != null) {
                         onItemUnlockClickListener.onItemUnlockClick(position);
@@ -1220,8 +1355,10 @@ public class ItemPreviewActivity extends AppCompatActivity {
                 });
             }
 
-            // Swipe up prompt - ONLY on the first item opened, animated gently
-            if (position == initialPosition && !hasUserSwiped) {
+            // Swipe up prompt - ONLY on the first item opened, animated gently, AND ONLY IF THERE IS A NEXT ITEM AND NOT FAVORITES
+            boolean isFavorites = categoryName != null && (categoryName.toLowerCase().contains("liked") || categoryName.toLowerCase().contains("favorite"));
+            boolean canSwipeMore = items.size() > 1 && position < items.size() - 1 && !isFavorites;
+            if (canSwipeMore && position == initialPosition && !hasUserSwiped) {
                 holder.llSwipePrompt.setVisibility(View.VISIBLE);
                 startSwipeUpAnimation(holder.llSwipePrompt);
                 holder.llSwipePrompt.setOnClickListener(v -> {

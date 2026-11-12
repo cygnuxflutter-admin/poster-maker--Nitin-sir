@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android" 
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" 
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     android:background="#F8F9FE"
     android:clipChildren="false"
     android:keepScreenOn="true"
@@ -14,17 +15,20 @@
         android:layout_height="200dp"
         android:background="@drawable/bg_home_top_gradient" />
 
+    <!-- Tier 3: SwipeRefreshLayout + Scrollable Content (Above Banner Ad Container) -->
     <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="70dp">
+        android:layout_alignParentTop="true"
+        android:layout_above="@+id/ll_bottom_bar">
 
         <androidx.core.widget.NestedScrollView
             android:id="@+id/nested_scroll_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:fillViewport="true"
+            android:paddingBottom="16dp"
             android:clipToPadding="false"
             android:clipChildren="false">
 
@@ -152,12 +156,11 @@
                 android:layout_marginTop="20dp"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="#1E293B">
+                app:cardBackgroundColor="#F1F5F9">
 
-                <LinearLayout
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_height="200dp">
 
                     <!-- Shimmer Loader for Hero Banner -->
                     <include layout="@layout/leaflet_hero_banner_shimmer"
@@ -181,7 +184,7 @@
 
                     </com.online.flyer.design.postermaker.Leaflet_components.Leaflet_NestedScrollableHost>
 
-                </LinearLayout>
+                </FrameLayout>
             </androidx.cardview.widget.CardView>
 
             <!-- Dot Indicators (Moved outside the banner box) -->
@@ -730,8 +733,8 @@
                     android:layout_centerVertical="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
                         android:src="@drawable/ic_header_popular_flame" />
 
                     <TextView
@@ -788,11 +791,11 @@
                 android:id="@+id/popular_posters_rv"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="220dp"
+                android:minHeight="172dp"
                 android:layout_marginTop="14dp"
                 android:paddingStart="20dp"
                 android:paddingEnd="20dp"
-                android:layout_marginBottom="20dp"
+                android:layout_marginBottom="16dp"
                 android:clipToPadding="false"
                 android:clipChildren="false"
                 android:orientation="horizontal"
@@ -801,19 +804,21 @@
                 android:overScrollMode="never" />
             <!-- ============== END POPULAR POSTERS ============== -->
 
+
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
     </com.online.flyer.design.postermaker.Leaflet_view.Leaflet_CustomSwipeRefreshLayout>
 
+    <!-- Tier 1 & 2: Bottom Navigation + Banner Container Pinned to Bottom -->
     <LinearLayout
-        android:id="@+id/bottom_container"
+        android:id="@+id/ll_bottom_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:background="#FFFFFF"
+        android:layout_alignParentBottom="true"
         android:orientation="vertical">
 
-        <!-- Banner Ad Container -->
+        <!-- Banner Ad Container (Visible only when Ad loads) -->
         <RelativeLayout
             android:id="@+id/banner_ad_container_home"
             android:layout_width="match_parent"
@@ -821,10 +826,16 @@
             android:background="#FFFFFF"
             android:paddingTop="4dp"
             android:paddingBottom="4dp"
-            android:visibility="gone"/>
+            android:visibility="gone" />
 
-        <include layout="@layout/layout_bottom_nav" />
+        <!-- Floating Bottom Navigation Bar -->
+        <include
+            android:id="@+id/bottom_nav_include"
+            layout="@layout/layout_bottom_nav"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
     </LinearLayout>
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</RelativeLayout>
 

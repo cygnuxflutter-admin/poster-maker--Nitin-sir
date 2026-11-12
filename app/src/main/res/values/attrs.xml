@@ -24,19 +24,23 @@
         <item name="android:windowIsFloating">false</item>
     </style>
 
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/appbg</item>
         <item name="colorPrimaryDark">@color/appbg</item>
-        <item name="titleTextColor">@color/white</item>`n        <item name="android:windowBackground">@color/white</item>
-
+        <item name="titleTextColor">@color/white</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
     <style name="AppTheme1" parent="Theme.AppCompat.Light.NoActionBar">
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/appbg</item>
         <item name="colorPrimaryDark">@color/appbg</item>
-        <item name="titleTextColor">@color/white</item>`n        <item name="android:windowBackground">@color/white</item>
-
+        <item name="titleTextColor">@color/white</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
     <style name="DialogAnimation_2">
         <item name="android:windowEnterAnimation">@anim/leaflet_slide_up_new</item>

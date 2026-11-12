@@ -32,7 +32,10 @@ public class Leaflet_MyCreationActivity extends AppCompatActivity {
         supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         super.onCreate(savedInstanceState);
 
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            getWindow().setStatusBarColor(android.graphics.Color.WHITE);
+        }
 
         setContentView(R.layout.leaflet_activity_my_creation);
 
@@ -52,10 +55,13 @@ public class Leaflet_MyCreationActivity extends AppCompatActivity {
         txtEmptyMsg = findViewById(R.id.txtEmptyMsg);
 
         RelativeLayout rl_ad = findViewById(R.id.rl_ad);
-        if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
-            if (new Leaflet_PreferenceClass(this).getAdsId("BannerAdunitID") != null) {
-                loadAdmobBannerAd(this, rl_ad);
+        Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(this);
+        if (pref.isBannerAdEnabled("my_creation")) {
+            if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
+                loadAdmobBannerAd(this, rl_ad, "my_creation");
             }
+        } else if (rl_ad != null) {
+            rl_ad.setVisibility(View.GONE);
         }
     }
 
@@ -83,6 +89,7 @@ public class Leaflet_MyCreationActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "my_creation", "back_button");
         com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
             @Override
             public void onAdClose() {
@@ -95,6 +102,7 @@ public class Leaflet_MyCreationActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "my_creation");
         if (myCreationAdapter != null) {
             setTemplateAdapter();
         }

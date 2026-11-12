@@ -42,44 +42,48 @@ public class Leaflet_DlTemplateAsync extends AsyncTask<String, String, String> {
     protected String doInBackground(String... strings) {
         try {
             for (int i = 0; i < stringArrayList.size(); i++) {
+                String uri = stringArrayList.get(i);
+                if (uri == null || uri.trim().isEmpty()) continue;
+
                 File dir = Leaflet_FileUtils.getRootPath(activity);
                 dir.mkdirs();
-                File file = new File(dir, Leaflet_FileUtils.getFileName(stringArrayList.get(i)));
+                File file = new File(dir, Leaflet_FileUtils.getFileName(uri));
 
-                if(!file.exists()) {
-                    String uri = stringArrayList.get(i);
-                    URL url = new URL(uri);
-                    URLConnection urlConnection = url.openConnection();
-                    urlConnection.connect();
+                if (!file.exists()) {
+                    try {
+                        URL url = new URL(uri);
+                        URLConnection urlConnection = url.openConnection();
+                        urlConnection.setConnectTimeout(8000);
+                        urlConnection.setReadTimeout(12000);
+                        urlConnection.connect();
 
-//                    file.createNewFile();
-//                    String PATH = file.getPath();
-//                    Log.e("PATH", "==" + PATH);
-//                    File folder = new File(PATH);
-//                    if (!folder.exists()) {
-//                        folder.mkdir();
-//                    }
-                    InputStream input;
-                    input = new BufferedInputStream(url.openStream());
-                    OutputStream output = new FileOutputStream(file);
-                    byte[] data = new byte[1024];
-                    while (true) {
-                        int count = input.read(data);
-                        if (count == -1) {
-                            break;
+                        InputStream input = new BufferedInputStream(url.openStream());
+                        OutputStream output = new FileOutputStream(file);
+                        byte[] data = new byte[1024];
+                        while (true) {
+                            int count = input.read(data);
+                            if (count == -1) {
+                                break;
+                            }
+                            output.write(data, 0, count);
                         }
-                        output.write(data, 0, count);
+                        output.flush();
+                        output.close();
+                        input.close();
+                    } catch (Exception e) {
+                        android.util.Log.e("DlTemplateAsync", "Failed to download asset: " + uri, e);
+                        // If the primary background image (index 0) fails, that is critical
+                        if (i == 0) {
+                            return "error";
+                        }
+                        // Non-critical assets (fonts/stickers) failure should not abort opening the template
                     }
-                    output.flush();
-                    output.close();
-                    input.close();
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
             return "error";
-        }///storage/emulated/0/DCIM/BM Infotech/Festival Adbanao/.poster_data/.temp/.framedata/5404_18-08-2018__1534570928.png: open failed: EISDIR (Is a directory)
+        }
         return "success";
     }
 

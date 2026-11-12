@@ -4,9 +4,11 @@ import static android.app.Activity.RESULT_OK;
 
 import android.Manifest;
 import android.app.Activity;
+import android.view.View;
 import android.app.Dialog;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -41,6 +43,7 @@ import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass
 import com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip;
 import com.yalantis.ucrop.UCrop;
 import com.yalantis.ucrop.model.AspectRatio;
+import com.yalantis.ucrop.view.CropImageView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -76,24 +79,23 @@ public class Leaflet_BGSelectionController {
     }
 
     public void loadBgImages() {
+        showSkeleton();
         String cachedJson = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().getCache(activity, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.KEY_BACKGROUNDS);
         if (cachedJson != null && !cachedJson.trim().isEmpty()) {
-            // Instant 0-second loading from cache!
-            Log.d("BGController", "Loading backgrounds instantly from cache...");
+            Log.d("BGController", "Loading backgrounds from cache...");
             parseAndDisplayBgJson(cachedJson, true);
 
             // Silent background refresh
             getBgThumb(preferenceClass.getDataType("field_0"), true);
         } else {
             Log.d("BGController", "No backgrounds cache found, fetching from API...");
-            startMaterialDialog();
             getBgThumb(preferenceClass.getDataType("field_0"), false);
         }
     }
 
     public void refreshData(boolean forceRefresh) {
         if (forceRefresh) {
-            startMaterialDialog();
+            showSkeleton();
             getBgThumb(preferenceClass.getDataType("field_0"), false);
         } else {
             getBgThumb(preferenceClass.getDataType("field_0"), true);
@@ -196,6 +198,8 @@ public class Leaflet_BGSelectionController {
     private void setPagerAdapter(ArrayList<Leaflet_BgModel> posterDataLists) {
         if (activity == null || activity.isFinishing()) return;
 
+        hideSkeleton();
+
         Leaflet_PagerSlidingTabStrip tabs = activity.findViewById(R.id.pagerSlidingTabStrip);
         ViewPager viewPager = activity.findViewById(R.id.viewPager);
         if (viewPager == null || tabs == null) {
@@ -227,6 +231,7 @@ public class Leaflet_BGSelectionController {
     }
 
     public void openPhotoGallery() {
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 //            if (activity.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED
 //                    || activity.checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
@@ -248,6 +253,7 @@ public class Leaflet_BGSelectionController {
     }
 
     public void openCamera() {
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 //            if (activity.checkSelfPermission("android.permission.CAMERA") != PERMISSION_GRANTED
 //                    || activity.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PERMISSION_GRANTED
@@ -276,6 +282,7 @@ public class Leaflet_BGSelectionController {
     }
 
     public void openColorDialog() {
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
 //        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 //            if (activity.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED
 //                    || activity.checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
@@ -422,7 +429,30 @@ public class Leaflet_BGSelectionController {
         }).show();
     }
 
-    public void startCrop(@NonNull Uri uri) {
+        private int[] getImageDimensions(@NonNull Uri uri) {
+        try {
+            BitmapFactory.Options opts = new BitmapFactory.Options();
+            opts.inJustDecodeBounds = true;
+            if ("file".equalsIgnoreCase(uri.getScheme()) && uri.getPath() != null) {
+                BitmapFactory.decodeFile(uri.getPath(), opts);
+            }
+            if (opts.outWidth <= 0 || opts.outHeight <= 0) {
+                java.io.InputStream is = activity.getContentResolver().openInputStream(uri);
+                if (is != null) {
+                    BitmapFactory.decodeStream(is, null, opts);
+                    is.close();
+                }
+            }
+            if (opts.outWidth > 0 && opts.outHeight > 0) {
+                return new int[]{opts.outWidth, opts.outHeight};
+            }
+        } catch (Exception e) {
+            Log.e("BGController", "Error reading image dimensions: " + e.getMessage());
+        }
+        return new int[]{1, 1};
+    }
+
+public void startCrop(@NonNull Uri uri) {
         String destinationFileName = "SampleCropImage.png";
 //        File file=new File(activity.getCacheDir(), destinationFileName);
 //        if (file.exists()){
@@ -430,47 +460,81 @@ public class Leaflet_BGSelectionController {
 //        }
 //        UCrop uCrop = UCrop.of(uri, Uri.fromFile(new File(Environment.getExternalStorageDirectory(), destinationFileName)));
         UCrop uCrop = UCrop.of(uri, Uri.fromFile(new File(activity.getCacheDir(), destinationFileName)));
-        uCrop = advancedConfig(uCrop);
+        uCrop = advancedConfig(uCrop, uri);
         uCrop.start(activity);
     }
 
 
-    private UCrop advancedConfig(@NonNull UCrop uCrop) {
+    private UCrop advancedConfig(@NonNull UCrop uCrop, @NonNull Uri uri) {
+        int[] dims = getImageDimensions(uri);
+        int imgW = dims[0];
+        int imgH = dims[1];
         UCrop.Options options = new UCrop.Options();
-        options.setToolbarColor(ContextCompat.getColor(activity, R.color.purple_700));
-        options.setStatusBarColor(ContextCompat.getColor(activity, R.color.purple_700));
-        options.setRootViewBackgroundColor(ContextCompat.getColor(activity, R.color.purple_200));
+        options.setFreeStyleCropEnabled(true);
+        options.setToolbarColor(Color.parseColor("#1E293B"));
+        options.setStatusBarColor(Color.parseColor("#0F172A"));
+        options.setRootViewBackgroundColor(Color.parseColor("#F1F5F9"));
         options.setActiveControlsWidgetColor(ContextCompat.getColor(activity, R.color.selected));
         options.setToolbarWidgetColor(ContextCompat.getColor(activity, R.color.white));
-        options.setAspectRatioOptions(1,
+        options.setAspectRatioOptions(0,
+                new AspectRatio("Orig", imgW, imgH),
                 new AspectRatio("1:1", 1, 1),
-                new AspectRatio("3:2", 3, 2),
-                new AspectRatio("2:3", 2, 3),
-                new AspectRatio("4:3", 4, 3),
-                new AspectRatio("3:4", 3, 4),
+                new AspectRatio("9:16", 9, 16),
                 new AspectRatio("16:9", 16, 9),
-                new AspectRatio("5:4", 5, 4),
-                new AspectRatio("4:5", 4, 5));
+                new AspectRatio("4:5", 4, 5),
+                new AspectRatio("3:4", 3, 4),
+                new AspectRatio("4:3", 4, 3),
+                new AspectRatio("2:3", 2, 3),
+                new AspectRatio("3:2", 3, 2));
         return uCrop.withOptions(options);
     }
 
+    private void showSkeleton() {
+        if (activity == null || activity.isFinishing()) return;
+        com.facebook.shimmer.ShimmerFrameLayout shimmer = activity.findViewById(R.id.layout_skeleton_grid);
+        if (shimmer != null) {
+            shimmer.setVisibility(View.VISIBLE);
+            shimmer.startShimmer();
+        }
+        View viewPagerLay = activity.findViewById(R.id.viewPagerLay);
+        if (viewPagerLay != null) viewPagerLay.setVisibility(View.GONE);
+        View swipeRefresh = activity.findViewById(R.id.swipe_refresh);
+        if (swipeRefresh != null) swipeRefresh.setVisibility(View.GONE);
+    }
+
+    private void hideSkeleton() {
+        if (activity == null || activity.isFinishing()) return;
+        com.facebook.shimmer.ShimmerFrameLayout shimmer = activity.findViewById(R.id.layout_skeleton_grid);
+        if (shimmer != null) {
+            shimmer.stopShimmer();
+            shimmer.setVisibility(View.GONE);
+        }
+        View viewPagerLay = activity.findViewById(R.id.viewPagerLay);
+        if (viewPagerLay != null) viewPagerLay.setVisibility(View.VISIBLE);
+        View swipeRefresh = activity.findViewById(R.id.swipe_refresh);
+        if (swipeRefresh != null) swipeRefresh.setVisibility(View.VISIBLE);
+    }
+
     public void startMaterialDialog() {
-        materialDialog = Leaflet_MaterialDialogUtils.getInstance().createAnimationDialog(activity);
-        Objects.requireNonNull(materialDialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-        materialDialog.setCancelable(false);
-        materialDialog.show();
+        try {
+            if (materialDialog != null && materialDialog.isShowing()) return;
+            materialDialog = Leaflet_MaterialDialogUtils.getInstance().createAnimationDialog(activity);
+            if (materialDialog != null && materialDialog.getWindow() != null) {
+                materialDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+            if (materialDialog != null) {
+                materialDialog.setCancelable(false);
+                materialDialog.show();
+            }
+        } catch (Exception ignored) {}
     }
 
     public void dismissMaterialDialog() {
         try {
-            if (activity != null && !activity.isFinishing()) {
-                if (materialDialog != null && materialDialog.isShowing()) {
-                    materialDialog.dismiss();
-                }
+            if (materialDialog != null && materialDialog.isShowing()) {
+                materialDialog.dismiss();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception ignored) {}
     }
 
 }

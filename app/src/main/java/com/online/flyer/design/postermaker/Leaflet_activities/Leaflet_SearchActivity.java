@@ -193,6 +193,9 @@ public class Leaflet_SearchActivity extends AppCompatActivity {
      */
     private void filterCategories(String query) {
         String cleanQuery = (query == null) ? "" : query.trim().toLowerCase();
+        if (cleanQuery.length() >= 3) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logSearchQuery(this, cleanQuery);
+        }
 
         List<SearchCategoryItem> poolByFilter = new ArrayList<>();
         for (SearchCategoryItem item : allCategoriesList) {
@@ -266,7 +269,9 @@ public class Leaflet_SearchActivity extends AppCompatActivity {
     }
 
     private void onCategoryClicked(SearchCategoryItem item) {
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
         hideKeyboard();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logCategorySelected(this, item.getName(), String.valueOf(item.getId()), "search_result");
         // Trigger Interstitial Ad with count logic
         Leaflet_MyApplication.showSearchInterstitialAd(this, () -> navigateToCategory(item));
     }
@@ -285,8 +290,16 @@ public class Leaflet_SearchActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "search");
+    }
+
     private void handleBackWithAd() {
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
         hideKeyboard();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "search", "back_button");
         Leaflet_MyApplication.showSearchInterstitialAd(this, this::finish);
     }
 

@@ -25,14 +25,22 @@ public class Leaflet_LoadAds {
         if (activity == null || mainLayout == null) return;
         
         Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(activity);
-        if (screenType != null && !pref.isBannerAdEnabled(screenType)) {
+        String sType = (screenType != null && !screenType.trim().isEmpty()) ? screenType : "banner";
+        if (!pref.isBannerAdEnabled(sType)) {
+            Log.d("AdManager", "loadAdmobBannerAd: Banner Ad is disabled for screen '" + sType + "'. Skipping request.");
             mainLayout.setVisibility(View.GONE);
             return;
         }
 
-        String bannerId = screenType != null ? pref.getBannerAdId(screenType) : pref.getAdsId("BannerAdunitID");
+        String bannerId = pref.getBannerAdId(sType);
         if (bannerId == null || bannerId.trim().isEmpty() || bannerId.equals("null")) {
             bannerId = pref.getAdsId("BannerAdunitID");
+        }
+
+        if (bannerId == null || bannerId.trim().isEmpty() || bannerId.equals("null")) {
+            Log.d("AdManager", "loadAdmobBannerAd: Banner Ad ID is null or empty. Skipping request.");
+            mainLayout.setVisibility(View.GONE);
+            return;
         }
         
         if (BuildConfig.DEBUG) {
@@ -40,11 +48,6 @@ public class Leaflet_LoadAds {
             Log.d("AdManager", "Debug Mode: Using Test Banner ID");
         } else {
             Log.d("AdManager", "Fetching Banner Ad from Firebase (via Prefs): " + bannerId);
-        }
-
-        if (bannerId == null || bannerId.trim().isEmpty() || bannerId.equals("null")) {
-            mainLayout.setVisibility(View.GONE);
-            return;
         }
 
         AdView adView = new AdView(activity);
@@ -86,20 +89,30 @@ public class Leaflet_LoadAds {
         params.addRule(RelativeLayout.CENTER_IN_PARENT);
         mainLayout.addView(adView, params);
 
+        boolean showShimmerOnFail = pref.shouldShowBannerShimmerOnFail(screenType);
+
         adView.setAdListener(new AdListener() {
             @Override
             public void onAdLoaded() {
                 Log.d("AdManager", "Banner Ad Loaded");
                 shimmerView.setVisibility(View.GONE);
                 mainLayout.setVisibility(View.VISIBLE);
+                adView.setVisibility(View.VISIBLE);
             }
 
             @Override
             public void onAdFailedToLoad(@NonNull LoadAdError adError) {
                 Log.d("AdManager", "Banner Ad Failed: " + adError.getMessage());
-                // User requested NOT to hide the box if AdMob fails, keep the loader spinning
-                adView.setVisibility(View.GONE);
-                shimmerView.setVisibility(View.VISIBLE);
+                if (showShimmerOnFail) {
+                    adView.setVisibility(View.GONE);
+                    shimmerView.setVisibility(View.VISIBLE);
+                    mainLayout.setVisibility(View.VISIBLE);
+                } else {
+                    adView.setVisibility(View.GONE);
+                    shimmerView.setVisibility(View.GONE);
+                    mainLayout.removeAllViews();
+                    mainLayout.setVisibility(View.GONE);
+                }
             }
 
             @Override

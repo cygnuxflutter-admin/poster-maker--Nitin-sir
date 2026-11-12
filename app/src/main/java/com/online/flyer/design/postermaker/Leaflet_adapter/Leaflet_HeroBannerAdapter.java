@@ -1,6 +1,7 @@
 package com.online.flyer.design.postermaker.Leaflet_adapter;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,9 +11,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+import com.facebook.shimmer.ShimmerFrameLayout;
 import com.online.flyer.design.postermaker.Leaflet_models.Leaflet_HeroBanner;
 import com.online.flyer.design.postermaker.R;
 
@@ -80,17 +88,51 @@ public class Leaflet_HeroBannerAdapter extends RecyclerView.Adapter<Leaflet_Hero
         Leaflet_HeroBanner banner = bannerList.get(realPosition);
 
         if (!TextUtils.isEmpty(banner.getImageUrl())) {
-            holder.bannerImage.setVisibility(View.VISIBLE);
-            holder.bannerPlaceholder.setVisibility(View.GONE);
+            // API image available: start shimmer skeleton until image arrives
+            if (holder.bannerPlaceholder != null) holder.bannerPlaceholder.setVisibility(View.GONE);
+            if (holder.bannerShimmer != null) {
+                holder.bannerShimmer.setVisibility(View.VISIBLE);
+                holder.bannerShimmer.startShimmer();
+            }
+            holder.bannerImage.setVisibility(View.INVISIBLE);
+
             Glide.with(context)
                     .load(banner.getImageUrl())
-                    .placeholder(R.drawable.bg_hero_banner_placeholder)
-                    .error(R.drawable.bg_hero_banner_placeholder)
+                    .transition(DrawableTransitionOptions.withCrossFade(250))
                     .centerCrop()
+                    .listener(new RequestListener<Drawable>() {
+                        @Override
+                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                            if (holder.bannerShimmer != null) {
+                                holder.bannerShimmer.stopShimmer();
+                                holder.bannerShimmer.setVisibility(View.GONE);
+                            }
+                            if (holder.bannerPlaceholder != null) {
+                                holder.bannerPlaceholder.setVisibility(View.VISIBLE);
+                            }
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                            if (holder.bannerShimmer != null) {
+                                holder.bannerShimmer.stopShimmer();
+                                holder.bannerShimmer.setVisibility(View.GONE);
+                            }
+                            holder.bannerImage.setVisibility(View.VISIBLE);
+                            return false;
+                        }
+                    })
                     .into(holder.bannerImage);
         } else {
+            if (holder.bannerShimmer != null) {
+                holder.bannerShimmer.stopShimmer();
+                holder.bannerShimmer.setVisibility(View.GONE);
+            }
             holder.bannerImage.setVisibility(View.GONE);
-            holder.bannerPlaceholder.setVisibility(View.VISIBLE);
+            if (holder.bannerPlaceholder != null) {
+                holder.bannerPlaceholder.setVisibility(View.VISIBLE);
+            }
         }
 
         if (!TextUtils.isEmpty(banner.getTitle())) {
@@ -117,12 +159,14 @@ public class Leaflet_HeroBannerAdapter extends RecyclerView.Adapter<Leaflet_Hero
         ImageView bannerImage;
         LinearLayout bannerPlaceholder;
         TextView bannerTitle;
+        ShimmerFrameLayout bannerShimmer;
 
         public BannerViewHolder(@NonNull View itemView) {
             super(itemView);
             bannerImage = itemView.findViewById(R.id.banner_image);
             bannerPlaceholder = itemView.findViewById(R.id.banner_placeholder);
             bannerTitle = itemView.findViewById(R.id.banner_title);
+            bannerShimmer = itemView.findViewById(R.id.banner_shimmer);
         }
     }
 }

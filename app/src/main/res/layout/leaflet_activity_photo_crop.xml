@@ -1,252 +1,238 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:background="@color/appbg"
+    android:id="@+id/root_crop_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
     android:fitsSystemWindows="true"
     android:keepScreenOn="true">
 
+    <!-- Top Bar -->
     <RelativeLayout
         android:id="@+id/top_ly"
         android:layout_width="match_parent"
-        android:layout_height="55dp"
+        android:layout_height="56dp"
         android:layout_alignParentStart="true"
-        android:layout_alignParentTop="true">
+        android:layout_alignParentTop="true"
+        android:background="#FFFFFF"
+        android:elevation="1dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
 
         <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/appbg"
-            android:rotation="180" />
+            android:id="@+id/btn_backPress"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_circle_button_flat"
+            android:clickable="true"
+            android:focusable="true">
 
-        <RelativeLayout
-            android:id="@+id/save_ly"
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_centerInParent="true"
+                android:src="@drawable/ic_arrow_back"
+                app:tint="#1E293B" />
+        </RelativeLayout>
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:fontFamily="@font/leaflet_visbyroundcf_bold"
+            android:text="@string/crop"
+            android:textColor="#111827"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <RelativeLayout
+            android:id="@+id/done_ly"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
             android:layout_alignParentEnd="true"
-            android:layout_centerVertical="true">
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_circle_button_flat"
+            android:clickable="true"
+            android:focusable="true">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:id="@+id/btn_backPress"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.5"
-                    android:gravity="center">
-
-                    <ImageView
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_circle_button_flat"
-                        android:padding="9dp"
-                        android:src="@drawable/ic_arrow_back"
-                        app:tint="#1E293B" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="2.5"
-                    android:gravity="center">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
-                        android:gravity="center"
-                        android:text="@string/crop"
-                        android:textColor="@color/white"
-                        android:textSize="18sp" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/done_ly"
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="0.5"
-                    android:gravity="center">
-
-                    <ImageView
-                        android:layout_width="25dp"
-                        android:layout_height="25dp"
-                        android:src="@drawable/leaflet_ic_check" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_centerInParent="true"
+                android:src="@drawable/leaflet_ic_check"
+                app:tint="#0066FF" />
         </RelativeLayout>
+
     </RelativeLayout>
 
+    <!-- Crop Canvas View Area -->
     <RelativeLayout
         android:id="@+id/rel"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:layout_above="@+id/bottom_ly"
         android:layout_below="@+id/top_ly"
-        android:layout_margin="1.0dip">
+        android:background="#F8FAFC">
 
         <com.online.flyer.design.postermaker.Leaflet_cropper.Leaflet_CropImageView
             android:id="@+id/cropImageView"
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
             app:cropBorderCornerOffset="0dp"
-            app:cropBorderCornerThickness="7dp"
+            app:cropBorderCornerThickness="6dp"
             app:cropBorderLineThickness="2dp"
+            app:cropBorderCornerColor="#0066FF"
+            app:cropBorderLineColor="#0066FF"
             app:cropGuidelines="off" />
     </RelativeLayout>
 
-
+    <!-- Bottom Aspect Ratio Control Panel -->
     <RelativeLayout
         android:id="@+id/bottom_ly"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true"
-        android:layout_alignParentBottom="true">
+        android:layout_alignParentBottom="true"
+        android:background="#FFFFFF"
+        android:elevation="6dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
+            android:layout_marginHorizontal="12dp"
             android:orientation="vertical">
 
+            <!-- Top Row: Free Style, 1:1, 16:9 -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal">
 
                 <RelativeLayout
                     android:id="@+id/freeRatio"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_3sdp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
                     android:layout_weight="1">
 
                     <TextView
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/_30sdp"
+                        android:layout_height="38dp"
                         android:layout_centerInParent="true"
-                        android:layout_marginTop="5.0dip"
                         android:background="@drawable/leaflet_btn_rounded_text_bg"
-                        android:fontFamily="@font/leaflet_visbyroundcf_medium"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
                         android:gravity="center"
                         android:text="Free Style"
-                        android:textColor="@color/appbg"
-                        android:textSize="12.0sp" />
+                        android:textColor="#FFFFFF"
+                        android:textSize="12.5sp" />
                 </RelativeLayout>
 
                 <RelativeLayout
                     android:id="@+id/ratio1"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_3sdp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
                     android:layout_weight="1">
 
                     <TextView
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/_30sdp"
+                        android:layout_height="38dp"
                         android:layout_centerInParent="true"
-                        android:layout_marginTop="5.0dip"
                         android:background="@drawable/leaflet_btn_rounded_text_bg"
-                        android:fontFamily="@font/leaflet_visbyroundcf_medium"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
                         android:gravity="center"
                         android:text="1:1"
-                        android:textColor="@color/appbg"
-                        android:textSize="12.0sp" />
+                        android:textColor="#FFFFFF"
+                        android:textSize="12.5sp" />
                 </RelativeLayout>
 
                 <RelativeLayout
                     android:id="@+id/ratio2"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_3sdp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
                     android:layout_weight="1">
 
                     <TextView
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/_30sdp"
+                        android:layout_height="38dp"
                         android:layout_centerInParent="true"
-                        android:layout_marginTop="5.0dip"
                         android:background="@drawable/leaflet_btn_rounded_text_bg"
-                        android:fontFamily="@font/leaflet_visbyroundcf_medium"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
                         android:gravity="center"
                         android:text="16:9"
-                        android:textColor="@color/appbg"
-                        android:textSize="12.0sp" />
+                        android:textColor="#FFFFFF"
+                        android:textSize="12.5sp" />
                 </RelativeLayout>
 
             </LinearLayout>
 
+            <!-- Bottom Row: 9:16, 4:3, 3:4 -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
                 android:orientation="horizontal">
 
                 <RelativeLayout
                     android:id="@+id/ratio3"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_3sdp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
                     android:layout_weight="1">
 
                     <TextView
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/_30sdp"
+                        android:layout_height="38dp"
                         android:layout_centerInParent="true"
-                        android:layout_marginTop="5.0dip"
                         android:background="@drawable/leaflet_btn_rounded_text_bg"
-                        android:fontFamily="@font/leaflet_visbyroundcf_medium"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
                         android:gravity="center"
                         android:text="9:16"
-                        android:textColor="@color/appbg"
-                        android:textSize="12.0sp" />
+                        android:textColor="#FFFFFF"
+                        android:textSize="12.5sp" />
                 </RelativeLayout>
 
                 <RelativeLayout
                     android:id="@+id/ratio4"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_3sdp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
                     android:layout_weight="1">
 
                     <TextView
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/_30sdp"
+                        android:layout_height="38dp"
                         android:layout_centerInParent="true"
-                        android:layout_marginTop="5.0dip"
                         android:background="@drawable/leaflet_btn_rounded_text_bg"
-                        android:fontFamily="@font/leaflet_visbyroundcf_medium"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
                         android:gravity="center"
                         android:text="4:3"
-                        android:textColor="@color/appbg"
-                        android:textSize="12.0sp" />
+                        android:textColor="#FFFFFF"
+                        android:textSize="12.5sp" />
                 </RelativeLayout>
 
                 <RelativeLayout
                     android:id="@+id/ratio5"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_margin="@dimen/_3sdp"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp"
                     android:layout_weight="1">
 
                     <TextView
                         android:layout_width="match_parent"
-                        android:layout_height="@dimen/_30sdp"
+                        android:layout_height="38dp"
                         android:layout_centerInParent="true"
-                        android:layout_marginTop="5.0dip"
                         android:background="@drawable/leaflet_btn_rounded_text_bg"
-                        android:fontFamily="@font/leaflet_visbyroundcf_medium"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
                         android:gravity="center"
                         android:text="3:4"
-                        android:textColor="@color/appbg"
-                        android:textSize="12.0sp" />
+                        android:textColor="#FFFFFF"
+                        android:textSize="12.5sp" />
                 </RelativeLayout>
             </LinearLayout>
 

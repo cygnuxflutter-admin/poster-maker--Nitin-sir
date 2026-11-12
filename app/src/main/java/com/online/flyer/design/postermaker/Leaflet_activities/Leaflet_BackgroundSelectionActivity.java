@@ -41,6 +41,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     private boolean isRewarded = false;
 
     private ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> allCategories;
+    private boolean isLoadingBg = false;
     private ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> currentTabList;
 
     @Override
@@ -61,13 +62,25 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         }
 
         android.view.View backBtn = findViewById(R.id.ic_back);
-        if (backBtn != null) backBtn.setOnClickListener(v -> onBackPressed());
+        if (backBtn != null) backBtn.setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            onBackPressed();
+        });
         android.view.View backContainer = findViewById(R.id.ic_back_container);
-        if (backContainer != null) backContainer.setOnClickListener(v -> onBackPressed());
+        if (backContainer != null) backContainer.setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            onBackPressed();
+        });
 
-        findViewById(R.id.ic_gallery).setOnClickListener(v -> bgSelectionController.openPhotoGallery());
+        findViewById(R.id.ic_gallery).setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            bgSelectionController.openPhotoGallery();
+        });
 
-        findViewById(R.id.ic_color).setOnClickListener(v -> bgSelectionController.openColorDialog());
+        findViewById(R.id.ic_color).setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            bgSelectionController.openColorDialog();
+        });
 
 
         android.view.View lyTitle = findViewById(R.id.ly_title);
@@ -77,8 +90,6 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         android.widget.EditText etSearch = findViewById(R.id.et_search);
 
         if (getIntent().getBooleanExtra("auto_load", false)) {
-            findViewById(R.id.viewPager).setVisibility(android.view.View.GONE);
-            findViewById(R.id.pagerSlidingTabStrip).setVisibility(android.view.View.GONE);
             String autoBgPath = getIntent().getStringExtra("bg_image");
             boolean premium = getIntent().getBooleanExtra("premium", false);
             onPosterClick(autoBgPath, premium);
@@ -151,6 +162,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
                     com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad, "backgrounds");
                 }
             } else {
+                rl_ad.removeAllViews();
                 rl_ad.setVisibility(android.view.View.GONE);
             }
         }
@@ -162,9 +174,83 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         bgSelectionController = new Leaflet_BGSelectionController(this, getSupportFragmentManager(), preferenceClass, mode);
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        selectTargetCategory();
+    }
+
+    private void selectTargetCategory() {
+        if (allCategories == null || currentTabList == null) return;
+        String targetCat = getIntent().getStringExtra("category_name");
+        String targetCatId = getIntent().getStringExtra("category_id");
+        if (targetCat == null && targetCatId == null) return;
+
+        androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
+        if (vp == null) return;
+
+        int targetIndex = -1;
+        // 1. Try matching by category_id
+        if (targetCatId != null && !targetCatId.trim().isEmpty()) {
+            for (int i = 0; i < allCategories.size(); i++) {
+                if (String.valueOf(allCategories.get(i).getCategory_id()).equals(targetCatId.trim())) {
+                    targetIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // 2. Try exact name match (case-insensitive)
+        if (targetIndex == -1 && targetCat != null && !targetCat.trim().isEmpty()) {
+            String cleanTarget = targetCat.trim().toLowerCase();
+            for (int i = 0; i < allCategories.size(); i++) {
+                String catName = allCategories.get(i).getCategory_name();
+                if (catName != null && catName.trim().equalsIgnoreCase(cleanTarget)) {
+                    targetIndex = i;
+                    break;
+                }
+            }
+        }
+
+        // 3. Try partial name match (contains)
+        if (targetIndex == -1 && targetCat != null && !targetCat.trim().isEmpty()) {
+            String cleanTarget = targetCat.trim().toLowerCase();
+            for (int i = 0; i < allCategories.size(); i++) {
+                String catName = allCategories.get(i).getCategory_name();
+                if (catName != null) {
+                    String cleanCat = catName.trim().toLowerCase();
+                    if (cleanCat.contains(cleanTarget) || cleanTarget.contains(cleanCat)) {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (targetIndex != -1) {
+            while (currentTabList.size() <= targetIndex) {
+                currentTabList.add(allCategories.get(currentTabList.size()));
+            }
+            if (vp.getAdapter() != null) {
+                vp.getAdapter().notifyDataSetChanged();
+            }
+            com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
+            if (tabs != null) tabs.notifyDataSetChanged();
+            vp.setCurrentItem(targetIndex);
+        }
+    }
+
     public void onCategoriesLoaded(ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> categories, ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> tabList) {
         this.allCategories = categories;
         this.currentTabList = tabList;
+        
+        selectTargetCategory();
+        
+        if (getIntent().getBooleanExtra("show_all_categories", false)) {
+            openAllCategories();
+            getIntent().removeExtra("show_all_categories");
+        }
         
         androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
         if (vp != null) {
@@ -197,6 +283,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     }
 
     public void openAllCategories() {
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
         if (allCategories == null) return;
         java.util.ArrayList<String> catNames = new java.util.ArrayList<>();
         for (com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel model : allCategories) {
@@ -321,6 +408,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     @Override
     public void onResume() {
         super.onResume();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "background_selection");
     }
 
     @Override
@@ -335,6 +423,10 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 
     @Override
     public void onBackPressed() {
+        if (System.currentTimeMillis() - com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.getLastAdDismissedTime() < 800) {
+            return;
+        }
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "background_selection", "back_button");
         if (getIntent().getBooleanExtra("auto_load", false)) {
             com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
                 @Override
@@ -359,6 +451,8 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 
     @Override
     public void onPosterClick(String path, boolean premium) {
+        if (isLoadingBg || com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackgroundSelected(this, path, premium ? "premium" : "free");
         if (Leaflet_NetworkUtils.isNetworkAvailable(this)) {
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 //                if (checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED || checkSelfPermission("android.permission.WRITE_EXTERNAL_STORAGE") != PackageManager.PERMISSION_GRANTED) {
@@ -374,27 +468,50 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
             strings.clear();
             strings.add(path);
             if (premium) {
+                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogShown(this, "background_unlock");
                 Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, "Use Background(One Time)", "Use premium background by watching Ads", materialDialog -> {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "background_unlock", "watch_video");
 //                    bgSelectionController.startMaterialDialog();
                     Leaflet_PreferenceClass preferenceClass = new Leaflet_PreferenceClass(this);
                     if(preferenceClass.getDataType("PremiumAdType")!=null && preferenceClass.getDataType("PremiumAdType").equals("Reward")) {
                         Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_BackgroundSelectionActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
                             @Override
                             public void onAdClose() {
+                                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(Leaflet_BackgroundSelectionActivity.this, "background_unlock");
                                 isRewarded = true;
                                 downloadTask(strings);
                             }
+
+                            @Override
+                            public void onAdFailedToEarnReward() {
+                                if (getIntent().getBooleanExtra("auto_load", false)) {
+                                    finish();
+                                }
+                            }
                         });
                     }else {
-                        Leaflet_MyApplication.showInterstitialAdWithOutCount(Leaflet_BackgroundSelectionActivity.this, () ->{
-                            isRewarded = true;
-                            downloadTask(strings);
+                        Leaflet_MyApplication.showUnlockInterstitialAd(Leaflet_BackgroundSelectionActivity.this, new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+                            @Override
+                            public void onAdClose() {
+                                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(Leaflet_BackgroundSelectionActivity.this, "background_unlock");
+                                isRewarded = true;
+                                downloadTask(strings);
+                            }
+
+                            @Override
+                            public void onAdFailedToEarnReward() {
+                                if (getIntent().getBooleanExtra("auto_load", false)) {
+                                    finish();
+                                }
+                            }
                         });
                     }
 //                    MyApplication.showInterstitialAd(this,() -> downloadTask(strings));
                     if (materialDialog != null && materialDialog.isShowing())
                         materialDialog.dismiss();
                 }, materialDialog -> {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "background_unlock", "cancel");
+                    isLoadingBg = false;
                     if (materialDialog != null && materialDialog.isShowing())
                         materialDialog.dismiss();
                     if (getIntent().getBooleanExtra("auto_load", false)) {
@@ -413,6 +530,8 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     }
 
     private void downloadTask(ArrayList<String> strings) {
+        if (isLoadingBg) return;
+        isLoadingBg = true;
         bgSelectionController.startMaterialDialog();
         new Leaflet_DlBgAsync(Leaflet_BackgroundSelectionActivity.this, strings, new Leaflet_DlBgAsync.OnDownloadTemplateListener() {
             @Override
@@ -441,6 +560,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 
             @Override
             public void onError() {
+                isLoadingBg = false;
                 Toast.makeText(Leaflet_BackgroundSelectionActivity.this, "Something went wrong!!!", Toast.LENGTH_SHORT).show();
                 bgSelectionController.dismissMaterialDialog();
             }
@@ -448,10 +568,16 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     }
 
     private void startIntent() {
+        isLoadingBg = false;
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
         Intent intent = new Intent(this, Leaflet_PosterEditActivity.class);
         intent.putExtra("bg_path", path);
         intent.putExtra("loadUserFrame", true);
         intent.putExtra("Temp_Type", "MY_TEMP");
+        if (isRewarded) {
+            intent.putExtra("show_celebration", true);
+            intent.putExtra("celebration_message", "✨ Background Unlocked!");
+        }
         startActivity(intent);
         if (getIntent().getBooleanExtra("auto_load", false)) {
             finish();

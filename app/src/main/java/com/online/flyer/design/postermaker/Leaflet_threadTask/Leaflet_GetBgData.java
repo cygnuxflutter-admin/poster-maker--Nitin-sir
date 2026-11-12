@@ -53,6 +53,7 @@ public class Leaflet_GetBgData extends AsyncTask<Void, Void, String> {
             int firstAdAfter = preferenceClass.getGridFirstAdAfter("backgrounds");
             int repeatAdAfter = preferenceClass.getGridRepeatAdAfter("backgrounds");
             boolean adEnabled = preferenceClass.isGridAdEnabled("backgrounds");
+            int premiumPostCount = preferenceClass.getPremiumPosterInterval("backgrounds");
 
             for (int j = 0; j < field_42.length(); j++) {
                 JSONObject textJSONObject = field_42.getJSONObject(j);
@@ -68,7 +69,13 @@ public class Leaflet_GetBgData extends AsyncTask<Void, Void, String> {
                     }
                 }
 
-                bgImageArrayList.add(new Leaflet_BgImage(field_43, field_44, field_45));
+                Leaflet_BgImage bgImage = new Leaflet_BgImage(field_43, field_44, field_45);
+                if (premiumPostCount > 0) {
+                    bgImage.setPremium((j + 1) % premiumPostCount == 0);
+                } else {
+                    bgImage.setPremium(false);
+                }
+                bgImageArrayList.add(bgImage);
             }
             return bgImageArrayList;
         } catch (Exception e) {

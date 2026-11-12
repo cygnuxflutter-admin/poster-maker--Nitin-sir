@@ -64,9 +64,17 @@ public class Leaflet_MyApplication extends android.app.Application {
     private android.app.Dialog noInternetDialog;
     private boolean wasDisconnected = false;
 
-    public static int interstitialClickCount = 0;
+        public static int interstitialClickCount = 0;
+    private static long lastGlobalAdInvocationTime = 0;
+    private static final long AD_DEBOUNCE_INTERVAL = 800; // 800ms debounce
 
     public static void showInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
+        long currentTime = android.os.SystemClock.elapsedRealtime();
+        if (currentTime - lastGlobalAdInvocationTime < AD_DEBOUNCE_INTERVAL) {
+            android.util.Log.d("AdDebounce", "showInterstitialAd: duplicate click ignored (" + (currentTime - lastGlobalAdInvocationTime) + "ms)");
+            return;
+        }
+        lastGlobalAdInvocationTime = currentTime;
         if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
             if (!pref.isGlobalInterstitialEnabled()) {
@@ -104,8 +112,39 @@ public class Leaflet_MyApplication extends android.app.Application {
     }
 
     public static void showInterstitialAdWithOutCount(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
+        long currentTime = android.os.SystemClock.elapsedRealtime();
+        if (currentTime - lastGlobalAdInvocationTime < AD_DEBOUNCE_INTERVAL) {
+            android.util.Log.d("AdDebounce", "showInterstitialAdWithOutCount: duplicate click ignored");
+            return;
+        }
+        lastGlobalAdInvocationTime = currentTime;
         if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
+            if (!pref.isGlobalInterstitialEnabled()) {
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
             ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager().showInterstitialAd(activity, onAdLoadInterface);
+        } else {
+            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+        }
+    }
+
+    public static void showUnlockInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
+        long currentTime = android.os.SystemClock.elapsedRealtime();
+        if (currentTime - lastGlobalAdInvocationTime < AD_DEBOUNCE_INTERVAL) {
+            android.util.Log.d("AdDebounce", "showUnlockInterstitialAd: duplicate click ignored");
+            return;
+        }
+        lastGlobalAdInvocationTime = currentTime;
+        if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
+            if (!pref.isGlobalInterstitialEnabled()) {
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
+            int minSeconds = 5;
+            ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager().showUnlockInterstitialAd(activity, minSeconds, onAdLoadInterface);
         } else {
             if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
         }
@@ -114,43 +153,19 @@ public class Leaflet_MyApplication extends android.app.Application {
     public static int editInterstitialClickCount = 0;
 
     public static void showEditInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
-        if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
-            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
-            if (!pref.isGlobalInterstitialEnabled()) {
-                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
-                return;
-            }
-            final int targetCount = pref.getEditScreenInterstitialCount();
-            
-            
-            editInterstitialClickCount++;
-            
-            Leaflet_InterstitialAdManager adManager = ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager();
-
-            if (targetCount > 1 && editInterstitialClickCount % targetCount == targetCount - 1) {
-                adManager.fetchAdMobAd();
-            }
-            
-            if (editInterstitialClickCount % targetCount == 0) {
-                Leaflet_InterstitialAdManager.OnAdLoadInterface wrappedListener = new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
-                    @Override
-                    public void onAdClose() {
-                        if (targetCount == 1) {
-                            adManager.fetchAdMobAd();
-                        }
-                        if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
-                    }
-                };
-                adManager.showInterstitialAd(activity, wrappedListener);
-            } else {
-                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
-            }
-        } else {
-            if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+        // Disabled: Editor screen relies exclusively on Reward Ad (timer/download) to prevent double ads
+        if (onAdLoadInterface != null) {
+            onAdLoadInterface.onAdClose();
         }
     }
 
     public static void showSearchInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
+        long currentTime = android.os.SystemClock.elapsedRealtime();
+        if (currentTime - lastGlobalAdInvocationTime < AD_DEBOUNCE_INTERVAL) {
+            android.util.Log.d("AdDebounce", "showSearchInterstitialAd: duplicate click ignored");
+            return;
+        }
+        lastGlobalAdInvocationTime = currentTime;
         if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref =
                     new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
@@ -203,6 +218,21 @@ public class Leaflet_MyApplication extends android.app.Application {
         // Interstitial ads disabled
     }
 
+    public static void applyScreenshotSecurity(Activity activity) {
+        if (activity == null || activity.getWindow() == null) return;
+        try {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref =
+                    new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
+            if (pref.isScreenshotDisabled()) {
+                activity.getWindow().setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE);
+                Log.d("ScreenshotSecurity", "Screenshot BLOCKED (FLAG_SECURE set) for " + activity.getClass().getSimpleName());
+            } else {
+                activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
+                Log.d("ScreenshotSecurity", "Screenshot ALLOWED (FLAG_SECURE cleared) for " + activity.getClass().getSimpleName());
+            }
+        } catch (Exception ignored) {}
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -249,11 +279,12 @@ public class Leaflet_MyApplication extends android.app.Application {
         OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
         OneSignal.initWithContext(this);
         OneSignal.setAppId("35b6d659-eeda-4729-b2c0-ebef7ac69e3e");
-        OneSignal.promptForPushNotifications();
+        // OneSignal.promptForPushNotifications(); // Moved to OnboardingStep1
 
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
             @Override
             public void onActivityCreated(@NonNull Activity activity, Bundle savedInstanceState) {
+                applyScreenshotSecurity(activity);
                 try {
                     if (activity.getClass().getName().contains("UCropActivity")) {
                         androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(activity.getWindow().getDecorView(), (v, insets) -> {
@@ -284,6 +315,7 @@ public class Leaflet_MyApplication extends android.app.Application {
             }
             @Override public void onActivityStarted(@NonNull Activity activity) {}
             @Override public void onActivityResumed(@NonNull Activity activity) {
+                applyScreenshotSecurity(activity);
                 currentActivity = activity;
                 checkAndShowDialog();
             }

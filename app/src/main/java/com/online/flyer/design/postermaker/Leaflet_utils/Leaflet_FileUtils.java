@@ -46,7 +46,35 @@ public class Leaflet_FileUtils {
     }
 
     public static String getFileName(String path) {
-        return path.substring(path.lastIndexOf("/") + 1);
+        if (path == null || path.trim().isEmpty()) {
+            return "temp_file";
+        }
+        String cleanPath = path.trim();
+        int queryIdx = cleanPath.indexOf('?');
+        if (queryIdx != -1) {
+            cleanPath = cleanPath.substring(0, queryIdx);
+        }
+
+        // For backgrounds (e.g. https://cygnux.in/postermaker/upload/poster_BG/bg_images/abstract/5.jpg)
+        // or any URL with poster_BG / bg_images, prefix category name to filename to avoid collisions across categories
+        if (cleanPath.contains("/poster_BG/") || cleanPath.contains("/bg_images/")) {
+            String[] parts = cleanPath.split("/");
+            if (parts.length >= 2) {
+                String file = parts[parts.length - 1];
+                String category = parts[parts.length - 2];
+                if (!category.equalsIgnoreCase("bg_images") && !category.equalsIgnoreCase("thumb")) {
+                    return category + "_" + file;
+                } else if (parts.length >= 3) {
+                    return parts[parts.length - 3] + "_" + file;
+                }
+            }
+        }
+
+        int lastSlash = cleanPath.lastIndexOf("/");
+        if (lastSlash != -1 && lastSlash < cleanPath.length() - 1) {
+            return cleanPath.substring(lastSlash + 1);
+        }
+        return cleanPath;
     }
 
     public static File GetFileDir(Context context) {

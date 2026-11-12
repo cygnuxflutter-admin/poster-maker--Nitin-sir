@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_onboarding_step2"
+    android:fitsSystemWindows="true"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:background="#FFFFFF">
+
+    <!-- TOP BAR -->
+    <RelativeLayout
+        android:id="@+id/top_bar"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_marginTop="6dp"
+        android:layout_alignParentTop="true"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_circle_button_flat"
+            android:src="@drawable/ic_arrow_back"
+            android:padding="9dp"
+            android:visibility="visible"
+            app:tint="#1E293B" />
+
+        <!-- Animated Expanding Pill & Dot Step Indicator: Step 2 Active -->
+        
+    </RelativeLayout>
+
+    <!-- BOTTOM SECTION: Native Ad Container + Continue Button -->
+    <LinearLayout
+        android:id="@+id/bottom_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:clipChildren="false"
+        android:clipToPadding="false"
+        android:orientation="vertical"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="16dp">
+
+        <!-- Native Ad Container -->
+        <RelativeLayout
+            android:id="@+id/native_ad_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:background="@android:color/transparent" />
+
+        <!-- Continue Button -->
+        <TextView
+            android:id="@+id/btn_continue"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/bg_onboarding_btn_primary"
+            android:fontFamily="@font/leaflet_visbyroundcf_bold"
+            android:gravity="center"
+            android:text="Continue  →"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp" />
+    </LinearLayout>
+
+    <!-- CENTER CONTENT: STEP 2 LIVE EDITING SHOWCASE -->
+    <LinearLayout
+        android:id="@+id/center_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/bottom_container"
+        android:layout_below="@id/top_bar"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp">
+
+        <!-- Title & Subtitle -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="@font/leaflet_visbyroundcf_bold"
+            android:gravity="center"
+            android:text="Easy &amp; Powerful Editing"
+            android:textColor="#111827"
+            android:textSize="20sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:layout_marginBottom="8dp"
+            android:fontFamily="@font/leaflet_visbyroundcf_medium"
+            android:gravity="center"
+            android:lineSpacingExtra="2dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:text="Change text, add stickers, adjust fonts &amp; apply photo filters in seconds."
+            android:textColor="#6B7280"
+            android:textSize="12sp" />
+
+        <!-- Editing Canvas Stage -->
+        <RelativeLayout
+            android:id="@+id/edit_stage"
+            android:layout_width="match_parent"
+            android:layout_height="215dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:gravity="center">
+
+            <!-- Ambient Glow Behind Poster -->
+            <View
+                android:id="@+id/glow_bg_step2"
+                android:layout_width="250dp"
+                android:layout_height="210dp"
+                android:layout_centerInParent="true"
+                android:background="@drawable/bg_onboarding_glow" />
+
+            <!-- Poster Card being edited (cardCanvas) -->
+            <androidx.cardview.widget.CardView
+                android:id="@+id/card_edit_poster"
+                android:layout_width="128dp"
+                android:layout_height="188dp"
+                android:layout_centerInParent="true"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="8dp"
+                app:cardUseCompatPadding="false">
+
+                <RelativeLayout
+                    android:id="@+id/layout_poster_canvas"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- Base Poster Template (Cleaned Heading Area) -->
+                    <ImageView
+                        android:id="@+id/iv_edit_poster"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/onboard_p6_template" />
+
+                    <!-- Background Color / Gradient Overlay for Customization -->
+                    <View
+                        android:id="@+id/view_canvas_bg_overlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:alpha="0"
+                        android:background="@drawable/bg_canvas_bg_overlay" />
+
+                    <!-- Real Poster Heading Container (Slot matches template perfectly) -->
+                    <RelativeLayout
+                        android:id="@+id/layout_heading_container"
+                        android:layout_width="64dp"
+                        android:layout_height="27dp"
+                        android:layout_alignParentStart="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_marginStart="7dp"
+                        android:layout_marginTop="26dp">
+
+                        <!-- The Real Poster Heading Text (Edits directly on the poster!) -->
+                        <TextView
+                            android:id="@+id/tv_poster_heading"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center_vertical"
+                            android:text="NEW&#10;COLLECTION"
+                            android:textColor="#2D150B"
+                            android:textSize="9.2sp"
+                            android:lineSpacingMultiplier="0.82"
+                            android:fontFamily="@font/leaflet_visbyroundcf_extrabold" />
+
+                        <!-- Selection Outline Border with 4 Corner Handles -->
+                        <RelativeLayout
+                            android:id="@+id/selection_box"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:alpha="0"
+                            android:background="@drawable/bg_onboarding_edit_box">
+
+                            <View
+                                android:id="@+id/handle_top_left"
+                                android:layout_width="6dp"
+                                android:layout_height="6dp"
+                                android:layout_alignParentStart="true"
+                                android:layout_alignParentTop="true"
+                                android:layout_marginStart="-3dp"
+                                android:layout_marginTop="-3dp"
+                                android:background="@drawable/bg_edit_handle" />
+
+                            <View
+                                android:id="@+id/handle_top_right"
+                                android:layout_width="6dp"
+                                android:layout_height="6dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_alignParentTop="true"
+                                android:layout_marginEnd="-3dp"
+                                android:layout_marginTop="-3dp"
+                                android:background="@drawable/bg_edit_handle" />
+
+                            <View
+                                android:id="@+id/handle_bottom_left"
+                                android:layout_width="6dp"
+                                android:layout_height="6dp"
+                                android:layout_alignParentStart="true"
+                                android:layout_alignParentBottom="true"
+                                android:layout_marginStart="-3dp"
+                                android:layout_marginBottom="-3dp"
+                                android:background="@drawable/bg_edit_handle" />
+
+                            <View
+                                android:id="@+id/handle_bottom_right"
+                                android:layout_width="6dp"
+                                android:layout_height="6dp"
+                                android:layout_alignParentEnd="true"
+                                android:layout_alignParentBottom="true"
+                                android:layout_marginEnd="-3dp"
+                                android:layout_marginBottom="-3dp"
+                                android:background="@drawable/bg_edit_handle" />
+                        </RelativeLayout>
+                    </RelativeLayout>
+
+                    <!-- Sticker applied onto poster -->
+                    <TextView
+                        android:id="@+id/iv_poster_sticker"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentBottom="true"
+                        android:layout_marginEnd="6dp"
+                        android:layout_marginBottom="14dp"
+                        android:alpha="0"
+                        android:background="@drawable/bg_sticker_sale"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                        android:paddingStart="7dp"
+                        android:paddingTop="3dp"
+                        android:paddingEnd="7dp"
+                        android:paddingBottom="3dp"
+                        android:rotation="-8"
+                        android:scaleX="0"
+                        android:scaleY="0"
+                        android:text="🔥 50% OFF"
+                        android:textColor="#FFFFFF"
+                        android:textSize="9.5sp" />
+
+                    <!-- Final Reveal Polish Pill -->
+                    <TextView
+                        android:id="@+id/badge_final_reveal"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentEnd="true"
+                        android:layout_marginTop="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:alpha="0"
+                        android:background="@drawable/bg_onboarding_badge"
+                        android:elevation="4dp"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                        android:paddingStart="6dp"
+                        android:paddingTop="2dp"
+                        android:paddingEnd="6dp"
+                        android:paddingBottom="2dp"
+                        android:text="✨ Edited"
+                        android:textColor="#10B981"
+                        android:textSize="9sp" />
+                </RelativeLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- 6 Floating Callout Badges around the Poster -->
+            <!-- 1. Top-Left: Change BG -->
+            <TextView
+                android:id="@+id/badge_callout_bg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_floating_badge_white"
+                android:elevation="6dp"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp"
+                android:text="🎨 Change BG"
+                android:textColor="#1E293B"
+                android:textSize="10sp" />
+
+            <!-- 2. Middle-Left: 50% OFF -->
+            <TextView
+                android:id="@+id/badge_callout_discount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:layout_marginStart="6dp"
+                android:background="@drawable/bg_floating_badge_orange"
+                android:elevation="6dp"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp"
+                android:text="🔥 50% OFF"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp" />
+
+            <!-- 3. Bottom-Left: 100+ Fonts -->
+            <TextView
+                android:id="@+id/badge_callout_fonts"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_floating_badge_blue"
+                android:elevation="6dp"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp"
+                android:text="🔤 100+ Fonts"
+                android:textColor="#3730A3"
+                android:textSize="10sp" />
+
+            <!-- 4. Top-Right: 3D Stickers -->
+            <TextView
+                android:id="@+id/badge_callout_stickers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_floating_badge_white"
+                android:elevation="6dp"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp"
+                android:text="✨ 3D Stickers"
+                android:textColor="#1E293B"
+                android:textSize="10sp" />
+
+            <!-- 5. Middle-Right: SHUBH -->
+            <TextView
+                android:id="@+id/badge_callout_shubh"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/bg_floating_badge_pink"
+                android:elevation="6dp"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp"
+                android:text="⚡ Trending"
+                android:textColor="#FFFFFF"
+                android:textSize="10sp" />
+
+            <!-- 6. Bottom-Right: Magic Glow -->
+            <TextView
+                android:id="@+id/badge_callout_glow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentBottom="true"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="12dp"
+                android:background="@drawable/bg_floating_badge_yellow"
+                android:elevation="6dp"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="4dp"
+                android:text="🪄 Magic Glow"
+                android:textColor="#92400E"
+                android:textSize="10sp" />
+
+        </RelativeLayout>
+
+        <!-- 2-Level Bottom Tool Bar in App Blue Theme -->
+        <!-- Level 1: Sub-Options Tray -->
+        <LinearLayout
+            android:id="@+id/layout_sub_options_tray"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_tray_container"
+            android:elevation="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="8dp"
+            android:paddingTop="3dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="3dp">
+
+            <!-- 1. Text Headlines Tray -->
+            <LinearLayout
+                android:id="@+id/tray_sub_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:text="Headline:"
+                    android:textColor="#4B5563"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/sub_text_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_sub_option_inactive"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="Festive"
+                    android:textColor="#374151"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/sub_text_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_sub_option_inactive"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="Mega Sale"
+                    android:textColor="#374151"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/sub_text_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_sub_option_active"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="Fashion Sale"
+                    android:textColor="#FFFFFF"
+                    android:textSize="9.5sp" />
+            </LinearLayout>
+
+            <!-- 2. Stickers Tray -->
+            <LinearLayout
+                android:id="@+id/tray_sub_stickers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:text="Stickers:"
+                    android:textColor="#4B5563"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/sub_sticker_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_sub_option_active"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="🔥 50% OFF"
+                    android:textColor="#FFFFFF"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/sub_sticker_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_sub_option_inactive"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="🌟 New"
+                    android:textColor="#374151"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/sub_sticker_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_sub_option_inactive"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="🎉 Special"
+                    android:textColor="#374151"
+                    android:textSize="9.5sp" />
+            </LinearLayout>
+
+            <!-- 3. Background Tints Tray -->
+            <LinearLayout
+                android:id="@+id/tray_sub_bg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:text="BG Tone:"
+                    android:textColor="#4B5563"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/sub_bg_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_sub_option_inactive"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="Warm Gold"
+                    android:textColor="#374151"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/sub_bg_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_sub_option_active"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="Blue Glam"
+                    android:textColor="#FFFFFF"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/sub_bg_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_sub_option_inactive"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="Rose"
+                    android:textColor="#374151"
+                    android:textSize="9.5sp" />
+            </LinearLayout>
+
+            <!-- 4. Glow / Effects Tray -->
+            <LinearLayout
+                android:id="@+id/tray_sub_glow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:text="Effects:"
+                    android:textColor="#4B5563"
+                    android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/sub_glow_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_sub_option_inactive"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="✨ Sparkles"
+                    android:textColor="#374151"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/sub_glow_2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_sub_option_active"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="🌟 Magic Glow"
+                    android:textColor="#FFFFFF"
+                    android:textSize="9.5sp" />
+
+                <TextView
+                    android:id="@+id/sub_glow_3"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/bg_sub_option_inactive"
+                    android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                    android:paddingStart="8dp"
+                    android:paddingTop="3dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="3dp"
+                    android:text="💫 Burst"
+                    android:textColor="#374151"
+                    android:textSize="9.5sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Level 2: Main Tools Bar in App Blue Theme -->
+        <LinearLayout
+            android:id="@+id/layout_main_tools_bar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_tray_container"
+            android:elevation="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="6dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="4dp">
+
+            <!-- 1. BG Tool Tab -->
+            <TextView
+                android:id="@+id/tab_tool_bg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_tool_pill_inactive"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="10dp"
+                android:paddingTop="5dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="5dp"
+                android:text="🎨 BG"
+                android:textColor="#4B5563"
+                android:textSize="10.5sp" />
+
+            <!-- 2. Text Tool Tab -->
+            <TextView
+                android:id="@+id/tab_tool_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_tool_pill_active"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="10dp"
+                android:paddingTop="5dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="5dp"
+                android:text="🔤 Text"
+                android:textColor="#FFFFFF"
+                android:textSize="10.5sp" />
+
+            <!-- 3. Stickers Tool Tab -->
+            <TextView
+                android:id="@+id/tab_tool_stickers"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_tool_pill_inactive"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="10dp"
+                android:paddingTop="5dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="5dp"
+                android:text="🏷️ Stickers"
+                android:textColor="#4B5563"
+                android:textSize="10.5sp" />
+
+            <!-- 4. Glow Tool Tab -->
+            <TextView
+                android:id="@+id/tab_tool_glow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:background="@drawable/bg_tool_pill_inactive"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:paddingStart="10dp"
+                android:paddingTop="5dp"
+                android:paddingEnd="10dp"
+                android:paddingBottom="5dp"
+                android:text="🪄 Glow"
+                android:textColor="#4B5563"
+                android:textSize="10.5sp" />
+        </LinearLayout>
+
+        <!-- Animated Hand Pointer -->
+        <ImageView
+            android:id="@+id/iv_hand_pointer"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:elevation="20dp"
+            android:src="@drawable/ic_hand_pointer"
+            android:visibility="gone" />
+
+    </LinearLayout>
+
+</RelativeLayout>

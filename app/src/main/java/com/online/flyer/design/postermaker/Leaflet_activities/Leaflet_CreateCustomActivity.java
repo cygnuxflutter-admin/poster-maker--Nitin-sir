@@ -20,6 +20,9 @@ import com.online.flyer.design.postermaker.Leaflet_controller.Leaflet_BGSelectio
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_FileUtils;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_MaterialDialogUtils;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils;
+import android.view.View;
+import android.widget.RelativeLayout;
+import com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass;
 import com.yalantis.ucrop.UCrop;
 
@@ -31,6 +34,14 @@ public class Leaflet_CreateCustomActivity extends AppCompatActivity {
     private String path;
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "create_custom");
+    }
+
+
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.leaflet_activity_create_custom);
@@ -39,13 +50,20 @@ public class Leaflet_CreateCustomActivity extends AppCompatActivity {
         // We pass "create" so we don't return to caller but launch editor
         bgSelectionController = new Leaflet_BGSelectionController(this, getSupportFragmentManager(), preferenceClass, "create");
 
-        findViewById(R.id.ic_back).setOnClickListener(v -> onBackPressed());
+        findViewById(R.id.ic_back).setOnClickListener(v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            onBackPressed();
+        });
 
         findViewById(R.id.card_gallery).setOnClickListener(v -> {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackgroundSourceSelected(this, "gallery");
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             bgSelectionController.openPhotoGallery();
         });
 
         findViewById(R.id.card_camera).setOnClickListener(v -> {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackgroundSourceSelected(this, "camera");
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             if (!checkPermission()) {
                 try {
                     requestPermission();
@@ -60,12 +78,76 @@ public class Leaflet_CreateCustomActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.card_color).setOnClickListener(v -> {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackgroundSourceSelected(this, "solid_color");
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             bgSelectionController.openColorDialog();
         });
+
+        loadAds(preferenceClass);
+    }
+
+    private void loadAds(Leaflet_PreferenceClass pref) {
+        RelativeLayout nativeContainer = findViewById(R.id.native_ad_container_create_custom);
+        RelativeLayout bannerContainer = findViewById(R.id.rl_ad);
+
+        boolean isNativeEnabled = pref.isCreateCustomNativeAdEnabled();
+        if (isNativeEnabled && nativeContainer != null) {
+            int customHeight = pref.getCreateCustomNativeAdHeight();
+            if (customHeight > 0) {
+                int heightPx = (int) (customHeight * getResources().getDisplayMetrics().density);
+                if (nativeContainer.getLayoutParams() != null) {
+                    nativeContainer.getLayoutParams().height = heightPx;
+                    nativeContainer.requestLayout();
+                }
+            } else {
+                if (nativeContainer.getLayoutParams() != null) {
+                    nativeContainer.getLayoutParams().height = android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+                    nativeContainer.requestLayout();
+                }
+            }
+
+            String nativeAdId = pref.getCreateCustomNativeAdId();
+            boolean showShimmerOnFail = pref.shouldShowNativeShimmerOnFail("create_custom");
+
+            nativeContainer.setVisibility(View.VISIBLE);
+            com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_NativeAdUtil util =
+                    new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_NativeAdUtil(this);
+            util.fillAdmobNativeAd(nativeContainer, nativeAdId, showShimmerOnFail, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_NativeAdUtil.OnNativeAdListener() {
+                @Override
+                public void onAdLoaded() {
+                    if (bannerContainer != null) {
+                        bannerContainer.setVisibility(View.GONE);
+                    }
+                }
+
+                @Override
+                public void onAdFailed() {
+                    if (!showShimmerOnFail && nativeContainer != null) {
+                        nativeContainer.setVisibility(View.GONE);
+                    }
+                    if (bannerContainer != null && pref.isBannerAdEnabled("create_custom")) {
+                        bannerContainer.setVisibility(View.VISIBLE);
+                        com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(Leaflet_CreateCustomActivity.this, bannerContainer, "create_custom");
+                    }
+                }
+            });
+        } else {
+            if (nativeContainer != null) {
+                nativeContainer.removeAllViews();
+                nativeContainer.setVisibility(View.GONE);
+            }
+            if (bannerContainer != null && pref.isBannerAdEnabled("create_custom")) {
+                bannerContainer.setVisibility(View.VISIBLE);
+                com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, bannerContainer, "create_custom");
+            } else if (bannerContainer != null) {
+                bannerContainer.setVisibility(View.GONE);
+            }
+        }
     }
 
     @Override
     public void onBackPressed() {
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "create_custom", "back_button");
         com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
             @Override
             public void onAdClose() {
@@ -106,6 +188,8 @@ public class Leaflet_CreateCustomActivity extends AppCompatActivity {
     }
 
     private void startIntent() {
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logEditorOpened(this, "custom_image", true);
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
         Intent intent = new Intent(this, Leaflet_PosterEditActivity.class);
         intent.putExtra("bg_path", path);
         intent.putExtra("loadUserFrame", true);

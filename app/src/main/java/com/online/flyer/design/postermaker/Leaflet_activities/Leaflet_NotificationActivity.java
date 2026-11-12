@@ -64,6 +64,7 @@ public class Leaflet_NotificationActivity extends AppCompatActivity {
                 }
                 if (model.getLaunchUrl() != null && !model.getLaunchUrl().isEmpty()) {
                     try {
+                        com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
                         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(model.getLaunchUrl()));
                         startActivity(intent);
                     } catch (Exception e) {

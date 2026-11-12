@@ -66,16 +66,18 @@
             <LinearLayout
                 android:id="@+id/ic_print_ll"
                 android:layout_width="0dp"
-                android:visibility="gone"
                 android:layout_height="match_parent"
                 android:layout_weight="0.2"
+                android:visibility="visible"
                 android:gravity="center">
 
                 <ImageView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_circle_button_flat"
+                    android:padding="9dp"
                     android:src="@drawable/leaflet_ic_print"
-                    app:tint="@color/new_selected" />
+                    app:tint="#1E293B" />
 
             </LinearLayout>
 

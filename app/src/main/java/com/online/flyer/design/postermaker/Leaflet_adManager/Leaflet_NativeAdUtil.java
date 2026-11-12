@@ -72,7 +72,8 @@ public class Leaflet_NativeAdUtil {
         }
         
         String customAdId = pref.getGridNativeAdId(key);
-        boolean showShimmerOnFail = pref.shouldShowNativeShimmerOnFail(key);
+        boolean isDialog = "exit_dialog".equals(key) || "app_exit_dialog".equals(key) || "reward_dialog".equals(key);
+        boolean showShimmerOnFail = isDialog ? pref.shouldShowDialogShimmerOnFail(key) : pref.shouldShowNativeShimmerOnFail(key);
 
         nativeAdContainer.setVisibility(View.VISIBLE);
         Leaflet_NativeAdUtil util = new Leaflet_NativeAdUtil(context);
@@ -96,7 +97,7 @@ public class Leaflet_NativeAdUtil {
         }
 
         String customAdId = pref.getRewardDialogNativeAdId(itemType);
-        boolean showShimmerOnFail = pref.shouldShowNativeShimmerOnFail("reward_dialog");
+        boolean showShimmerOnFail = pref.shouldShowDialogShimmerOnFail("reward_dialog");
 
         nativeAdContainer.setVisibility(View.VISIBLE);
         Leaflet_NativeAdUtil util = new Leaflet_NativeAdUtil(context);
@@ -108,8 +109,12 @@ public class Leaflet_NativeAdUtil {
 
             @Override
             public void onAdFailed() {
-                nativeAdContainer.removeAllViews();
-                nativeAdContainer.setVisibility(View.GONE);
+                if (!showShimmerOnFail) {
+                    nativeAdContainer.removeAllViews();
+                    nativeAdContainer.setVisibility(View.GONE);
+                } else {
+                    nativeAdContainer.setVisibility(View.VISIBLE);
+                }
             }
         });
     }
@@ -122,13 +127,15 @@ public class Leaflet_NativeAdUtil {
         if (nativeAdContainer == null || context == null) return;
         Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(context);
         if (pref.getInt("show_onboarding_native", 1) == 0) {
+            nativeAdContainer.removeAllViews();
             nativeAdContainer.setVisibility(View.GONE);
             return;
         }
         
+        boolean showShimmerOnFail = pref.shouldShowNativeShimmerOnFail("onboarding");
         nativeAdContainer.setVisibility(View.VISIBLE);
         Leaflet_NativeAdUtil util = new Leaflet_NativeAdUtil(context);
-        util.fillAdmobNativeAd(nativeAdContainer, customUnitId);
+        util.fillAdmobNativeAd(nativeAdContainer, customUnitId, showShimmerOnFail, null);
     }
 
     public interface OnNativeAdListener {
@@ -151,10 +158,41 @@ public class Leaflet_NativeAdUtil {
         }
 
         String nativeUnitId;
-        if (customUnitId != null && !customUnitId.trim().isEmpty() && !customUnitId.equals("null") && !customUnitId.contains("xxxx")) {
-            nativeUnitId = customUnitId;
+        if (customUnitId != null && !customUnitId.trim().isEmpty()) {
+            if ("null".equals(customUnitId.trim()) || "none".equalsIgnoreCase(customUnitId.trim())) {
+                Log.d("AdMob_Native", "fillAdmobNativeAd: Native Ad unit ID is explicitly null. Skipping request.");
+                if (!showShimmerOnFail) {
+                    nativeAdContainer.removeAllViews();
+                    nativeAdContainer.setVisibility(View.GONE);
+                } else {
+                    nativeAdContainer.setVisibility(View.VISIBLE);
+                    if (nativeAdContainer.getChildCount() == 0) {
+                        View shimmerView = LayoutInflater.from(context).inflate(R.layout.leaflet_native_shimmer, nativeAdContainer, false);
+                        nativeAdContainer.addView(shimmerView);
+                    }
+                }
+                if (listener != null) listener.onAdFailed();
+                return;
+            }
+            nativeUnitId = customUnitId.trim();
         } else {
             nativeUnitId = preferenceClass.getAdsId("NativeUnitID");
+        }
+
+        if (nativeUnitId == null || nativeUnitId.trim().isEmpty() || nativeUnitId.equals("null") || nativeUnitId.contains("xxxx")) {
+            Log.d("AdMob_Native", "fillAdmobNativeAd: Native Ad unit ID is null or empty. Skipping request.");
+            if (!showShimmerOnFail) {
+                nativeAdContainer.removeAllViews();
+                nativeAdContainer.setVisibility(View.GONE);
+            } else {
+                nativeAdContainer.setVisibility(View.VISIBLE);
+                if (nativeAdContainer.getChildCount() == 0) {
+                    View shimmerView = LayoutInflater.from(context).inflate(R.layout.leaflet_native_shimmer, nativeAdContainer, false);
+                    nativeAdContainer.addView(shimmerView);
+                }
+            }
+            if (listener != null) listener.onAdFailed();
+            return;
         }
         
         if (com.online.flyer.design.postermaker.BuildConfig.DEBUG) {
@@ -162,16 +200,6 @@ public class Leaflet_NativeAdUtil {
             Log.d("AdMob_Native", "Debug Mode: Using Test Native ID");
         } else {
             Log.d("AdMob_Native", "Fetching Native Ad from Firebase (via Prefs): " + nativeUnitId);
-        }
-
-        if (nativeUnitId == null || nativeUnitId.trim().isEmpty() || nativeUnitId.equals("null")) {
-            if (!showShimmerOnFail) {
-                nativeAdContainer.removeAllViews();
-                nativeAdContainer.setVisibility(View.GONE);
-
-            }
-            if (listener != null) listener.onAdFailed();
-            return;
         }
 
         nativeAdContainer.setTag("loaded"); // Set tag so it doesn't request again for this container
@@ -217,6 +245,10 @@ public class Leaflet_NativeAdUtil {
                         nativeAdContainer.setVisibility(View.GONE);
                     } else {
                         nativeAdContainer.setVisibility(View.VISIBLE);
+                        if (nativeAdContainer.getChildCount() == 0) {
+                            View shimmerView = LayoutInflater.from(context).inflate(R.layout.leaflet_native_shimmer, nativeAdContainer, false);
+                            nativeAdContainer.addView(shimmerView);
+                        }
                     }
                     if (listener != null) {
                         listener.onAdFailed();

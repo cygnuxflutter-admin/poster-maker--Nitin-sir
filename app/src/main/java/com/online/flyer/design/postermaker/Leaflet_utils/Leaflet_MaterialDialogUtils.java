@@ -165,8 +165,35 @@ public class Leaflet_MaterialDialogUtils {
         if (tv_title != null) tv_title.setText(title);
         if (tv_description != null) tv_description.setText(message);
 
-        if (button2 != null) button2.setOnClickListener(v -> positiveButton.onClick(materialDialog));
-        if (button1 != null) button1.setOnClickListener(v -> negativeButton.onClick(materialDialog));
+        final boolean[] isActionTaken = {false};
+        if (button2 != null) {
+            button2.setOnClickListener(v -> {
+                if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+                isActionTaken[0] = true;
+                button2.setEnabled(false);
+                if (button1 != null) button1.setEnabled(false);
+                if (positiveButton != null) {
+                    positiveButton.onClick(materialDialog);
+                }
+            });
+        }
+        if (button1 != null) {
+            button1.setOnClickListener(v -> {
+                if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+                isActionTaken[0] = true;
+                button1.setEnabled(false);
+                if (button2 != null) button2.setEnabled(false);
+                if (negativeButton != null) {
+                    negativeButton.onClick(materialDialog);
+                }
+            });
+        }
+
+        materialDialog.setOnDismissListener(d -> {
+            if (!isActionTaken[0] && negativeButton != null) {
+                negativeButton.onClick(materialDialog);
+            }
+        });
 
         RelativeLayout native_banner_ad_container = materialDialog.findViewById(R.id.native_banner_ad_containers);
         if (native_banner_ad_container != null) {
@@ -204,8 +231,18 @@ public class Leaflet_MaterialDialogUtils {
         TextView btn_yes = materialDialog.findViewById(R.id.btn_yes);
         TextView btn_no = materialDialog.findViewById(R.id.btn_no);
 
-        btn_yes.setOnClickListener(v -> positiveButton.onClick(materialDialog));
-        btn_no.setOnClickListener(v -> negativeButton.onClick(materialDialog));
+        btn_yes.setOnClickListener(v -> {
+            if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            btn_yes.setEnabled(false);
+            if (btn_no != null) btn_no.setEnabled(false);
+            positiveButton.onClick(materialDialog);
+        });
+        btn_no.setOnClickListener(v -> {
+            if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            btn_no.setEnabled(false);
+            if (btn_yes != null) btn_yes.setEnabled(false);
+            negativeButton.onClick(materialDialog);
+        });
 
         RelativeLayout native_banner_ad_container = materialDialog.findViewById(R.id.native_banner_ad_containers);
         loadNativeAd(native_banner_ad_container, activity);
@@ -237,11 +274,15 @@ public class Leaflet_MaterialDialogUtils {
         tv_title.setText(title);
         tv_description.setText(message);
 
-        button1.setOnClickListener(v -> materialDialog.dismiss());
-//        button2.setOnClickListener(v -> dialogClickListener.onClick(materialDialog));
+        button1.setOnClickListener(v -> {
+            if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            materialDialog.dismiss();
+        });
         button2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+                button2.setEnabled(false);
                 Intent intent = new Intent(Intent.ACTION_MAIN);
                 intent.addCategory(Intent.CATEGORY_HOME);
                 intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -275,9 +316,14 @@ public class Leaflet_MaterialDialogUtils {
             TextView btn_cancel = materialDialog.findViewById(R.id.btn_cancel);
             TextView btn_settings = materialDialog.findViewById(R.id.btn_settings);
 
-            btn_cancel.setOnClickListener(v -> materialDialog.dismiss());
+            btn_cancel.setOnClickListener(v -> {
+                if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+                materialDialog.dismiss();
+            });
 
             btn_settings.setOnClickListener(v -> {
+                if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+                btn_settings.setEnabled(false);
                 materialDialog.dismiss();
                 activity.startActivity(new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:" + BuildConfig.APPLICATION_ID)));
 //            Log.e("#brand", Build.BRAND);
@@ -312,9 +358,18 @@ public class Leaflet_MaterialDialogUtils {
         TextView btn_yes = materialDialog.findViewById(R.id.btn_yes);
         TextView btn_no = materialDialog.findViewById(R.id.btn_no);
 
-        btn_no.setOnClickListener(v -> materialDialog.dismiss());
+        btn_no.setOnClickListener(v -> {
+            if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            materialDialog.dismiss();
+        });
 
-        btn_yes.setOnClickListener(v -> dialogClickListener.onClick(materialDialog));
+        btn_yes.setOnClickListener(v -> {
+            if (Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            btn_yes.setEnabled(false);
+            if (dialogClickListener != null) {
+                dialogClickListener.onClick(materialDialog);
+            }
+        });
 
         RelativeLayout native_banner_ad_container = materialDialog.findViewById(R.id.native_banner_ad_containers);
         loadNativeAd(native_banner_ad_container, activity);

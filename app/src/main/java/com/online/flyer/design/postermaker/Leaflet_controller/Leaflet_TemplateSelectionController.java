@@ -1,6 +1,7 @@
 package com.online.flyer.design.postermaker.Leaflet_controller;
 
 import android.app.Activity;
+import android.view.View;
 import android.util.Base64;
 import android.util.Log;
 
@@ -49,26 +50,24 @@ public class Leaflet_TemplateSelectionController {
     }
 
     private void loadTemplates() {
+        showSkeleton();
         String cachedJson = Leaflet_DataCacheManager.getInstance().getCache(activity, Leaflet_DataCacheManager.KEY_TEMPLATES);
         if (cachedJson != null && !cachedJson.trim().isEmpty()) {
-            // Instant 0-second loading from cache!
-            Log.d(TAG, "Loading templates instantly from cache...");
+            Log.d(TAG, "Loading templates from cache...");
             isDataLoaded = true;
             parseAndDisplayJson(cachedJson, true);
 
             // Silent background refresh to check if admin added new templates
             getTemplateThumb(preferenceClass.getDataType("field_0"), true);
         } else {
-            // No cache yet (first install), show loading dialog
             Log.d(TAG, "No cache found, fetching templates from API...");
-            startMaterialDialog();
             getTemplateThumb(preferenceClass.getDataType("field_0"), false);
         }
     }
 
     public void refreshData(boolean forceRefresh) {
         if (forceRefresh) {
-            startMaterialDialog();
+            showSkeleton();
             getTemplateThumb(preferenceClass.getDataType("field_0"), false);
         } else {
             getTemplateThumb(preferenceClass.getDataType("field_0"), true);
@@ -201,6 +200,8 @@ public class Leaflet_TemplateSelectionController {
     private void setPagerAdapter(ArrayList<Leaflet_PosterModel> posterDataLists) {
         if (activity == null || activity.isFinishing()) return;
 
+        hideSkeleton();
+
         Leaflet_PagerSlidingTabStrip tabs = activity.findViewById(R.id.pagerSlidingTabStrip);
         ViewPager viewPager = activity.findViewById(R.id.viewPager);
         if (viewPager == null || tabs == null) {
@@ -231,16 +232,51 @@ public class Leaflet_TemplateSelectionController {
         dismissMaterialDialog();
     }
 
+    private void showSkeleton() {
+        if (activity == null || activity.isFinishing()) return;
+        com.facebook.shimmer.ShimmerFrameLayout shimmer = activity.findViewById(R.id.layout_skeleton_grid);
+        if (shimmer != null) {
+            shimmer.setVisibility(View.VISIBLE);
+            shimmer.startShimmer();
+        }
+        View viewPagerLay = activity.findViewById(R.id.viewPagerLay);
+        if (viewPagerLay != null) viewPagerLay.setVisibility(View.GONE);
+        View swipeRefresh = activity.findViewById(R.id.swipe_refresh);
+        if (swipeRefresh != null) swipeRefresh.setVisibility(View.GONE);
+    }
+
+    private void hideSkeleton() {
+        if (activity == null || activity.isFinishing()) return;
+        com.facebook.shimmer.ShimmerFrameLayout shimmer = activity.findViewById(R.id.layout_skeleton_grid);
+        if (shimmer != null) {
+            shimmer.stopShimmer();
+            shimmer.setVisibility(View.GONE);
+        }
+        View viewPagerLay = activity.findViewById(R.id.viewPagerLay);
+        if (viewPagerLay != null) viewPagerLay.setVisibility(View.VISIBLE);
+        View swipeRefresh = activity.findViewById(R.id.swipe_refresh);
+        if (swipeRefresh != null) swipeRefresh.setVisibility(View.VISIBLE);
+    }
+
     public void startMaterialDialog() {
-        if (materialDialog != null && materialDialog.isShowing()) return;
-        materialDialog = Leaflet_MaterialDialogUtils.getInstance().createAnimationDialog(activity);
-        Objects.requireNonNull(materialDialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-        materialDialog.setCancelable(false);
-        materialDialog.show();
+        try {
+            if (materialDialog != null && materialDialog.isShowing()) return;
+            materialDialog = Leaflet_MaterialDialogUtils.getInstance().createAnimationDialog(activity);
+            if (materialDialog != null && materialDialog.getWindow() != null) {
+                materialDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
+            if (materialDialog != null) {
+                materialDialog.setCancelable(false);
+                materialDialog.show();
+            }
+        } catch (Exception ignored) {}
     }
 
     public void dismissMaterialDialog() {
-        if (materialDialog != null && materialDialog.isShowing())
-            materialDialog.dismiss();
+        try {
+            if (materialDialog != null && materialDialog.isShowing()) {
+                materialDialog.dismiss();
+            }
+        } catch (Exception ignored) {}
     }
 }

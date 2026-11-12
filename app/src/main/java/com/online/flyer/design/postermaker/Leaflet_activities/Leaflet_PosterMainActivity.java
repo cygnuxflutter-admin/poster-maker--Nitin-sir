@@ -44,6 +44,7 @@ import com.online.flyer.design.postermaker.Leaflet_models.Leaflet_HeroBanner;
 import com.online.flyer.design.postermaker.Leaflet_models.Leaflet_PopularPoster;
 import com.online.flyer.design.postermaker.R;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_MaterialDialogUtils;
+import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AdBlockerDetector;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ShareUtils;
 import com.google.android.material.navigation.NavigationView;
@@ -104,21 +105,24 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+            getWindow().setStatusBarColor(Color.parseColor("#F8F9FE"));
+        }
         setContentView(R.layout.leaflet_activity_mainposter);
 
-        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
-        if (pref.getInt("show_banner_home", 1) == 1) {
-            android.widget.RelativeLayout bannerContainer = findViewById(R.id.banner_ad_container_home);
+// 3-tier RelativeLayout automatically manages dynamic spacing when Banner Ad loads/fails
+
+        preferenceClass = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
+        android.widget.RelativeLayout bannerContainer = findViewById(R.id.banner_ad_container_home);
+        if (preferenceClass.isBannerAdEnabled("home")) {
             if (bannerContainer != null) {
-                com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, bannerContainer);
-                
-                android.view.View srView = findViewById(R.id.swipe_refresh);
-                if (srView != null) {
-                    androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams params = (androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams) srView.getLayoutParams();
-                    params.bottomMargin += (int) (50 * getResources().getDisplayMetrics().density);
-                    srView.setLayoutParams(params);
-                }
+                com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, bannerContainer, "home");
+            }
+        } else {
+            if (bannerContainer != null) {
+                bannerContainer.removeAllViews();
+                bannerContainer.setVisibility(android.view.View.GONE);
             }
         }
 
@@ -136,7 +140,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         // OneSignal Initialization
         OneSignal.initWithContext(this);
         OneSignal.setAppId("35b6d659-eeda-4729-b2c0-ebef7ac69e3e");
-        OneSignal.promptForPushNotifications();
+        // OneSignal.promptForPushNotifications(); // Moved to OnboardingStep1
 
         // FCM Global Topic Subscription
         try {
@@ -150,25 +154,20 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             Log.e("FCM", "Error subscribing to all_users topic", e);
         }
 
-        // Android 13+ Notification Permission Check
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
-                    != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.POST_NOTIFICATIONS}, 101);
-            }
-        }
+        // All initial permissions (Storage, Camera, Notifications) are requested on Onboarding Step 1
 
         handleNotificationIntent(getIntent());
 
         android.view.View btnNotification = findViewById(R.id.btn_notification);
         if (btnNotification != null) {
             btnNotification.setOnClickListener(v -> {
+                if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
                 startActivity(new Intent(Leaflet_PosterMainActivity.this, Leaflet_NotificationActivity.class));
-            });
+             });
+
         }
 
-        checkAccess();
+        // checkAccess() removed from onCreate so home screen launches cleanly without permission dialogs
 
 //        prefManager = new MailER_PrefManager(this);
 //        dialogMsg = new MailER_DialogMsg(this, false);
@@ -189,7 +188,17 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         findByID();
         setupAnimatedSearchBar();
 
+        int homeVisits = preferenceClass.incrementHomeVisitCount();
+        if ((homeVisits == 3 || homeVisits == 4) && !preferenceClass.isRateSubmitted() && preferenceClass.isRatingDialogEnabled()) {
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if (!isFinishing() && !isDestroyed()) {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_RatingManager.checkAndShowRatingDialog(Leaflet_PosterMainActivity.this, "home");
+                }
+            }, 1200);
+        }
+
         findViewById(R.id.lay_poster).setOnClickListener(v -> {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logCategorySelected(this, "Create Poster", "0", "quick_action");
             activityIndex = 1;
             if (!checkPermission()) {
                 try {
@@ -216,6 +225,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 //            openActivity(MailER_BackgroundSelectionActivity.class);
         });
         findViewById(R.id.lay_template).setOnClickListener(v -> {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logCategorySelected(this, "Readymade Poster", "0", "quick_action");
             activityIndex = 2;
             if (!checkPermission()) {
                 try {
@@ -243,11 +253,20 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 //            openActivity(MailER_HomeActivity.class);
         });
 
+        // Quick Action Cards Spring Touch Animation
+        applyTouchBounceEffect(findViewById(R.id.lay_poster));
+        applyTouchBounceEffect(findViewById(R.id.lay_template));
+        applyTouchBounceEffect(findViewById(R.id.lay_creation));
+        applyTouchBounceEffect(findViewById(R.id.lay_design));
+        applyTouchBounceEffect(findViewById(R.id.btn_notification));
+
         findViewById(R.id.lay_design).setOnClickListener(v -> {
-            Leaflet_ShareUtils.rateUs(Leaflet_PosterMainActivity.this);
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_RatingManager.showRatingDialog(Leaflet_PosterMainActivity.this, "home_rate_us");
         });
 
         findViewById(R.id.lay_creation).setOnClickListener(v -> {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "my_creation", "quick_action");
             activityIndex = 4;
             if (!checkPermission()) {
                 try {
@@ -264,6 +283,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 
         // Category click listener
         android.view.View.OnClickListener catClickListener = v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick()) return;
             String catName = "";
             int id = v.getId();
             if (id == R.id.cat_festival) catName = "Festival";
@@ -276,6 +296,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             else if (id == R.id.cat_event) catName = "Party";
 
             String finalCatName = catName;
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logCategorySelected(this, finalCatName, "", "home_category");
             Leaflet_MyApplication.showInterstitialAd(this, () -> {
                 Intent intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
                 intent.putExtra("category_name", finalCatName);
@@ -299,6 +320,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 
         // More & See All click listener
         android.view.View.OnClickListener moreClickListener = v -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick()) return;
             Leaflet_MyApplication.showInterstitialAd(this, () -> {
                 Intent intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
                 intent.putExtra("show_all_categories", true);
@@ -392,14 +414,40 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         heroBannerViewPager = findViewById(R.id.hero_banner_viewpager);
         bannerIndicatorLayout = findViewById(R.id.banner_indicator_layout);
 
-        View heroBannerShimmer = findViewById(R.id.hero_banner_shimmer);
+        com.facebook.shimmer.ShimmerFrameLayout heroBannerShimmer = findViewById(R.id.hero_banner_shimmer);
         View heroBannerHost = findViewById(R.id.hero_banner_host);
 
-        // Call API to fetch banners from admin panel
-        loadHeroBannersFromApi();
+        if (heroBannerShimmer != null) {
+            heroBannerShimmer.startShimmer();
+            heroBannerShimmer.setVisibility(View.VISIBLE);
+        }
+        if (heroBannerHost != null) {
+            heroBannerHost.setVisibility(View.GONE);
+        }
+        if (bannerIndicatorLayout != null) {
+            bannerIndicatorLayout.setVisibility(View.GONE);
+        }
 
         heroBannerAdapter = new Leaflet_HeroBannerAdapter(this, heroBannerList);
         heroBannerViewPager.setAdapter(heroBannerAdapter);
+
+        // 3D Depth & Scale PageTransformer
+        heroBannerViewPager.setPageTransformer((page, position) -> {
+            float absPos = Math.abs(position);
+            if (absPos <= 1) {
+                float scale = 0.94f + (1 - absPos) * 0.06f;
+                page.setScaleY(scale);
+                page.setScaleX(scale);
+                page.setAlpha(0.85f + (1 - absPos) * 0.15f);
+            } else {
+                page.setScaleY(0.94f);
+                page.setScaleX(0.94f);
+                page.setAlpha(0.85f);
+            }
+        });
+
+        // Instant Load from Cache + silent background refresh
+        loadHeroBannersFromApi();
 
         // Set starting position to middle of the fake infinite list
         if (heroBannerAdapter.getRealCount() > 0) {
@@ -433,9 +481,11 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 
         // Banner click listener
         heroBannerAdapter.setOnBannerClickListener((banner, position) -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             Log.d("HeroBanner", "Clicked banner: " + banner.getTitle() + " actionUrl: " + banner.getActionUrl());
             if (banner.getActionUrl() != null && banner.getActionUrl().startsWith("category/")) {
                 String catId = banner.getActionUrl().replace("category/", "");
+                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logCategorySelected(this, banner.getTitle(), catId, "hero_banner");
                 Leaflet_MyApplication.showInterstitialAd(this, () -> {
                     Intent intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
                     intent.putExtra("category_id", catId);
@@ -473,6 +523,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             if (launchUrl != null && !launchUrl.trim().isEmpty()) {
                 if (launchUrl.startsWith("http://") || launchUrl.startsWith("https://")) {
                     try {
+                        com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
                         Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(launchUrl));
                         startActivity(browserIntent);
                     } catch (Exception e) {
@@ -483,46 +534,73 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         }
     }
 
+    private static final String KEY_CACHE_HERO_BANNERS = "hero_banners_cache_json";
+
     private void loadHeroBannersFromApi() {
+        String cachedJson = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().getCache(this, KEY_CACHE_HERO_BANNERS);
+        if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+            android.util.Log.d("HeroBanner", "Loading hero banners instantly from cache!");
+            parseAndDisplayHeroBanners(cachedJson, true);
+            fetchHeroBannersFromApi(true);
+        } else {
+            android.util.Log.d("HeroBanner", "No cached hero banners, fetching from API...");
+            fetchHeroBannersFromApi(false);
+        }
+    }
+
+    private void parseAndDisplayHeroBanners(String jsonString, boolean fromCache) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            if (jsonObject.has("data")) {
+                JSONArray dataArray = jsonObject.getJSONArray("data");
+                if (dataArray.length() == 0) return;
+                heroBannerList.clear();
+                for (int i = 0; i < dataArray.length(); i++) {
+                    JSONObject bannerObj = dataArray.getJSONObject(i);
+                    String bannerImage = bannerObj.optString("banner_image", "");
+                    String actionUrl = bannerObj.optString("action_url", "");
+                    heroBannerList.add(new Leaflet_HeroBanner(String.valueOf(i), bannerImage, "", actionUrl));
+                }
+                if (heroBannerAdapter != null) {
+                    heroBannerAdapter.updateData(heroBannerList);
+                    if (heroBannerAdapter.getRealCount() > 0) {
+                        heroBannerViewPager.setCurrentItem(heroBannerAdapter.getStartPosition(), false);
+                        setupBannerIndicators(heroBannerAdapter.getRealCount());
+                        updateBannerIndicator(heroBannerAdapter.getStartPosition() % heroBannerAdapter.getRealCount());
+                    }
+                }
+                com.facebook.shimmer.ShimmerFrameLayout shimmer = findViewById(R.id.hero_banner_shimmer);
+                android.view.View host = findViewById(R.id.hero_banner_host);
+                if (shimmer != null) {
+                    shimmer.stopShimmer();
+                    shimmer.setVisibility(android.view.View.GONE);
+                }
+                if (host != null) {
+                    host.setVisibility(android.view.View.VISIBLE);
+                }
+                if (bannerIndicatorLayout != null && heroBannerAdapter != null && heroBannerAdapter.getRealCount() > 1) {
+                    bannerIndicatorLayout.setVisibility(android.view.View.VISIBLE);
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.e("HeroBanner", "Error parsing hero banners: " + e.getMessage());
+        }
+    }
+
+    private void fetchHeroBannersFromApi(boolean isSilentRefresh) {
         String requestUrl = "https://cygnux.in/postermaker/api/v1/poster/hero";
         String key = preferenceClass.getDataType("field_0");
-        android.util.Log.d("CygnuxAPI", "--> URL: " + requestUrl + " | Params: device=1, app_id=2, key=" + key);
-
         StringRequest stringRequest = new StringRequest(Request.Method.POST, requestUrl, response -> {
             try {
-                android.util.Log.d("CygnuxAPI", "<-- Hero Banners Response: " + response);
-                JSONObject jsonObject = new JSONObject(response);
-                if (jsonObject.has("data")) {
-                    JSONArray dataArray = jsonObject.getJSONArray("data");
-                    heroBannerList.clear();
-                    for (int i = 0; i < dataArray.length(); i++) {
-                        JSONObject bannerObj = dataArray.getJSONObject(i);
-                        String bannerImage = bannerObj.optString("banner_image", "");
-                        String actionUrl = bannerObj.optString("action_url", "");
-                        heroBannerList.add(new Leaflet_HeroBanner(String.valueOf(i), bannerImage, "", actionUrl));
-                    }
-                    if (heroBannerAdapter != null) {
-                        heroBannerAdapter.updateData(heroBannerList);
-                        if (heroBannerAdapter.getRealCount() > 0) {
-                            heroBannerViewPager.setCurrentItem(heroBannerAdapter.getStartPosition(), false);
-                            setupBannerIndicators(heroBannerAdapter.getRealCount());
-                            updateBannerIndicator(heroBannerAdapter.getStartPosition() % heroBannerAdapter.getRealCount());
-                        }
-                    }
-                    android.view.View shimmer = findViewById(R.id.hero_banner_shimmer);
-                    android.view.View host = findViewById(R.id.hero_banner_host);
-                    if (shimmer != null) shimmer.setVisibility(android.view.View.GONE);
-                    if (host != null) host.setVisibility(android.view.View.VISIBLE);
-                } else {
-                    android.util.Log.e("CygnuxAPI", "<-- No data field in hero response");
+                if (response != null && response.contains("\"data\"")) {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().saveCache(this, KEY_CACHE_HERO_BANNERS, response);
+                    parseAndDisplayHeroBanners(response, isSilentRefresh);
                 }
             } catch (Exception e) {
-                android.util.Log.e("CygnuxAPI", "<-- Hero Banners Exception: " + e.getMessage());
-                e.printStackTrace();
+                android.util.Log.e("HeroBanner", "Exception in hero banner API: " + e.getMessage());
             }
         }, error -> {
-            android.util.Log.e("CygnuxAPI", "<-- Hero Banners Error: " + error.getMessage());
-            error.printStackTrace();
+            android.util.Log.e("HeroBanner", "Error in hero banner API: " + error.getMessage());
         }) {
             @Override
             protected Map<String, String> getParams() {
@@ -568,23 +646,21 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             ImageView dot = (ImageView) bannerIndicatorLayout.getChildAt(i);
             if (dot == null) continue;
             LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) dot.getLayoutParams();
-            if (i == position) {
-                dot.setImageResource(R.drawable.bg_banner_indicator_active);
-                if (params != null && params.width != activeWidth) {
-                    params.width = activeWidth;
-                    params.height = dotSize;
-                    params.setMargins(margin, 0, margin, 0);
+            if (params == null) continue;
+            int targetWidth = (i == position) ? activeWidth : dotSize;
+            int currentWidth = params.width;
+
+            if (currentWidth != targetWidth) {
+                android.animation.ValueAnimator anim = android.animation.ValueAnimator.ofInt(currentWidth, targetWidth);
+                anim.addUpdateListener(a -> {
+                    params.width = (Integer) a.getAnimatedValue();
                     dot.setLayoutParams(params);
-                }
-            } else {
-                dot.setImageResource(R.drawable.bg_banner_indicator_inactive);
-                if (params != null && params.width != dotSize) {
-                    params.width = dotSize;
-                    params.height = dotSize;
-                    params.setMargins(margin, 0, margin, 0);
-                    dot.setLayoutParams(params);
-                }
+                });
+                anim.setDuration(220);
+                anim.setInterpolator(new android.view.animation.DecelerateInterpolator());
+                anim.start();
             }
+            dot.setImageResource((i == position) ? R.drawable.bg_banner_indicator_active : R.drawable.bg_banner_indicator_inactive);
         }
     }
 
@@ -609,6 +685,14 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
     // ===================== POPULAR POSTERS SETUP =====================
     private void setupPopularPosters() {
         popularPostersRv = findViewById(R.id.popular_posters_rv);
+        com.facebook.shimmer.ShimmerFrameLayout popShimmer = findViewById(R.id.popular_shimmer);
+        if (popShimmer != null) {
+            popShimmer.startShimmer();
+            popShimmer.setVisibility(View.VISIBLE);
+        }
+        if (popularPostersRv != null) {
+            popularPostersRv.setVisibility(View.GONE);
+        }
 
         // Horizontal layout manager
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
@@ -623,7 +707,9 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 
         // Poster click listener
         popularPosterAdapter.setOnPosterClickListener((poster, position) -> {
+            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             Log.d("PopularPoster", "Clicked poster: " + poster.getCategory() + " cat_id: " + poster.getId());
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logTemplateSelected(this, poster.getId(), poster.getCategory(), true, "popular_poster");
             Leaflet_MyApplication.showInterstitialAd(this, () -> {
                 Intent intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
                 intent.putExtra("category_id", poster.getId());
@@ -636,6 +722,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         if (popularSeeAll != null) {
             applyTouchBounceEffect(popularSeeAll);
             popularSeeAll.setOnClickListener(v -> {
+                if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
                 Leaflet_MyApplication.showInterstitialAd(this, () -> {
                     startActivity(new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class));
                 });
@@ -672,10 +759,15 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
                     if (popularPosterAdapter != null) {
                         popularPosterAdapter.updateData(popularPosterList);
                     }
-                    android.view.View popShimmer = findViewById(R.id.popular_shimmer);
+                    com.facebook.shimmer.ShimmerFrameLayout popShimmer = findViewById(R.id.popular_shimmer);
                     android.view.View popRv = findViewById(R.id.popular_posters_rv);
-                    if (popShimmer != null) popShimmer.setVisibility(android.view.View.GONE);
-                    if (popRv != null) popRv.setVisibility(android.view.View.VISIBLE);
+                    if (popShimmer != null) {
+                        popShimmer.stopShimmer();
+                        popShimmer.setVisibility(android.view.View.GONE);
+                    }
+                    if (popRv != null) {
+                        popRv.setVisibility(android.view.View.VISIBLE);
+                    }
                 } else {
                     android.util.Log.e("CygnuxAPI", "<-- No data field in popular posters response");
                 }
@@ -685,6 +777,11 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             }
         }, error -> {
             android.util.Log.e("CygnuxAPI", "<-- Popular Posters Error: " + error.getMessage());
+            com.facebook.shimmer.ShimmerFrameLayout popShimmer = findViewById(R.id.popular_shimmer);
+            if (popShimmer != null) {
+                popShimmer.stopShimmer();
+                popShimmer.setVisibility(android.view.View.GONE);
+            }
             error.printStackTrace();
         }) {
             @Override
@@ -718,9 +815,16 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 
         if (cardSearchBar != null) {
             cardSearchBar.setOnClickListener(v -> {
+                if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
                 Intent intent = new Intent(this, Leaflet_SearchActivity.class);
                 startActivity(intent);
             });
+        }
+
+        applyTouchBounceEffect(cardSearchBar);
+        View searchFilter = findViewById(R.id.iv_search_filter);
+        if (searchFilter != null) {
+            applyTouchBounceEffect(searchFilter);
         }
 
         searchHintHandler = new Handler(Looper.getMainLooper());
@@ -734,11 +838,20 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
                 }
             }
         };
+        searchHintHandler.postDelayed(searchHintRunnable, 2800);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "home");
+        if (preferenceClass != null && preferenceClass.isAdBlockerDetectionEnabled()) {
+            Leaflet_AdBlockerDetector.detect(this, isBlocked -> {
+                if (isBlocked && !isFinishing() && !isDestroyed()) {
+                    Leaflet_AdBlockerDetector.showAdBlockerDialog(this, null);
+                }
+            });
+        }
         startAutoScroll();
         updateNotificationBadge();
         if (searchHintHandler != null && searchHintRunnable != null) {
@@ -803,6 +916,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 //    }
 
     public void nextActivity(Class<? extends Activity> activity) {
+        if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick()) return;
         Leaflet_MyApplication.showInterstitialAd(this, () -> startIntent1(activity));
     }
 
@@ -818,6 +932,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "home", "exit_dialog_shown");
         Leaflet_MaterialDialogUtils.getInstance().exitAlertDialog(Leaflet_PosterMainActivity.this, "Exit Alert", "Do you really want to exit?", materialDialog -> {
             materialDialog.dismiss();
             Leaflet_PosterMainActivity.this.finish();

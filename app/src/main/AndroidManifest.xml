@@ -48,7 +48,8 @@
         <activity
             android:name=".Leaflet_activities.Leaflet_SplashScreen"
             android:exported="true"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme1">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -63,10 +64,37 @@
         <meta-data
             android:name="com.google.android.gms.ads.flag.NATIVE_AD_DEBUGGER_ENABLED"
             android:value="false" />
+        <!-- Full-Screen AdActivity with No Title Bar and True Fullscreen to eliminate "Poster Maker" header -->
+        <activity
+            android:name="com.google.android.gms.ads.AdActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+            android:enableOnBackInvokedCallback="false"
+            android:exported="false"
+            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+            tools:replace="android:theme,android:enableOnBackInvokedCallback" />
+
 
         <activity
             android:name=".Leaflet_activities.Leaflet_OnboardingActivity"
             android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme1" />
+
+        <activity
+            android:name=".Leaflet_activities.Leaflet_OnboardingStep1Activity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme1" />
+
+        <activity
+            android:name=".Leaflet_activities.Leaflet_OnboardingStep2Activity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme1" />
+
+        <activity
+            android:name=".Leaflet_activities.Leaflet_OnboardingStep3Activity"
+            android:exported="false"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme1" />
 
@@ -86,9 +114,11 @@
             android:screenOrientation="portrait" />
         <activity
             android:name=".Leaflet_activities.Leaflet_ShareActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait" />
         <activity
             android:name=".Leaflet_activities.Leaflet_PosterEditActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme1" />
         <activity
@@ -104,9 +134,10 @@
             android:name=".Leaflet_activities.Leaflet_PosterMainActivity"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme" />
+            android:theme="@style/AppTheme1" />
         <activity
             android:name=".Leaflet_activities.Leaflet_SearchActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.PosterMaker"
             android:windowSoftInputMode="adjustResize|stateVisible" />
@@ -127,6 +158,7 @@
 
         <activity
             android:name=".Leaflet_activities.Leaflet_CreateCustomActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:exported="false" />
 
@@ -166,6 +198,7 @@
             <activity android:name=".Leaflet_activities.Leaflet_NotificationActivity" android:screenOrientation="portrait" android:theme="@style/Theme.PosterMaker" android:exported="false" />
             <activity
             android:name=".Leaflet_activities.ItemPreviewActivity"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.PosterMaker"
             android:exported="true" />

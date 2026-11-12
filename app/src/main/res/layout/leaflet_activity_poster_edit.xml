@@ -288,7 +288,7 @@
                             android:layout_alignParentTop="true"
                             android:background="@color/black"
                             android:src="@drawable/leaflet_ic_close"
-                            android:visibility="visible" />
+                            android:visibility="gone" />
 
                     </RelativeLayout>
                 </com.online.flyer.design.postermaker.Leaflet_view.Leaflet_AspectRatioFrameLayout>

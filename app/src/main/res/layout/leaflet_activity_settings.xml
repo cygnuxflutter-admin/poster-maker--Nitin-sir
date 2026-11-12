@@ -457,6 +457,19 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- App Version -->
+            <TextView
+                android:id="@+id/tv_app_version"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:text="Version 2.3"
+                android:textColor="#9CA3AF"
+                android:textSize="13sp" />
+
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

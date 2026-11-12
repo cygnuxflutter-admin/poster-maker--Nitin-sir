@@ -1,18 +1,25 @@
 package com.online.flyer.design.postermaker.Leaflet_adapter;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+import com.facebook.shimmer.ShimmerFrameLayout;
 import com.online.flyer.design.postermaker.Leaflet_models.Leaflet_PopularPoster;
 import com.online.flyer.design.postermaker.R;
 
@@ -57,19 +64,52 @@ public class Leaflet_PopularPosterAdapter extends RecyclerView.Adapter<Leaflet_P
         Leaflet_PopularPoster poster = posterList.get(position);
 
         if (!TextUtils.isEmpty(poster.getImageUrl())) {
-            // API image available
-            holder.posterImage.setVisibility(View.VISIBLE);
-            holder.posterPlaceholder.setVisibility(View.GONE);
+            // API image available: start shimmer skeleton until image arrives
+            if (holder.posterPlaceholder != null) holder.posterPlaceholder.setVisibility(View.GONE);
+            if (holder.posterShimmer != null) {
+                holder.posterShimmer.setVisibility(View.VISIBLE);
+                holder.posterShimmer.startShimmer();
+            }
+            holder.posterImage.setVisibility(View.INVISIBLE);
+
             Glide.with(context)
                     .load(poster.getImageUrl())
-                    .placeholder(R.drawable.bg_popular_card)
-                    .error(R.drawable.bg_popular_card)
+                    .transition(DrawableTransitionOptions.withCrossFade(250))
                     .centerCrop()
+                    .listener(new RequestListener<Drawable>() {
+                        @Override
+                        public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+                            if (holder.posterShimmer != null) {
+                                holder.posterShimmer.stopShimmer();
+                                holder.posterShimmer.setVisibility(View.GONE);
+                            }
+                            if (holder.posterPlaceholder != null) {
+                                holder.posterPlaceholder.setVisibility(View.VISIBLE);
+                            }
+                            return false;
+                        }
+
+                        @Override
+                        public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+                            if (holder.posterShimmer != null) {
+                                holder.posterShimmer.stopShimmer();
+                                holder.posterShimmer.setVisibility(View.GONE);
+                            }
+                            holder.posterImage.setVisibility(View.VISIBLE);
+                            return false;
+                        }
+                    })
                     .into(holder.posterImage);
         } else {
             // No API image — show centered placeholder icon
+            if (holder.posterShimmer != null) {
+                holder.posterShimmer.stopShimmer();
+                holder.posterShimmer.setVisibility(View.GONE);
+            }
             holder.posterImage.setVisibility(View.GONE);
-            holder.posterPlaceholder.setVisibility(View.VISIBLE);
+            if (holder.posterPlaceholder != null) {
+                holder.posterPlaceholder.setVisibility(View.VISIBLE);
+            }
         }
 
         holder.itemView.setOnClickListener(v -> {
@@ -87,11 +127,13 @@ public class Leaflet_PopularPosterAdapter extends RecyclerView.Adapter<Leaflet_P
     static class PosterViewHolder extends RecyclerView.ViewHolder {
         ImageView posterImage;
         LinearLayout posterPlaceholder;
+        ShimmerFrameLayout posterShimmer;
 
         public PosterViewHolder(@NonNull View itemView) {
             super(itemView);
             posterImage = itemView.findViewById(R.id.poster_image);
             posterPlaceholder = itemView.findViewById(R.id.poster_placeholder);
+            posterShimmer = itemView.findViewById(R.id.poster_shimmer);
         }
     }
 }

@@ -40,3 +40,28 @@
 -dontwarn com.online.flyer.design.postermaker.Leaflet_adManager.**
 -dontwarn com.online.flyer.design.postermaker.Leaflet_fragment.**
 -dontwarn com.online.flyer.design.postermaker.Leaflet_view.**
+
+# Volley
+-keep class com.android.volley.** { *; }
+-dontwarn com.android.volley.**
+
+# App Models and Utils for JSON / Serialization / Reflection
+-keep class com.online.flyer.design.postermaker.Leaflet_model.** { *; }
+-keepclassmembers class com.online.flyer.design.postermaker.Leaflet_model.** { *; }
+-keep class com.online.flyer.design.postermaker.Leaflet_utils.** { *; }
+-keepclassmembers class com.online.flyer.design.postermaker.Leaflet_utils.** { *; }
+
+# Firebase Database serialization
+-keepattributes *Annotation*
+-keepclassmembers class * {
+    @com.google.firebase.database.PropertyName <fields>;
+    @com.google.firebase.database.PropertyName <methods>;
+}
+
+
+# Keep LifecycleObserver & AppOpenManager for Foreground Ads in release/live builds
+-keepclassmembers class * implements androidx.lifecycle.LifecycleObserver {
+    @androidx.lifecycle.OnLifecycleEvent *;
+}
+-keep class * implements androidx.lifecycle.DefaultLifecycleObserver { *; }
+-keep class com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager { *; }

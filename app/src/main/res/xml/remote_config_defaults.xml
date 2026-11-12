@@ -1,10 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <defaultsMap>
     <entry>
+        <key>bannerAdStatus</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>NativeUnitID</key>
+        <value>ca-app-pub-7915560734124811/5807970180</value>
+    </entry>
+    <entry>
+        <key>show_preview_native</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_native_preview</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>preview_native_height</key>
+        <value>95</value>
+    </entry>
+    <entry>
+        <key>reward_timer_enabled</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>reward_timer_seconds</key>
+        <value>50</value>
+    </entry>
+    <entry>
+        <key>show_loading_screen</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>loading_timer_seconds</key>
+        <value>10</value>
+    </entry>
+    <entry>
+        <key>show_loading_native</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>loading_native_height</key>
+        <value>280</value>
+    </entry>
+    <entry>
         <key>search</key>
         <value>{
   "enabled": true,
-  "count": 3
+  "count": 4
 }</value>
     </entry>
     <entry>
@@ -13,13 +57,13 @@
     </entry>
     <entry>
         <key>search_interstitial_count</key>
-        <value>3</value>
+        <value>4</value>
     </entry>
     <entry>
         <key>premium_poster_lock</key>
         <value>{
   "enabled": true,
-  "blur_enabled": true,
+  "blur_enabled": false,
   "reward_popup_enabled": true,
   "native_ad_enabled": true,
   "ad_type": "reward"
@@ -30,7 +74,7 @@
         <value>{
   "native_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-5706123402805812/8186296336"
+    "ad_id": "ca-app-pub-7915560734124811/5807970180"
   }
 }</value>
     </entry>
@@ -52,7 +96,7 @@
     </entry>
     <entry>
         <key>premium_poster_blur_enabled</key>
-        <value>true</value>
+        <value>false</value>
     </entry>
     <entry>
         <key>premium_reward_popup_enabled</key>
@@ -64,7 +108,7 @@
   "enabled": true,
   "free_actions_allowed": 0,
   "ad_type": "reward",
-  "ad_id": "ca-app-pub-5706123402805812/6490071289"
+  "ad_id": "ca-app-pub-7915560734124811/5807970180"
 }</value>
     </entry>
     <entry>
@@ -72,29 +116,29 @@
         <value>{
   "enabled": true,
   "timer_seconds": 50,
-  "ad_id": "ca-app-pub-5706123402805812/6490071289"
+  "ad_id": "ca-app-pub-7915560734124811/5807970180"
 }</value>
     </entry>
     <entry>
         <key>interstitial_ad</key>
         <value>{
   "enabled": true,
-  "count": 2,
+  "count": 4,
   "edit_count": 3,
-  "ad_id": "ca-app-pub-5706123402805812/1594372797"
+  "ad_id": "ca-app-pub-7915560734124811/6506808330"
 }</value>
     </entry>
     <entry>
         <key>interstitial_ad_count</key>
-        <value>2</value>
+        <value>4</value>
     </entry>
     <entry>
         <key>interstitialAdCount</key>
-        <value>2</value>
+        <value>4</value>
     </entry>
     <entry>
         <key>interstitialAdStatus</key>
-        <value>2</value>
+        <value>4</value>
     </entry>
     <entry>
         <key>EditScreenAdCount</key>
@@ -111,7 +155,7 @@
     "enabled": true,
     "height": 280,
     "type": "video",
-    "ad_id": "ca-app-pub-5706123402805812/8186296336"
+    "ad_id": "ca-app-pub-7915560734124811/5807970180"
   }
 }</value>
     </entry>
@@ -121,11 +165,11 @@
   "timer_seconds": 4,
   "app_open_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-5706123402805812/2933969658"
+    "ad_id": "ca-app-pub-7915560734124811/1238169780"
   },
   "fallback_interstitial_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-5706123402805812/1594372797"
+    "ad_id": "ca-app-pub-7915560734124811/6506808330"
   }
 }</value>
     </entry>
@@ -133,7 +177,7 @@
         <key>foreground_app_open</key>
         <value>{
   "enabled": true,
-  "ad_id": "ca-app-pub-5706123402805812/2933969658",
+  "ad_id": "ca-app-pub-7915560734124811/1238169780",
   "cooldown_seconds": 2,
   "gallery_cooldown_seconds": 0,
   "suppress_on_intent": false,
@@ -145,22 +189,22 @@
         <value>{
   "banner_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-5706123402805812/4821766396"
+    "ad_id": "ca-app-pub-7915560734124811/5807970180"
   },
   "preview_native_ad": {
     "enabled": true,
     "ad_type": "compact",
     "height": 100,
-    "ad_id": "ca-app-pub-5706123402805812/8186296336"
+    "ad_id": "ca-app-pub-7915560734124811/5807970180"
   },
   "native_ad": {
     "enabled": true,
-    "first_ad_after": 6,
-    "repeat_ad_after": 6,
-    "ad_id": "ca-app-pub-5706123402805812/8186296336",
-    "native_show_shimmer_on_fail": false
+    "first_ad_after": 4,
+    "repeat_ad_after": 4,
+    "ad_id": "ca-app-pub-7915560734124811/5807970180",
+    "native_show_shimmer_on_fail": true
   },
-  "native_show_shimmer_on_fail": false
+  "native_show_shimmer_on_fail": true
 }</value>
     </entry>
     <entry>
@@ -168,22 +212,22 @@
         <value>{
   "banner_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-5706123402805812/4821766396"
+    "ad_id": "ca-app-pub-7915560734124811/5807970180"
   },
   "preview_native_ad": {
     "enabled": true,
     "ad_type": "compact",
     "height": 100,
-    "ad_id": "ca-app-pub-5706123402805812/8186296336"
+    "ad_id": "ca-app-pub-7915560734124811/5807970180"
   },
   "native_ad": {
     "enabled": true,
-    "first_ad_after": 6,
-    "repeat_ad_after": 6,
-    "ad_id": "ca-app-pub-5706123402805812/8186296336",
-    "native_show_shimmer_on_fail": false
+    "first_ad_after": 4,
+    "repeat_ad_after": 4,
+    "ad_id": "ca-app-pub-7915560734124811/5807970180",
+    "native_show_shimmer_on_fail": true
   },
-  "native_show_shimmer_on_fail": false
+  "native_show_shimmer_on_fail": true
 }</value>
     </entry>
     <entry>
@@ -191,7 +235,7 @@
         <value>{
   "banner_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-5706123402805812/4821766396"
+    "ad_id": "ca-app-pub-7915560734124811/5807970180"
   }
 }</value>
     </entry>
@@ -200,8 +244,8 @@
         <value>{
   "native_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-5706123402805812/8186296336",
-    "native_show_shimmer_on_fail": false
+    "ad_id": "ca-app-pub-7915560734124811/5807970180",
+    "native_show_shimmer_on_fail": true
   }
 }</value>
     </entry>
@@ -222,6 +266,10 @@
         <value>1</value>
     </entry>
     <entry>
+        <key>show_foreground_app_open</key>
+        <value>1</value>
+    </entry>
+    <entry>
         <key>show_banner_background</key>
         <value>1</value>
     </entry>
@@ -231,6 +279,14 @@
     </entry>
     <entry>
         <key>show_banner_share</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_banner_custom</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_banner_create_custom</key>
         <value>1</value>
     </entry>
     <entry>
@@ -247,7 +303,23 @@
     </entry>
     <entry>
         <key>native_show_shimmer_on_fail</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>poster_maker_paid</key>
+        <value>{}</value>
+    </entry>
+    <entry>
+        <key>poster_maker_organic</key>
+        <value>{}</value>
+    </entry>
+    <entry>
+        <key>banner_show_shimmer_on_fail</key>
         <value>false</value>
+    </entry>
+    <entry>
+        <key>dialog_show_shimmer_on_fail</key>
+        <value>true</value>
     </entry>
     <entry>
         <key>template_ad_interval</key>
@@ -333,5 +405,310 @@
     "next_interstitial": false
   }
 }</value>
+    </entry>
+    <entry>
+        <key>create_custom</key>
+        <value>{
+  "banner_ad": {
+    "enabled": false,
+    "ad_id": "ca-app-pub-7915560734124811/6506808330"
+  },
+  "native_ad": {
+    "enabled": true,
+    "ad_id": "ca-app-pub-7915560734124811/5807970180",
+    "height": 0,
+    "show_shimmer_on_fail": true
+  }
+}</value>
+    </entry>
+    <entry>
+        <key>create_custom_native_ad_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>create_custom_native_ad_height</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>rating_dialog_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>app_update</key>
+        <value>{
+  "update_available": false,
+  "force_update": false,
+  "update_version_name": "1.0",
+  "update_title": "Update Available",
+  "update_message": "A new version of the app is available with new templates and features. Please update now!"
+}</value>
+    </entry>
+    <entry>
+        <key>UpdateAvailable</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>force_update</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>UpdateVersionName</key>
+        <value>1.0</value>
+    </entry>
+    <entry>
+        <key>update_title</key>
+        <value>Update Available</value>
+    </entry>
+    <entry>
+        <key>update_message</key>
+        <value>A new version of the app is available with new templates and features. Please update now!</value>
+    </entry>
+    <entry>
+        <key>PremiumPostCount</key>
+        <value>3</value>
+    </entry>
+    <entry>
+        <key>template_pro_interval</key>
+        <value>3</value>
+    </entry>
+    <entry>
+        <key>background_pro_interval</key>
+        <value>3</value>
+    </entry>
+    <entry>
+        <key>disable_screenshot</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>ad_blocker_detection_enabled</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>cooldown_seconds</key>
+        <value>2</value>
+    </entry>
+    <entry>
+        <key>gallery_cooldown_seconds</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>suppress_on_intent</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>suppress_on_ad_click</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>reward_ad_timeout_seconds</key>
+        <value>10</value>
+    </entry>
+    <entry>
+        <key>field_0</key>
+        <value>drytdsry6ne46ndr6</value>
+    </entry>
+    <entry>
+        <key>field_1</key>
+        <value>https://cygnux.in/postermaker</value>
+    </entry>
+    <entry>
+        <key>field_2</key>
+        <value>message</value>
+    </entry>
+    <entry>
+        <key>field_3</key>
+        <value>error</value>
+    </entry>
+    <entry>
+        <key>field_4</key>
+        <value>data</value>
+    </entry>
+    <entry>
+        <key>field_5</key>
+        <value>cat_name</value>
+    </entry>
+    <entry>
+        <key>field_6</key>
+        <value>thumb_img</value>
+    </entry>
+    <entry>
+        <key>field_7</key>
+        <value>poster_list</value>
+    </entry>
+    <entry>
+        <key>field_8</key>
+        <value>ratio</value>
+    </entry>
+    <entry>
+        <key>field_9</key>
+        <value>back_image</value>
+    </entry>
+    <entry>
+        <key>field_10</key>
+        <value>post_id</value>
+    </entry>
+    <entry>
+        <key>field_11</key>
+        <value>post_thumb</value>
+    </entry>
+    <entry>
+        <key>field_12</key>
+        <value>text_info</value>
+    </entry>
+    <entry>
+        <key>field_13</key>
+        <value>sticker_info</value>
+    </entry>
+    <entry>
+        <key>field_14</key>
+        <value>txt_height</value>
+    </entry>
+    <entry>
+        <key>field_15</key>
+        <value>txt_width</value>
+    </entry>
+    <entry>
+        <key>field_16</key>
+        <value>text</value>
+    </entry>
+    <entry>
+        <key>field_17</key>
+        <value>txt_x_pos</value>
+    </entry>
+    <entry>
+        <key>field_18</key>
+        <value>font_family</value>
+    </entry>
+    <entry>
+        <key>field_19</key>
+        <value>txt_y_pos</value>
+    </entry>
+    <entry>
+        <key>field_20</key>
+        <value>txt_order</value>
+    </entry>
+    <entry>
+        <key>field_21</key>
+        <value>text_id</value>
+    </entry>
+    <entry>
+        <key>field_22</key>
+        <value>txt_rotation</value>
+    </entry>
+    <entry>
+        <key>field_23</key>
+        <value>txt_color</value>
+    </entry>
+    <entry>
+        <key>field_24</key>
+        <value>st_order</value>
+    </entry>
+    <entry>
+        <key>field_25</key>
+        <value>st_image</value>
+    </entry>
+    <entry>
+        <key>field_26</key>
+        <value>st_rotation</value>
+    </entry>
+    <entry>
+        <key>field_27</key>
+        <value>st_height</value>
+    </entry>
+    <entry>
+        <key>field_28</key>
+        <value>st_y_pos</value>
+    </entry>
+    <entry>
+        <key>field_29</key>
+        <value>st_x_pos</value>
+    </entry>
+    <entry>
+        <key>field_30</key>
+        <value>st_res_uri</value>
+    </entry>
+    <entry>
+        <key>field_31</key>
+        <value>st_width</value>
+    </entry>
+    <entry>
+        <key>field_32</key>
+        <value>sticker_id</value>
+    </entry>
+    <entry>
+        <key>field_33</key>
+        <value>st_res_id</value>
+    </entry>
+    <entry>
+        <key>field_34</key>
+        <value>/API/V1/</value>
+    </entry>
+    <entry>
+        <key>field_35</key>
+        <value>poster/swiperCat</value>
+    </entry>
+    <entry>
+        <key>field_36</key>
+        <value>poster/poster</value>
+    </entry>
+    <entry>
+        <key>field_37</key>
+        <value>http://varniapp.com/fontasset/assets/</value>
+    </entry>
+    <entry>
+        <key>field_38</key>
+        <value>poster/swiperBG</value>
+    </entry>
+    <entry>
+        <key>field_39</key>
+        <value>thumbnail_bg</value>
+    </entry>
+    <entry>
+        <key>field_40</key>
+        <value>category_id</value>
+    </entry>
+    <entry>
+        <key>field_41</key>
+        <value>category_name</value>
+    </entry>
+    <entry>
+        <key>field_42</key>
+        <value>category_list</value>
+    </entry>
+    <entry>
+        <key>field_43</key>
+        <value>id</value>
+    </entry>
+    <entry>
+        <key>field_44</key>
+        <value>thumb_url</value>
+    </entry>
+    <entry>
+        <key>field_45</key>
+        <value>image_url</value>
+    </entry>
+    <entry>
+        <key>field_46</key>
+        <value>cat_id</value>
+    </entry>
+    <entry>
+        <key>field_47</key>
+        <value>key</value>
+    </entry>
+    <entry>
+        <key>field_48</key>
+        <value>device</value>
+    </entry>
+    <entry>
+        <key>force_config_type</key>
+        <value>auto</value>
+    </entry>
+    <entry>
+        <key>force_paid_config</key>
+        <value>false</value>
+    </entry>
+    <entry>
+        <key>force_organic_config</key>
+        <value>false</value>
     </entry>
 </defaultsMap>

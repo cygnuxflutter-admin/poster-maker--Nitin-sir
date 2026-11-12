@@ -24,12 +24,29 @@ public class Leaflet_FavoritesManager {
     public static ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_PosterImage> getLikedPosters(Context context) {
         String json = getPrefs(context).getString(KEY_LIKED_POSTERS, "[]");
         Type type = new TypeToken<ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_PosterImage>>() {}.getType();
-        return new Gson().fromJson(json, type);
+        ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_PosterImage> list = new Gson().fromJson(json, type);
+        if (list == null) list = new ArrayList<>();
+        checkAndUpdatePremiumPosters(context, list);
+        return list;
     }
 
     public static void addLikedPoster(Context context, com.online.flyer.design.postermaker.Leaflet_model.Leaflet_PosterImage poster) {
         ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_PosterImage> liked = getLikedPosters(context);
-        if (!isPosterLiked(context, String.valueOf(poster.getPost_id()))) {
+        boolean found = false;
+        for (int i = 0; i < liked.size(); i++) {
+            if (liked.get(i).getPost_id() == poster.getPost_id()) {
+                found = true;
+                if (poster.isPremium() && !liked.get(i).isPremium()) {
+                    liked.get(i).setPremium(true);
+                }
+                if (poster.getCat_id() != 0 && liked.get(i).getCat_id() == 0) {
+                    liked.get(i).setCat_id(poster.getCat_id());
+                }
+                saveLikedPosters(context, liked);
+                break;
+            }
+        }
+        if (!found) {
             liked.add(poster);
             saveLikedPosters(context, liked);
         }
@@ -58,17 +75,77 @@ public class Leaflet_FavoritesManager {
         getPrefs(context).edit().putString(KEY_LIKED_POSTERS, new Gson().toJson(list)).apply();
     }
 
+    private static void checkAndUpdatePremiumPosters(Context context, ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_PosterImage> list) {
+        if (context == null || list == null || list.isEmpty()) return;
+        boolean needsUpdate = false;
+        try {
+            Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(context);
+            int interval = pref.getPremiumPosterInterval("templates");
+            if (interval <= 0) return;
+
+            String cache = Leaflet_DataCacheManager.getInstance().getCache(context, Leaflet_DataCacheManager.KEY_TEMPLATES);
+            if (cache == null || cache.isEmpty()) return;
+
+            org.json.JSONArray rootArray = new org.json.JSONArray(cache);
+            String field7 = pref.getDataType("field_7");
+            String field10 = pref.getDataType("field_10");
+
+            java.util.Map<Integer, Boolean> premiumMap = new java.util.HashMap<>();
+            for (int i = 0; i < rootArray.length(); i++) {
+                org.json.JSONObject catObj = rootArray.getJSONObject(i);
+                if (catObj.has(field7)) {
+                    org.json.JSONArray items = catObj.getJSONArray(field7);
+                    for (int j = 0; j < items.length(); j++) {
+                        org.json.JSONObject item = items.getJSONObject(j);
+                        int pId = item.optInt(field10, -1);
+                        if (pId != -1) {
+                            boolean isPrem = (interval > 0 && (j + 1) % interval == 0);
+                            if (isPrem) {
+                                premiumMap.put(pId, true);
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (com.online.flyer.design.postermaker.Leaflet_model.Leaflet_PosterImage poster : list) {
+                if (!poster.isPremium() && premiumMap.containsKey(poster.getPost_id())) {
+                    poster.setPremium(true);
+                    needsUpdate = true;
+                }
+            }
+        } catch (Exception ignored) {}
+
+        if (needsUpdate) {
+            saveLikedPosters(context, list);
+        }
+    }
+
     // --- Backgrounds ---
 
     public static ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage> getLikedBackgrounds(Context context) {
         String json = getPrefs(context).getString(KEY_LIKED_BACKGROUNDS, "[]");
         Type type = new TypeToken<ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage>>() {}.getType();
-        return new Gson().fromJson(json, type);
+        ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage> list = new Gson().fromJson(json, type);
+        if (list == null) list = new ArrayList<>();
+        checkAndUpdatePremiumBackgrounds(context, list);
+        return list;
     }
 
     public static void addLikedBackground(Context context, com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage bg) {
         ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage> liked = getLikedBackgrounds(context);
-        if (!isBackgroundLiked(context, String.valueOf(bg.getId()))) {
+        boolean found = false;
+        for (int i = 0; i < liked.size(); i++) {
+            if (liked.get(i).getId() == bg.getId()) {
+                found = true;
+                if (bg.isPremium() && !liked.get(i).isPremium()) {
+                    liked.get(i).setPremium(true);
+                }
+                saveLikedBackgrounds(context, liked);
+                break;
+            }
+        }
+        if (!found) {
             liked.add(bg);
             saveLikedBackgrounds(context, liked);
         }
@@ -95,5 +172,51 @@ public class Leaflet_FavoritesManager {
 
     private static void saveLikedBackgrounds(Context context, ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage> list) {
         getPrefs(context).edit().putString(KEY_LIKED_BACKGROUNDS, new Gson().toJson(list)).apply();
+    }
+
+    private static void checkAndUpdatePremiumBackgrounds(Context context, ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage> list) {
+        if (context == null || list == null || list.isEmpty()) return;
+        boolean needsUpdate = false;
+        try {
+            Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(context);
+            int interval = pref.getPremiumPosterInterval("backgrounds");
+            if (interval <= 0) return;
+
+            String cache = Leaflet_DataCacheManager.getInstance().getCache(context, Leaflet_DataCacheManager.KEY_BACKGROUNDS);
+            if (cache == null || cache.isEmpty()) return;
+
+            org.json.JSONArray rootArray = new org.json.JSONArray(cache);
+            String field42 = pref.getDataType("field_42");
+            String field43 = pref.getDataType("field_43");
+
+            java.util.Map<Integer, Boolean> premiumMap = new java.util.HashMap<>();
+            for (int i = 0; i < rootArray.length(); i++) {
+                org.json.JSONObject catObj = rootArray.getJSONObject(i);
+                if (catObj.has(field42)) {
+                    org.json.JSONArray items = catObj.getJSONArray(field42);
+                    for (int j = 0; j < items.length(); j++) {
+                        org.json.JSONObject item = items.getJSONObject(j);
+                        int bgId = item.optInt(field43, -1);
+                        if (bgId != -1) {
+                            boolean isPrem = (interval > 0 && (j + 1) % interval == 0);
+                            if (isPrem) {
+                                premiumMap.put(bgId, true);
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage bg : list) {
+                if (!bg.isPremium() && premiumMap.containsKey(bg.getId())) {
+                    bg.setPremium(true);
+                    needsUpdate = true;
+                }
+            }
+        } catch (Exception ignored) {}
+
+        if (needsUpdate) {
+            saveLikedBackgrounds(context, list);
+        }
     }
 }
