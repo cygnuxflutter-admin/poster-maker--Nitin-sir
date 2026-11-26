@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.bumptech.glide.request.RequestListener;
@@ -28,8 +29,8 @@ import java.util.List;
 
 public class Leaflet_HeroBannerAdapter extends RecyclerView.Adapter<Leaflet_HeroBannerAdapter.BannerViewHolder> {
 
-    // Use a huge count for infinite looping effect
-    private static final int FAKE_INFINITE_COUNT = Integer.MAX_VALUE;
+    // Safe loop multiplier for smooth infinite carousel without integer overflow
+    private static final int FAKE_LOOP_MULTIPLIER = 1000;
 
     private final Context context;
     private final List<Leaflet_HeroBanner> bannerList;
@@ -70,8 +71,8 @@ public class Leaflet_HeroBannerAdapter extends RecyclerView.Adapter<Leaflet_Hero
      */
     public int getStartPosition() {
         if (bannerList.isEmpty()) return 0;
-        // Start near the middle so user can scroll both left and right
-        return (FAKE_INFINITE_COUNT / 2) - ((FAKE_INFINITE_COUNT / 2) % bannerList.size());
+        int total = bannerList.size() * FAKE_LOOP_MULTIPLIER;
+        return (total / 2) - ((total / 2) % bannerList.size());
     }
 
     @NonNull
@@ -88,17 +89,19 @@ public class Leaflet_HeroBannerAdapter extends RecyclerView.Adapter<Leaflet_Hero
         Leaflet_HeroBanner banner = bannerList.get(realPosition);
 
         if (!TextUtils.isEmpty(banner.getImageUrl())) {
-            // API image available: start shimmer skeleton until image arrives
             if (holder.bannerPlaceholder != null) holder.bannerPlaceholder.setVisibility(View.GONE);
+            if (holder.bannerImage != null) holder.bannerImage.setVisibility(View.VISIBLE);
             if (holder.bannerShimmer != null) {
                 holder.bannerShimmer.setVisibility(View.VISIBLE);
                 holder.bannerShimmer.startShimmer();
             }
-            holder.bannerImage.setVisibility(View.INVISIBLE);
 
             Glide.with(context)
                     .load(banner.getImageUrl())
+                    .priority(com.bumptech.glide.Priority.HIGH)
                     .transition(DrawableTransitionOptions.withCrossFade(250))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .skipMemoryCache(false)
                     .centerCrop()
                     .listener(new RequestListener<Drawable>() {
                         @Override
@@ -119,7 +122,9 @@ public class Leaflet_HeroBannerAdapter extends RecyclerView.Adapter<Leaflet_Hero
                                 holder.bannerShimmer.stopShimmer();
                                 holder.bannerShimmer.setVisibility(View.GONE);
                             }
-                            holder.bannerImage.setVisibility(View.VISIBLE);
+                            if (holder.bannerImage != null) {
+                                holder.bannerImage.setVisibility(View.VISIBLE);
+                            }
                             return false;
                         }
                     })
@@ -129,7 +134,9 @@ public class Leaflet_HeroBannerAdapter extends RecyclerView.Adapter<Leaflet_Hero
                 holder.bannerShimmer.stopShimmer();
                 holder.bannerShimmer.setVisibility(View.GONE);
             }
-            holder.bannerImage.setVisibility(View.GONE);
+            if (holder.bannerImage != null) {
+                holder.bannerImage.setVisibility(View.GONE);
+            }
             if (holder.bannerPlaceholder != null) {
                 holder.bannerPlaceholder.setVisibility(View.VISIBLE);
             }
@@ -151,8 +158,7 @@ public class Leaflet_HeroBannerAdapter extends RecyclerView.Adapter<Leaflet_Hero
 
     @Override
     public int getItemCount() {
-        // Infinite scrolling — return huge number
-        return bannerList.isEmpty() ? 0 : FAKE_INFINITE_COUNT;
+        return bannerList.isEmpty() ? 0 : bannerList.size() * FAKE_LOOP_MULTIPLIER;
     }
 
     static class BannerViewHolder extends RecyclerView.ViewHolder {

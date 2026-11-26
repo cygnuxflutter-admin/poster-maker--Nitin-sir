@@ -41,7 +41,7 @@ public class Leaflet_TextController {
 
     private final LinearLayout ly_txt_controls, ly_txt_rotation, ly_fonts, ly_txt_color, ly_txt_shadow, ly_txt_bg, ly_txt_style;
     private final RecyclerView fonts_rv, txtBg_recycler;
-    private final RelativeLayout txt_btn_up, txt_btnLeft, txt_btnRight, txt_btnDown, lay_dupliText, lay_edit, lay_txt_delete;
+    private final RelativeLayout txt_btn_up, txt_btnLeft, txt_btnRight, txt_btnDown, lay_dupliText, lay_edit, lay_txt_delete, lay_txt_lock;
     private final SeekBar txt_alpha_seekbar, seekBar_txt_shadow, txt_bg_seekbar;
     private final ImageView btn_pickColor, btn_txt_shadow_picker, btn_shadow_minus, btn_shadow_plus, btn_bg_none, btn_pick_bg_color;
     private final ImageView boldIV, italicIV, bold_italic_iv, normalIV;
@@ -79,6 +79,7 @@ public class Leaflet_TextController {
         lay_dupliText = activity.findViewById(R.id.lay_dupliText);
         lay_edit = activity.findViewById(R.id.lay_edit);
         lay_txt_delete = activity.findViewById(R.id.lay_txt_delete);
+        lay_txt_lock = activity.findViewById(R.id.lay_txt_lock);
 
         fonts_rv = activity.findViewById(R.id.fonts_rv);
         txtBg_recycler = activity.findViewById(R.id.txtBg_recycler);
@@ -250,6 +251,20 @@ public class Leaflet_TextController {
                 autofitTextRel.deleteText();
             }
         });
+
+        if (lay_txt_lock != null) {
+            lay_txt_lock.setOnClickListener(v -> {
+                if (autofitTextRel != null) {
+                    autofitTextRel.setDefaultTouchListener(false);
+                    autofitTextRel.setBorderVisibility(false);
+                    if (activity instanceof Leaflet_PosterEditActivity) {
+                        ((Leaflet_PosterEditActivity) activity).hideAllControls();
+                        ((Leaflet_PosterEditActivity) activity).updateLockUi(autofitTextRel);
+                        ((Leaflet_PosterEditActivity) activity).showFloatingPill("🔒 Text Locked", R.drawable.ic_poster_center_lock);
+                    }
+                }
+            });
+        }
     }
 
     private void setFontAdapter() {

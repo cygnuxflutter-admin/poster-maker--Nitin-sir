@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="30dp"
+    android:height="30dp"
+    android:viewportWidth="30"
+    android:viewportHeight="30">
+    <!-- Dark Circle Background -->
+    <path
+        android:fillColor="#1E293B"
+        android:pathData="M15,15m-14,0a14,14 0 1,0 28,0a14,14 0 1,0 -28,0" />
+    <!-- White Closed Lock Icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,13h-0.8V11.4c0,-2.21 -1.79,-4 -4,-4s-4,1.79 -4,4V13H10.4c-0.88,0 -1.6,0.72 -1.6,1.6v8c0,0.88 0.72,1.6 1.6,1.6h9.6c0.88,0 1.6,-0.72 1.6,-1.6v-8c0,-0.88 -0.72,-1.6 -1.6,-1.6zM12.8,11.4c0,-1.33 1.07,-2.4 2.4,-2.4s2.4,1.07 2.4,2.4V13h-4.8v-1.6zm2.4,8.8c-0.88,0 -1.6,-0.72 -1.6,-1.6s0.72,-1.6 1.6,-1.6 1.6,0.72 1.6,1.6 -0.72,1.6 -1.6,1.6z" />
+</vector>

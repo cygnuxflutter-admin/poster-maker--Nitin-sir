@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poster Maker - Promotional Landing Creative (1080x1920)</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Great+Vibes&family=Impact&family=Outfit:wght@400;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,800;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Export Libraries (html-to-image & html2canvas for 100% reliable high-res PNG export) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body class="preview-mode">
+
+  <!-- Interactive Browser Preview Toolbar (Non-printable, for inspection & export) -->
+  <header class="preview-toolbar" id="previewToolbar">
+    <div class="toolbar-brand">
+      <img src="assets/logo.png" alt="Poster Maker" class="tb-logo">
+      <div class="tb-info">
+        <span class="tb-title">Poster Maker Creative</span>
+        <span class="tb-tag">1080 × 1920 px (9:16 Canvas)</span>
+      </div>
+    </div>
+
+    <div class="toolbar-controls">
+      <div class="zoom-pill">
+        <button id="btnZoomFit" class="tb-btn active" title="Fit to Screen">Fit Screen</button>
+        <button id="btnZoom50" class="tb-btn" title="50% Size">50%</button>
+        <button id="btnZoom75" class="tb-btn" title="75% Size">75%</button>
+        <button id="btnZoom100" class="tb-btn" title="100% Actual Size">100%</button>
+      </div>
+
+      <button id="btnToggleAnim" class="tb-btn tb-toggle active" title="Toggle Floating Animations">
+        <span class="indicator"></span> Animations: ON
+      </button>
+
+      <button id="btnToggleTheme" class="tb-btn" title="Toggle Studio Backdrop">
+        🌓 Backdrop
+      </button>
+
+      <button id="btnExportPng" class="tb-btn tb-btn-primary" title="Export as 1080x1920 PNG">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>Export PNG (1080×1920)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Viewport Container that smoothly scales the 1080x1920 canvas -->
+  <main class="viewport-stage" id="viewportStage">
+    
+    <!-- MASTER 9:16 CANVAS (1080 × 1920 px) -->
+    <div class="canvas-wrapper" id="canvasWrapper">
+      <div class="creative-canvas" id="creativeCanvas">
+
+        <!-- Ambient Background Glow & Gradients -->
+        <div class="bg-decorations">
+          <div class="glow-orb orb-1"></div>
+          <div class="glow-orb orb-2"></div>
+          <div class="glow-orb orb-3"></div>
+          <div class="glow-orb orb-4"></div>
+          <div class="mesh-grid"></div>
+          
+          <!-- Sparkling vector decorative stars -->
+          <div class="sparkle sp-1">✦</div>
+          <div class="sparkle sp-2">★</div>
+          <div class="sparkle sp-3">✦</div>
+          <div class="sparkle sp-4">★</div>
+          <div class="sparkle sp-5">✦</div>
+          <div class="sparkle sp-6">★</div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- TOP SECTION: Branding, Headline, Subheadline    -->
+        <!-- ============================================== -->
+        <section class="creative-header">
+          <!-- App Logo & Branding Badge -->
+          <div class="app-branding-badge">
+            <div class="logo-box">
+              <img src="assets/logo.png" alt="Poster Maker App Logo" class="brand-logo-img">
+            </div>
+            <div class="brand-text">
+              <div class="brand-title-row">
+                <span class="brand-name">POSTER MAKER</span>
+                <span class="pro-tag">PRO</span>
+              </div>
+              <span class="brand-subtitle">Flyer &amp; Graphic Design</span>
+            </div>
+            <div class="rating-chip">
+              <span class="stars">★★★★★</span>
+              <span class="score">4.8</span>
+            </div>
+          </div>
+
+          <!-- Main Headlines -->
+          <h1 class="main-headline">
+            <span class="headline-part">DESIGN</span>
+            <span class="headline-dot">•</span>
+            <span class="headline-part">EDIT</span>
+            <span class="headline-dot">•</span>
+            <span class="headline-part">CUSTOMIZE</span>
+          </h1>
+
+          <p class="sub-headline">
+            Stunning Posters <span class="highlight-pill">in Minutes!</span>
+          </p>
+        </section>
+
+
+        <!-- ============================================== -->
+        <!-- CENTERPIECE: Smartphone & Surrounding Posters  -->
+        <!-- ============================================== -->
+        <section class="showcase-section">
+
+          <!-- 4 LEFT POSTER CARDS -->
+          <div class="posters-column posters-left">
+            <!-- 1. Christmas -->
+            <div class="poster-card card-christmas float-anim anim-delay-1" data-tilt="-8">
+              <div class="card-inner">
+                <img src="assets/posters/christmas.svg" alt="Christmas Poster Design" class="poster-img">
+                <div class="category-pill pill-christmas">
+                  <span class="cat-icon">🎄</span> Christmas
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Halloween -->
+            <div class="poster-card card-halloween float-anim anim-delay-2" data-tilt="-12">
+              <div class="card-inner">
+                <img src="assets/posters/halloween.svg" alt="Halloween Poster Design" class="poster-img">
+                <div class="category-pill pill-halloween">
+                  <span class="cat-icon">🎃</span> Halloween
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Birthday -->
+            <div class="poster-card card-birthday float-anim anim-delay-3" data-tilt="-6">
+              <div class="card-inner">
+                <img src="assets/posters/birthday.svg" alt="Birthday Poster Design" class="poster-img">
+                <div class="category-pill pill-birthday">
+                  <span class="cat-icon">🎂</span> Birthday
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. Business -->
+            <div class="poster-card card-business float-anim anim-delay-4" data-tilt="-10">
+              <div class="card-inner">
+                <img src="assets/posters/business.svg" alt="Business Poster Design" class="poster-img">
+                <div class="category-pill pill-business">
+                  <span class="cat-icon">💼</span> Business
+                </div>
+              </div>
+            </div>
+          </div>
+
+
+          <!-- CENTRAL SMARTPHONE MOCKUP -->
+          <div class="phone-mockup-container">
+            
+            <!-- Floating Feature Tool Chips around the phone -->
+            <div class="floating-tool-badge tool-badge-text float-tool-1">
+              <div class="tool-icon-wrap icon-text">
+                <img src="assets/icons/tool-text.svg" alt="Text Tool">
+              </div>
+              <span class="tool-label">Text</span>
+            </div>
+
+            <div class="floating-tool-badge tool-badge-sticker float-tool-2">
+              <div class="tool-icon-wrap icon-sticker">
+                <img src="assets/icons/tool-sticker.svg" alt="Sticker Tool">
+              </div>
+              <span class="tool-label">Sticker</span>
+            </div>
+
+            <div class="floating-tool-badge tool-badge-image float-tool-3">
+              <div class="tool-icon-wrap icon-image">
+                <img src="assets/icons/tool-image.svg" alt="Image Tool">
+              </div>
+              <span class="tool-label">Image</span>
+            </div>
+
+            <div class="floating-tool-badge tool-badge-bg float-tool-4">
+              <div class="tool-icon-wrap icon-bg">
+                <img src="assets/icons/tool-background.svg" alt="Background Tool">
+              </div>
+              <span class="tool-label">Background</span>
+            </div>
+
+            <div class="floating-tool-badge tool-badge-color float-tool-5">
+              <div class="tool-icon-wrap icon-color">
+                <img src="assets/icons/tool-color.svg" alt="Color Tool">
+              </div>
+              <span class="tool-label">Color</span>
+            </div>
+
+            <div class="floating-tool-badge tool-badge-resize float-tool-6">
+              <div class="tool-icon-wrap icon-resize">
+                <img src="assets/icons/tool-resize.svg" alt="Resize Tool">
+              </div>
+              <span class="tool-label">Resize</span>
+            </div>
+
+            <!-- Phone Hardware Body -->
+            <div class="smartphone-chassis">
+              <div class="chassis-rim"></div>
+              
+              <!-- Glass Screen Area -->
+              <div class="smartphone-screen">
+                
+                <!-- Dynamic Island / Top Camera Punch Hole -->
+                <div class="dynamic-island">
+                  <div class="camera-lens"></div>
+                  <div class="sensor"></div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="phone-status-bar">
+                  <span class="status-time">9:41</span>
+                  <div class="status-icons">
+                    <span class="status-cell">5G</span>
+                    <span class="status-wifi">📶</span>
+                    <span class="status-battery">100% 🔋</span>
+                  </div>
+                </div>
+
+                <!-- In-App Editor Header -->
+                <div class="editor-header-bar">
+                  <button class="ed-btn ed-back">❮</button>
+                  <div class="ed-doc-info">
+                    <span class="ed-doc-title">Music Festival Poster</span>
+                    <span class="ed-doc-size">1080 × 1920 • 300 DPI</span>
+                  </div>
+                  <div class="ed-header-actions">
+                    <button class="ed-icon-btn" title="Undo">↶</button>
+                    <button class="ed-icon-btn" title="Redo">↷</button>
+                    <button class="ed-btn-save">Save</button>
+                  </div>
+                </div>
+
+                <!-- Canvas Active Editing Viewport -->
+                <div class="editor-canvas-stage">
+                  <img src="assets/posters/editor-poster.svg" alt="Active Poster Design" class="editor-canvas-bg">
+
+                  <!-- Realistic Layer Selection Box (Transformer) -->
+                  <div class="editor-bounding-box">
+                    <div class="guide-cross-h"></div>
+                    <div class="guide-cross-v"></div>
+
+                    <!-- Bounding Box Border -->
+                    <div class="box-outline"></div>
+
+                    <!-- Rotate Handle -->
+                    <div class="handle-rotate">
+                      <div class="rotate-stem"></div>
+                      <div class="rotate-knob">↻</div>
+                    </div>
+
+                    <!-- Action Corners -->
+                    <button class="box-badge badge-delete" title="Delete">✕</button>
+                    <button class="box-badge badge-duplicate" title="Duplicate">⧉</button>
+                    <button class="box-badge badge-lock" title="Lock">🔒</button>
+
+                    <!-- Corner Resize Anchors -->
+                    <div class="anchor-node anchor-tl"></div>
+                    <div class="anchor-node anchor-tr"></div>
+                    <div class="anchor-node anchor-bl"></div>
+                    <div class="anchor-node anchor-br"></div>
+
+                    <!-- Floating contextual tool pill above selection -->
+                    <div class="selected-layer-pill">
+                      <span class="layer-prop">Font: Montserrat Bold</span>
+                      <span class="layer-dot">•</span>
+                      <span class="layer-prop">Size: 64</span>
+                      <span class="layer-dot">•</span>
+                      <span class="layer-color-dot"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Editor Bottom Tool Tabs -->
+                <div class="editor-bottom-bar">
+                  <div class="ed-tab">
+                    <span class="tab-icon">📐</span>
+                    <span class="tab-name">Templates</span>
+                  </div>
+                  <div class="ed-tab active">
+                    <span class="tab-icon">🔤</span>
+                    <span class="tab-name">Text</span>
+                    <span class="tab-active-dot"></span>
+                  </div>
+                  <div class="ed-tab">
+                    <span class="tab-icon">⭐</span>
+                    <span class="tab-name">Sticker</span>
+                  </div>
+                  <div class="ed-tab">
+                    <span class="tab-icon">🖼️</span>
+                    <span class="tab-name">Image</span>
+                  </div>
+                  <div class="ed-tab">
+                    <span class="tab-icon">🎨</span>
+                    <span class="tab-name">Effects</span>
+                  </div>
+                </div>
+
+                <!-- Screen Glass Reflection Sheen -->
+                <div class="screen-glare"></div>
+
+              </div> <!-- End smartphone-screen -->
+            </div> <!-- End smartphone-chassis -->
+
+          </div> <!-- End phone-mockup-container -->
+
+
+          <!-- 4 RIGHT POSTER CARDS -->
+          <div class="posters-column posters-right">
+            <!-- 5. Sale -->
+            <div class="poster-card card-sale float-anim anim-delay-1" data-tilt="8">
+              <div class="card-inner">
+                <img src="assets/posters/sale.svg" alt="Mega Sale Poster Design" class="poster-img">
+                <div class="category-pill pill-sale">
+                  <span class="cat-icon">🔥</span> Mega Sale
+                </div>
+              </div>
+            </div>
+
+            <!-- 6. Wedding -->
+            <div class="poster-card card-wedding float-anim anim-delay-2" data-tilt="12">
+              <div class="card-inner">
+                <img src="assets/posters/wedding.svg" alt="Wedding Poster Design" class="poster-img">
+                <div class="category-pill pill-wedding">
+                  <span class="cat-icon">💍</span> Wedding
+                </div>
+              </div>
+            </div>
+
+            <!-- 7. Travel -->
+            <div class="poster-card card-travel float-anim anim-delay-3" data-tilt="6">
+              <div class="card-inner">
+                <img src="assets/posters/travel.svg" alt="Travel Poster Design" class="poster-img">
+                <div class="category-pill pill-travel">
+                  <span class="cat-icon">✈️</span> Travel
+                </div>
+              </div>
+            </div>
+
+            <!-- 8. Fitness -->
+            <div class="poster-card card-fitness float-anim anim-delay-4" data-tilt="10">
+              <div class="card-inner">
+                <img src="assets/posters/fitness.svg" alt="Fitness Poster Design" class="poster-img">
+                <div class="category-pill pill-fitness">
+                  <span class="cat-icon">⚡</span> Fitness
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+
+        <!-- ============================================== -->
+        <!-- EDITING TOOLS SHOWCASE BAR                     -->
+        <!-- ============================================== -->
+        <section class="tools-showcase-section">
+          <div class="tools-showcase-wrapper">
+            <div class="tools-showcase-title">
+              <span class="icon">✨</span> POWERFUL CREATIVE TOOLS
+            </div>
+            
+            <div class="tools-grid">
+              <!-- 1. Text -->
+              <div class="tool-item">
+                <div class="tool-chip">
+                  <img src="assets/icons/tool-text.svg" alt="Text" class="tool-svg">
+                </div>
+                <span class="tool-name">Text</span>
+              </div>
+
+              <!-- 2. Image -->
+              <div class="tool-item">
+                <div class="tool-chip">
+                  <img src="assets/icons/tool-image.svg" alt="Image" class="tool-svg">
+                </div>
+                <span class="tool-name">Image</span>
+              </div>
+
+              <!-- 3. Logo -->
+              <div class="tool-item">
+                <div class="tool-chip">
+                  <img src="assets/icons/tool-logo.svg" alt="Logo" class="tool-svg">
+                </div>
+                <span class="tool-name">Logo</span>
+              </div>
+
+              <!-- 4. Sticker -->
+              <div class="tool-item">
+                <div class="tool-chip">
+                  <img src="assets/icons/tool-sticker.svg" alt="Sticker" class="tool-svg">
+                </div>
+                <span class="tool-name">Sticker</span>
+              </div>
+
+              <!-- 5. Background -->
+              <div class="tool-item">
+                <div class="tool-chip">
+                  <img src="assets/icons/tool-background.svg" alt="Background" class="tool-svg">
+                </div>
+                <span class="tool-name">Background</span>
+              </div>
+
+              <!-- 6. Color -->
+              <div class="tool-item">
+                <div class="tool-chip">
+                  <img src="assets/icons/tool-color.svg" alt="Color" class="tool-svg">
+                </div>
+                <span class="tool-name">Color</span>
+              </div>
+
+              <!-- 7. Font -->
+              <div class="tool-item">
+                <div class="tool-chip">
+                  <img src="assets/icons/tool-font.svg" alt="Font" class="tool-svg">
+                </div>
+                <span class="tool-name">Font</span>
+              </div>
+
+              <!-- 8. Resize -->
+              <div class="tool-item">
+                <div class="tool-chip">
+                  <img src="assets/icons/tool-resize.svg" alt="Resize" class="tool-svg">
+                </div>
+                <span class="tool-name">Resize</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================== -->
+        <!-- BOTTOM SECTION: Features, CTA, Google Play     -->
+        <!-- ============================================== -->
+        <footer class="creative-footer">
+          
+          <!-- 3 Feature Cards -->
+          <div class="features-trio">
+            <!-- Feature 1: Easy Editing -->
+            <div class="feature-card">
+              <div class="feat-icon-box feat-easy">
+                <img src="assets/icons/feature-easy.svg" alt="Easy Editing">
+              </div>
+              <div class="feat-content">
+                <h3 class="feat-title">Easy Editing</h3>
+                <p class="feat-desc">Drag, drop &amp; customize in seconds</p>
+              </div>
+            </div>
+
+            <!-- Feature 2: Ready Templates -->
+            <div class="feature-card">
+              <div class="feat-icon-box feat-templates">
+                <img src="assets/icons/feature-templates.svg" alt="Ready Templates">
+              </div>
+              <div class="feat-content">
+                <h3 class="feat-title">Ready Templates</h3>
+                <p class="feat-desc">10,000+ Pro crafted designs</p>
+              </div>
+            </div>
+
+            <!-- Feature 3: High-Quality Download -->
+            <div class="feature-card">
+              <div class="feat-icon-box feat-download">
+                <img src="assets/icons/feature-download.svg" alt="High-Quality Download">
+              </div>
+              <div class="feat-content">
+                <h3 class="feat-title">High-Quality Download</h3>
+                <p class="feat-desc">Crystal clear 4K &amp; print ready</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Master Call-To-Action Button -->
+          <div class="cta-wrapper">
+            <a href="#download" class="cta-button" id="ctaMainBtn">
+              <span class="cta-shine"></span>
+              <span class="cta-text">CREATE FOR FREE</span>
+              <span class="cta-arrow">➔</span>
+            </a>
+            <span class="cta-subtext">No Credit Card Required • Instant Free Access</span>
+          </div>
+
+          <!-- Google Play & Social Proof Section -->
+          <div class="app-store-section">
+            <a href="https://play.google.com/store/apps/details?id=com.online.flyer.design.postermaker" target="_blank" rel="noopener noreferrer" class="gp-badge-link">
+              <img src="assets/google-play-badge.svg" alt="Get it on Google Play" class="gp-badge-img">
+            </a>
+
+            <div class="social-proof-pill">
+              <div class="proof-avatars">
+                <span class="avatar av-1">👩</span>
+                <span class="avatar av-2">👨</span>
+                <span class="avatar av-3">🧑</span>
+                <span class="avatar av-4">👩‍💼</span>
+              </div>
+              <div class="proof-details">
+                <span class="proof-rating">★★★★★ <strong>4.8</strong></span>
+                <span class="proof-count">Loved by <strong>5 Million+</strong> Designers</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Footer Brand Copyright -->
+          <div class="footer-bottom-line">
+            <span>Poster Maker &amp; Flyer Designer • com.online.flyer.design.postermaker</span>
+          </div>
+
+        </footer>
+
+      </div> <!-- End creative-canvas -->
+    </div> <!-- End canvas-wrapper -->
+
+  </main> <!-- End viewport-stage -->
+
+  <!-- Toast Notification Container -->
+  <div class="toast-notification" id="toastNotification">
+    <span class="toast-icon">✓</span>
+    <span class="toast-msg" id="toastMsg">Exporting image...</span>
+  </div>
+
+  <!-- Main JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>

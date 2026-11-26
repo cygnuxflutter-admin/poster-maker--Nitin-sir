@@ -33,12 +33,15 @@ import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterEditActivity;
 
 import androidx.core.widget.TextViewCompat;
 
 import com.online.flyer.design.postermaker.R;
+import com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterEditActivity;
 import com.online.flyer.design.postermaker.Leaflet_components.Leaflet_listener.Leaflet_MultiTouchListener;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_FileUtils;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.IOException;
@@ -127,6 +130,10 @@ public class Leaflet_AutofitTextRel extends RelativeLayout implements Leaflet_Mu
         }
     };
     private ImageView rotate_iv;
+    private ImageView lock_iv;
+    private ImageView center_lock_iv;
+    private ImageView move_handle_iv;
+    private boolean isLockAlertShowing = false;
     private float rotation;
     private int s;
     private ImageView scale_iv;
@@ -325,6 +332,62 @@ public class Leaflet_AutofitTextRel extends RelativeLayout implements Leaflet_Mu
         this.scale_iv.setLayoutParams(slp);
         this.scale_iv.setTag("scale_iv");
         this.scale_iv.setOnTouchListener(this.mTouchListener1);
+
+        this.lock_iv = new ImageView(this.context);
+        this.lock_iv.setImageResource(R.drawable.leaflet_ic_corner_unlock);
+        LayoutParams llp = new LayoutParams(this.s, this.s);
+        llp.addRule(10);
+        llp.addRule(11);
+        llp.setMargins(5, 5, 5, 5);
+        addView(this.lock_iv);
+        this.lock_iv.setLayoutParams(llp);
+
+        this.center_lock_iv = new ImageView(this.context);
+        this.center_lock_iv.setImageResource(R.drawable.ic_poster_center_lock);
+        this.center_lock_iv.setBackgroundResource(R.drawable.bg_canvas_lock_alert_badge);
+        int pad = dpToPx(this.context, 7);
+        this.center_lock_iv.setPadding(pad, pad, pad, pad);
+        int badgeSize = dpToPx(this.context, 34);
+        LayoutParams clp = new LayoutParams(badgeSize, badgeSize);
+        clp.addRule(13); // CENTER_IN_PARENT
+        addView(this.center_lock_iv);
+        this.center_lock_iv.setLayoutParams(clp);
+        this.center_lock_iv.setVisibility(GONE);
+        this.center_lock_iv.setOnClickListener(v -> unlockSelf());
+
+        this.move_handle_iv = new ImageView(this.context);
+        this.move_handle_iv.setImageResource(R.drawable.ic_poster_move_crosshair);
+        this.move_handle_iv.setBackgroundResource(R.drawable.bg_canvas_move_badge);
+        int padM = dpToPx(this.context, 4);
+        this.move_handle_iv.setPadding(padM, padM, padM, padM);
+        int moveBadgeSize = dpToPx(this.context, 26);
+        LayoutParams mlp = new LayoutParams(moveBadgeSize, moveBadgeSize);
+        mlp.addRule(10); // ALIGN_PARENT_TOP
+        mlp.addRule(14); // CENTER_HORIZONTAL
+        mlp.setMargins(0, dpToPx(this.context, 2), 0, 0);
+        addView(this.move_handle_iv);
+        this.move_handle_iv.setLayoutParams(mlp);
+        this.move_handle_iv.setVisibility(GONE);
+        this.move_handle_iv.setOnClickListener(v -> {
+            if (context instanceof Leaflet_PosterEditActivity) {
+                ((Leaflet_PosterEditActivity) context).showMoveGuideHint("Text");
+            }
+        });
+
+        this.lock_iv.setOnClickListener(v -> {
+            if (!this.isMultiTouchEnabled) {
+                unlockSelf();
+                return;
+            }
+            setDefaultTouchListener(false);
+            setBorderVisibility(false);
+            if (context instanceof Leaflet_PosterEditActivity) {
+                ((Leaflet_PosterEditActivity) context).hideAllControls();
+                ((Leaflet_PosterEditActivity) context).updateLockUi(Leaflet_AutofitTextRel.this);
+                ((Leaflet_PosterEditActivity) context).showFloatingPill("🔒 Text Locked", R.drawable.ic_poster_center_lock);
+            }
+        });
+
         this.rotation = getRotation();
         this.scale = AnimationUtils.loadAnimation(getContext(), R.anim.leaflet_sticker_scale_anim);
         this.zoomOutScale = AnimationUtils.loadAnimation(getContext(), R.anim.leaflet_sticker_scale_zoom_out);
@@ -355,13 +418,161 @@ public class Leaflet_AutofitTextRel extends RelativeLayout implements Leaflet_Mu
     }
 
     public boolean setDefaultTouchListener(boolean enable) {
+        this.isMultiTouchEnabled = enable;
         if (enable) {
             setOnTouchListener(new Leaflet_MultiTouchListener().enableRotation(true).setOnTouchCallbackListener(this).setGestureListener(this.gd));
+            if (this.lock_iv != null) {
+                this.lock_iv.setImageResource(R.drawable.leaflet_ic_corner_lock);
+            }
+            if (this.isBorderVisible) {
+                if (this.rotate_iv != null) this.rotate_iv.setVisibility(VISIBLE);
+                if (this.scale_iv != null) this.scale_iv.setVisibility(VISIBLE);
+                if (this.delete_iv != null) this.delete_iv.setVisibility(VISIBLE);
+                if (this.lock_iv != null) this.lock_iv.setVisibility(VISIBLE);
+            }
             return true;
+        } else {
+            this.isLockAlertShowing = false;
+            setBorderVisibility(false);
+            if (this.center_lock_iv != null) {
+                this.center_lock_iv.setVisibility(GONE);
+            }
+            setOnTouchListener((view, event) -> {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    if (isLockAlertShowing || isEventOnLockBadge(event)) {
+                        unlockSelf();
+                        return true;
+                    }
+                    showLockAlert();
+                    if (context instanceof Leaflet_PosterEditActivity) {
+                        ((Leaflet_PosterEditActivity) context).onLockedViewTouched(this, "Text");
+                    }
+                    return true;
+                }
+                return false;
+            });
+            return false;
         }
-        setOnTouchListener(null);
+    }
+
+    private boolean isEventOnLockBadge(MotionEvent event) {
+        float x = event.getX();
+        float y = event.getY();
+        if (this.center_lock_iv != null && this.center_lock_iv.getVisibility() == VISIBLE) {
+            if (x >= this.center_lock_iv.getLeft() && x <= this.center_lock_iv.getRight() &&
+                y >= this.center_lock_iv.getTop() && y <= this.center_lock_iv.getBottom()) {
+                return true;
+            }
+        }
+        if (this.lock_iv != null && this.lock_iv.getVisibility() == VISIBLE) {
+            if (x >= this.lock_iv.getLeft() && x <= this.lock_iv.getRight() &&
+                y >= this.lock_iv.getTop() && y <= this.lock_iv.getBottom()) {
+                return true;
+            }
+        }
         return false;
     }
+
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        if (!this.isMultiTouchEnabled) {
+            return true;
+        }
+        return super.onInterceptTouchEvent(ev);
+    }
+
+    public void showLockAlert() {
+        if (this.isMultiTouchEnabled) return;
+        this.isLockAlertShowing = true;
+        removeCallbacks(lockAlertDismissRunnable);
+
+        setBackgroundResource(R.drawable.leaflet_sticker_border_locked);
+
+        if (this.center_lock_iv != null) {
+            this.center_lock_iv.setVisibility(VISIBLE);
+            this.center_lock_iv.setScaleX(0f);
+            this.center_lock_iv.setScaleY(0f);
+            this.center_lock_iv.setAlpha(1.0f);
+            this.center_lock_iv.animate()
+                    .scaleX(1.18f)
+                    .scaleY(1.18f)
+                    .setDuration(180)
+                    .setInterpolator(new android.view.animation.OvershootInterpolator(2.5f))
+                    .withEndAction(() -> {
+                        if (this.center_lock_iv != null) {
+                            this.center_lock_iv.animate()
+                                    .scaleX(1.0f)
+                                    .scaleY(1.0f)
+                                    .setDuration(120)
+                                    .start();
+                        }
+                    })
+                    .start();
+        }
+
+        if (this.lock_iv != null) {
+            this.lock_iv.setImageResource(R.drawable.leaflet_ic_corner_unlock);
+            this.lock_iv.setVisibility(VISIBLE);
+            this.lock_iv.setScaleX(0f);
+            this.lock_iv.setScaleY(0f);
+            this.lock_iv.setAlpha(1.0f);
+            this.lock_iv.animate()
+                    .scaleX(1.0f)
+                    .scaleY(1.0f)
+                    .setDuration(180)
+                    .setInterpolator(new android.view.animation.OvershootInterpolator(2.0f))
+                    .start();
+        }
+
+        postDelayed(lockAlertDismissRunnable, 2500);
+    }
+
+    public void unlockSelf() {
+        this.isLockAlertShowing = false;
+        removeCallbacks(lockAlertDismissRunnable);
+        if (this.center_lock_iv != null) {
+            this.center_lock_iv.setVisibility(GONE);
+        }
+        setDefaultTouchListener(true);
+        setBorderVisibility(true);
+        if (context instanceof Leaflet_PosterEditActivity) {
+            Leaflet_PosterEditActivity act = (Leaflet_PosterEditActivity) context;
+            act.showFloatingPill("🔓 Text Unlocked", R.drawable.ic_poster_center_unlock);
+            act.updateLockUi(this);
+            act.onTouchDown(this);
+        }
+    }
+
+    private final Runnable lockAlertDismissRunnable = () -> {
+        this.isLockAlertShowing = false;
+        if (!this.isMultiTouchEnabled) {
+            setBackgroundResource(0);
+            if (this.center_lock_iv != null && this.center_lock_iv.getVisibility() == VISIBLE) {
+                this.center_lock_iv.animate()
+                        .alpha(0f)
+                        .scaleX(0.7f)
+                        .scaleY(0.7f)
+                        .setDuration(200)
+                        .withEndAction(() -> {
+                            if (this.center_lock_iv != null) {
+                                this.center_lock_iv.setVisibility(GONE);
+                            }
+                        })
+                        .start();
+            }
+            if (this.lock_iv != null && this.lock_iv.getVisibility() == VISIBLE) {
+                this.lock_iv.animate()
+                        .alpha(0f)
+                        .setDuration(150)
+                        .withEndAction(() -> {
+                            if (this.lock_iv != null) {
+                                this.lock_iv.setVisibility(GONE);
+                            }
+                        })
+                        .start();
+            }
+        }
+    };
 
     public boolean getBorderVisibility() {
         return this.isBorderVisible;
@@ -369,16 +580,35 @@ public class Leaflet_AutofitTextRel extends RelativeLayout implements Leaflet_Mu
 
     public void setBorderVisibility(boolean ch) {
         this.isBorderVisible = ch;
-        if (!ch) {
+        if (!ch || !this.isMultiTouchEnabled) {
             this.border_iv.setVisibility(GONE);
             this.scale_iv.setVisibility(GONE);
             this.delete_iv.setVisibility(GONE);
             this.rotate_iv.setVisibility(GONE);
+            if (this.lock_iv != null) {
+                this.lock_iv.setVisibility(GONE);
+            }
+            if (this.center_lock_iv != null) {
+                this.center_lock_iv.setVisibility(GONE);
+            }
+            if (this.move_handle_iv != null) {
+                this.move_handle_iv.setVisibility(GONE);
+            }
             setBackgroundResource(0);
         } else if (this.border_iv.getVisibility() != VISIBLE) {
             this.border_iv.setVisibility(VISIBLE);
-            this.scale_iv.setVisibility(VISIBLE);
             this.delete_iv.setVisibility(VISIBLE);
+            if (this.lock_iv != null) {
+                this.lock_iv.setVisibility(VISIBLE);
+                this.lock_iv.setImageResource(R.drawable.leaflet_ic_corner_lock);
+            }
+            if (this.center_lock_iv != null) {
+                this.center_lock_iv.setVisibility(GONE);
+            }
+            if (this.move_handle_iv != null) {
+                this.move_handle_iv.setVisibility(GONE);
+            }
+            this.scale_iv.setVisibility(VISIBLE);
             this.rotate_iv.setVisibility(VISIBLE);
             setBackgroundResource(R.drawable.leaflet_sticker_border_gray);
             this.resizeTextView.startAnimation(this.scale);

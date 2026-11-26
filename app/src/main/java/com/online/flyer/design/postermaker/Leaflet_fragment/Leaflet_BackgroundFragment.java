@@ -87,6 +87,9 @@ public class Leaflet_BackgroundFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        if (template_rv != null && template_rv.getAdapter() != null) {
+            template_rv.getAdapter().notifyDataSetChanged();
+        }
     }
 
     @Override

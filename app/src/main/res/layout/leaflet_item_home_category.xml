@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cat_root"
+    android:layout_width="66dp"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackgroundBorderless"
+    android:gravity="center_horizontal"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/cat_tile_bg"
+        android:layout_width="54dp"
+        android:layout_height="54dp"
+        android:background="@drawable/bg_cat_tile_festival">
+
+        <ImageView
+            android:id="@+id/cat_icon"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_gravity="center"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_cat_diya_festival" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/cat_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:text="Category"
+        android:textColor="#1F2937"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+</LinearLayout>

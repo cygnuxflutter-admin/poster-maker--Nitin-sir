@@ -43,6 +43,10 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
     private Leaflet_PreferenceClass preferenceClass;
     private Dialog dialog;
     private boolean isProceeded = false;
+    private boolean isSplashVisible = false;
+    private boolean pendingStartIntent = false;
+    private boolean hasStartedIntent = false;
+    private final Handler splashHandler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +100,11 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         }
 
         Leaflet_MyApplication.isAdsSplash = true;
+        try {
+            if (getApplication() instanceof Leaflet_MyApplication) {
+                ((Leaflet_MyApplication) getApplication()).getAppOpenManager().resetSplashState();
+            }
+        } catch (Exception ignored) {}
 
         if (!Leaflet_NetworkUtils.isNetworkAvailable(this)) {
             Leaflet_MaterialDialogUtils.getInstance().errorDialog(this, "Make sure you are connected to internet !!");
@@ -104,6 +113,10 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
 
         // Fetch backend API metadata (field_0..field_48) in background
         fetchBackendApiMetadata();
+
+        // Preload templates & backgrounds in background so cache and Glide images are warm before home opens
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().preloadTemplatesSilently(this, preferenceClass);
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().preloadBackgroundsSilently(this, preferenceClass);
 
         // 1. Resolve Install Attribution (Paid vs Organic with 2000ms watchdog / 0ms returning user bypass)
         Leaflet_InstallReferrerHelper.resolveAttribution(this, acquisitionType -> {
@@ -128,6 +141,8 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
                                     }
                                 }
                                 Log.d(TAG, "Backend API metadata updated from Realtime Database.");
+                                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().preloadTemplatesSilently(Leaflet_SplashScreen.this, preferenceClass);
+                                com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().preloadBackgroundsSilently(Leaflet_SplashScreen.this, preferenceClass);
                             }
                         }
 
@@ -155,13 +170,14 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
                 proceedAfterRemoteConfig();
             });
 
-            // Fallback timeout in case fetch takes longer than 2.5s (offline/poor network)
+            // Fallback timeout in case fetch takes longer than timeout (offline/poor network - dynamically from Remote Config)
+            long rcTimeoutMs = (preferenceClass != null) ? preferenceClass.getRemoteConfigTimeoutMs() : 2500L;
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 if (!isProceeded && !isFinishing() && !isDestroyed()) {
                     Log.d(TAG, "Remote Config fetch timeout reached. Proceeding with active/default config.");
                     proceedAfterRemoteConfig();
                 }
-            }, 2500);
+            }, rcTimeoutMs);
 
         } catch (Exception e) {
             Log.e(TAG, "Error initializing Remote Config: " + e.getMessage(), e);
@@ -354,7 +370,14 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
             long splashDelayMs = Math.max(0, timerSeconds * 1000L);
             Log.d(TAG, "Splash screen timer: " + timerSeconds + "s (" + splashDelayMs + "ms) from Remote Config.");
 
-            new Handler(Looper.getMainLooper()).postDelayed(this::startIntent, splashDelayMs);
+            try {
+                if (getApplication() instanceof Leaflet_MyApplication) {
+                    ((Leaflet_MyApplication) getApplication()).getAppOpenManager().fetchSplashAd();
+                }
+            } catch (Exception ignored) {}
+
+            splashHandler.removeCallbacksAndMessages(null);
+            splashHandler.postDelayed(this::startIntent, splashDelayMs);
         }
     }
 
@@ -364,38 +387,63 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
 
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                dialog.getWindow().setElevation(0f);
+            }
+
+            android.util.DisplayMetrics metrics = getResources().getDisplayMetrics();
+            int screenWidth = metrics.widthPixels;
+            int maxWidth = (int) (380 * metrics.density);
+            int minWidth = (int) (280 * metrics.density);
+            int targetWidth = (int) (screenWidth * 0.88f);
+            if (targetWidth > maxWidth) targetWidth = maxWidth;
+            if (targetWidth < minWidth && screenWidth > minWidth) targetWidth = minWidth;
+
+            dialog.getWindow().setLayout(targetWidth, android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            dialog.getWindow().setGravity(android.view.Gravity.CENTER);
+        }
+
         TextView descriptionTextView = dialog.findViewById(R.id.descriptionTextView);
         Button cancelBtn = dialog.findViewById(R.id.dialogCancelButton);
         TextView msgTextView = dialog.findViewById(R.id.titleTextView);
         Button okBtn = dialog.findViewById(R.id.dialogOkButton);
 
-        descriptionTextView.setTextColor(getResources().getColor(R.color.black));
-        msgTextView.setTextColor(getResources().getColor(R.color.black));
-
-        if (customTitle != null && !customTitle.trim().isEmpty()) {
-            msgTextView.setText(customTitle);
-        } else {
-            msgTextView.setText(isForceUpdate ? "Update Required" : "Update Available");
-        }
-
-        if (customMessage != null && !customMessage.trim().isEmpty()) {
-            descriptionTextView.setText(customMessage);
-        } else {
-            if (isForceUpdate) {
-                descriptionTextView.setText("A mandatory new version of the app is available. Please update now to continue using the app.");
+        if (msgTextView != null) {
+            msgTextView.setTextColor(android.graphics.Color.parseColor("#0F172A"));
+            if (customTitle != null && !customTitle.trim().isEmpty()) {
+                msgTextView.setText(customTitle);
             } else {
-                descriptionTextView.setText("There is a newer version of the app available. Please update it now.");
+                msgTextView.setText(isForceUpdate ? "Update Required" : "Update Available");
             }
         }
 
-        if (isForceUpdate) {
-            cancelBtn.setVisibility(View.GONE);
-        } else {
+        if (descriptionTextView != null) {
+            descriptionTextView.setTextColor(android.graphics.Color.parseColor("#475569"));
+            if (customMessage != null && !customMessage.trim().isEmpty()) {
+                descriptionTextView.setText(customMessage);
+            } else {
+                if (isForceUpdate) {
+                    descriptionTextView.setText("A mandatory new version of the app is available. Please update now to continue using the app.");
+                } else {
+                    descriptionTextView.setText("There is a newer version of the app available. Please update it now.");
+                }
+            }
+        }
+
+        if (cancelBtn != null) {
             cancelBtn.setVisibility(View.VISIBLE);
-            cancelBtn.setText("Later");
+            cancelBtn.setText(isForceUpdate ? "Exit" : "Later");
+            cancelBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#F1F5F9")));
+            cancelBtn.setTextColor(android.graphics.Color.parseColor("#334155"));
             cancelBtn.setOnClickListener(view -> {
                 dialog.dismiss();
-                startIntent();
+                if (isForceUpdate) {
+                    finishAffinity();
+                } else {
+                    startIntent();
+                }
             });
         }
 
@@ -409,14 +457,18 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
             return false;
         });
 
-        okBtn.setText("Update Now");
-        okBtn.setOnClickListener(view -> {
-            try {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getPackageName())));
-            } catch (ActivityNotFoundException e) {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + getPackageName())));
-            }
-        });
+        if (okBtn != null) {
+            okBtn.setText("Update Now");
+            okBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#0066FF")));
+            okBtn.setTextColor(android.graphics.Color.WHITE);
+            okBtn.setOnClickListener(view -> {
+                try {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + getPackageName())));
+                } catch (ActivityNotFoundException e) {
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + getPackageName())));
+                }
+            });
+        }
 
         if (!isFinishing() && !isDestroyed()) {
             dialog.show();
@@ -424,6 +476,17 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
     }
 
     private void startIntent() {
+        if (hasStartedIntent || isFinishing() || isDestroyed()) {
+            return;
+        }
+        if (!isSplashVisible) {
+            // User temporarily backgrounded during splash timer; defer until Splash resumes
+            pendingStartIntent = true;
+            return;
+        }
+        hasStartedIntent = true;
+        pendingStartIntent = false;
+
         boolean isSplashAdEnabled = preferenceClass.getInt("splashscreen", 1) == 1
                 && preferenceClass.getBoolean("splashscreen", true)
                 && (preferenceClass.isSplashAppOpenEnabled() || preferenceClass.isSplashFallbackInterstitialEnabled());
@@ -444,12 +507,7 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
             int showOnboarding = preferenceClass.getInt("show_onboarding", 1);
             boolean isNextOnboarding = (showOnboarding == 1 && !isOnboardingDone);
 
-            // Preload interstitial only if not going to onboarding and enabled in config
-            if (!isNextOnboarding && preferenceClass.isGlobalInterstitialEnabled()) {
-                if (preferenceClass.getAdsStatus("interstitialAdStatus") == 1 || preferenceClass.getAdsStatus("EditScreenAdCount") == 1) {
-                    ((Leaflet_MyApplication) application).getInterstitialAdManager().fetchAdMobAd();
-                }
-            }
+            // Removed blind interstitial preload — Target-1 logic in MyApplication.showInterstitialAd() handles pre-fetch
 
             openNextScreen();
         });
@@ -462,35 +520,69 @@ public class Leaflet_SplashScreen extends AppCompatActivity {
         int showOnboardingMain = preferenceClass.getInt("show_onboarding", 1);
         boolean isNextOnboardingMain = (showOnboardingMain == 1 && !isOnboardingDoneMain);
 
-        if (!isNextOnboardingMain && preferenceClass.isGlobalInterstitialEnabled()) {
-            if (preferenceClass.getAdsStatus("interstitialAdStatus") == 1 || preferenceClass.getAdsStatus("EditScreenAdCount") == 1) {
-                ((Leaflet_MyApplication) getApplicationContext()).getInterstitialAdManager().fetchAdMobAd();
-            }
-        }
+        // Removed blind interstitial preload — Target-1 logic in MyApplication.showInterstitialAd() handles pre-fetch
 
-        ((Leaflet_MyApplication) getApplicationContext()).sendRequest();
+        // Removed sendRequest() — App Open Ad now loads via JIT in onStop() only
 
         openNextScreen();
     }
 
+    private boolean isNavigatedToNext = false;
+
     private void openNextScreen() {
+        if (isNavigatedToNext) return;
+        isNavigatedToNext = true;
+
         boolean isOnboardingDone = preferenceClass.getBoolean("isOnboardingDone", false);
         int showOnboarding = preferenceClass.getInt("show_onboarding", 1);
         Intent intent;
         if (showOnboarding == 1 && !isOnboardingDone) {
-            intent = new Intent(getApplicationContext(), Leaflet_OnboardingStep1Activity.class);
+            intent = new Intent(Leaflet_SplashScreen.this, Leaflet_OnboardingStep1Activity.class);
         } else {
             if (preferenceClass.isLoadingScreenEnabled() && preferenceClass.isShowLoadingAfterSplash()) {
-                intent = new Intent(getApplicationContext(), Leaflet_LoadingActivity.class);
+                intent = new Intent(Leaflet_SplashScreen.this, Leaflet_LoadingActivity.class);
             } else {
-                intent = new Intent(getApplicationContext(), Leaflet_PosterMainActivity.class);
+                intent = new Intent(Leaflet_SplashScreen.this, Leaflet_PosterMainActivity.class);
             }
         }
         if (getIntent() != null && getIntent().getExtras() != null) {
             intent.putExtras(getIntent().getExtras());
         }
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
-        finish();
+        overridePendingTransition(0, 0);
+        // finish() is handled in onStop() so SplashScreen stays visible behind translucent AdActivity
+        // preventing any black screen and preventing any home-screen drop!
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        isSplashVisible = true;
+        if (pendingStartIntent && !hasStartedIntent) {
+            pendingStartIntent = false;
+            splashHandler.post(this::startIntent);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        isSplashVisible = false;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (isNavigatedToNext) {
+            finish();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        splashHandler.removeCallbacksAndMessages(null);
+        super.onDestroy();
     }
 
     private boolean isVersionGreater(String serverVer, String appVer) {

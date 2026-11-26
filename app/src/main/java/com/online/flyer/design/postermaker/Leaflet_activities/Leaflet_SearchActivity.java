@@ -114,6 +114,15 @@ public class Leaflet_SearchActivity extends AppCompatActivity {
     }
 
     private void setupFilterChips() {
+        String initialFilter = getIntent().getStringExtra("filter");
+        if ("templates".equalsIgnoreCase(initialFilter)) {
+            currentFilter = FilterMode.TEMPLATES;
+            updateChipUi();
+        } else if ("backgrounds".equalsIgnoreCase(initialFilter)) {
+            currentFilter = FilterMode.BACKGROUNDS;
+            updateChipUi();
+        }
+
         chipAll.setOnClickListener(v -> {
             if (currentFilter != FilterMode.ALL) {
                 currentFilter = FilterMode.ALL;
@@ -300,7 +309,7 @@ public class Leaflet_SearchActivity extends AppCompatActivity {
         if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
         hideKeyboard();
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "search", "back_button");
-        Leaflet_MyApplication.showSearchInterstitialAd(this, this::finish);
+        Leaflet_MyApplication.showSearchInterstitialAd(this, "Please wait...", this::finish);
     }
 
     @Override

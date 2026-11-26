@@ -90,7 +90,7 @@ public class Leaflet_MyCreationActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "my_creation", "back_button");
-        com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+        com.online.flyer.design.postermaker.Leaflet_MyApplication.showBackInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
             @Override
             public void onAdClose() {
                 finish();

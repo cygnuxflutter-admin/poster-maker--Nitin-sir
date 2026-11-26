@@ -77,6 +77,16 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
             if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
             onBackPressed();
         });
+
+        android.view.View icSearchContainer = findViewById(R.id.ic_search_container);
+        if (icSearchContainer != null) {
+            icSearchContainer.setOnClickListener(v -> {
+                if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+                Intent searchIntent = new Intent(this, Leaflet_SearchActivity.class);
+                searchIntent.putExtra("filter", "templates");
+                startActivity(searchIntent);
+            });
+        }
         deleteFromExternalStorage();
 
         if (getIntent().getBooleanExtra("auto_load", false)) {
@@ -88,6 +98,7 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
     }
 
     private ArrayList<Leaflet_PosterModel> currentTabList;
+    private androidx.viewpager.widget.ViewPager.OnPageChangeListener lazyLoadPageListener;
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -96,64 +107,69 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         selectTargetCategory();
     }
 
-    private void selectTargetCategory() {
-        if (allCategories == null || currentTabList == null) return;
+    public int findTargetCategoryIndex(ArrayList<Leaflet_PosterModel> categories) {
+        if (categories == null || getIntent() == null) return -1;
         String targetCat = getIntent().getStringExtra("category_name");
         String targetCatId = getIntent().getStringExtra("category_id");
-        if (targetCat == null && targetCatId == null) return;
+        if (targetCat == null && targetCatId == null) return -1;
 
-        androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
-        if (vp == null) return;
-
-        int targetIndex = -1;
         // 1. Match by ID
         if (targetCatId != null && !targetCatId.trim().isEmpty()) {
-            for (int i = 0; i < allCategories.size(); i++) {
-                if (String.valueOf(allCategories.get(i).getCat_id()).equals(targetCatId.trim())) {
-                    targetIndex = i;
-                    break;
+            String cleanId = targetCatId.trim();
+            for (int i = 0; i < categories.size(); i++) {
+                if (String.valueOf(categories.get(i).getCat_id()).equals(cleanId)) {
+                    return i;
                 }
             }
         }
 
         // 2. Exact match by name (case-insensitive)
-        if (targetIndex == -1 && targetCat != null && !targetCat.trim().isEmpty()) {
+        if (targetCat != null && !targetCat.trim().isEmpty()) {
             String cleanTarget = targetCat.trim().toLowerCase();
-            for (int i = 0; i < allCategories.size(); i++) {
-                String catName = allCategories.get(i).getCat_name();
+            for (int i = 0; i < categories.size(); i++) {
+                String catName = categories.get(i).getCat_name();
                 if (catName != null && catName.trim().equalsIgnoreCase(cleanTarget)) {
-                    targetIndex = i;
-                    break;
+                    return i;
                 }
             }
-        }
-
-        // 3. Partial match (contains)
-        if (targetIndex == -1 && targetCat != null && !targetCat.trim().isEmpty()) {
-            String cleanTarget = targetCat.trim().toLowerCase();
-            for (int i = 0; i < allCategories.size(); i++) {
-                String catName = allCategories.get(i).getCat_name();
+            // 3. Partial match (contains)
+            for (int i = 0; i < categories.size(); i++) {
+                String catName = categories.get(i).getCat_name();
                 if (catName != null) {
                     String cleanCat = catName.trim().toLowerCase();
                     if (cleanCat.contains(cleanTarget) || cleanTarget.contains(cleanCat)) {
-                        targetIndex = i;
-                        break;
+                        return i;
                     }
                 }
             }
         }
+        return -1;
+    }
 
-        if (targetIndex != -1) {
-            while (currentTabList.size() <= targetIndex) {
-                currentTabList.add(allCategories.get(currentTabList.size()));
-            }
-            if (vp.getAdapter() != null) {
-                vp.getAdapter().notifyDataSetChanged();
-            }
-            com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
-            if (tabs != null) tabs.notifyDataSetChanged();
-            vp.setCurrentItem(targetIndex);
+    private void selectTargetCategory() {
+        if (allCategories == null || currentTabList == null) return;
+        androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
+        if (vp == null) return;
+
+        int targetIndex = findTargetCategoryIndex(allCategories);
+        if (targetIndex == -1) return;
+
+        if (targetIndex < currentTabList.size() && vp.getCurrentItem() == targetIndex) {
+            return;
         }
+
+        com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
+        boolean added = false;
+        while (currentTabList.size() <= targetIndex) {
+            Leaflet_PosterModel nextCat = allCategories.get(currentTabList.size());
+            currentTabList.add(nextCat);
+            if (tabs != null) tabs.appendTabBeforeMore(nextCat.getCat_name());
+            added = true;
+        }
+        if (added && vp.getAdapter() != null) {
+            vp.getAdapter().notifyDataSetChanged();
+        }
+        vp.setCurrentItem(targetIndex, false);
     }
 
     public void onCategoriesLoaded(ArrayList<Leaflet_PosterModel> categories, ArrayList<Leaflet_PosterModel> tabList) {
@@ -170,31 +186,34 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 
 
         if (vp != null) {
-            vp.addOnPageChangeListener(new androidx.viewpager.widget.ViewPager.OnPageChangeListener() {
+            if (lazyLoadPageListener != null) {
+                vp.removeOnPageChangeListener(lazyLoadPageListener);
+            }
+            lazyLoadPageListener = new androidx.viewpager.widget.ViewPager.OnPageChangeListener() {
                 @Override
                 public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
 
                 @Override
-                public void onPageSelected(int position) {
-                    // Do nothing here, wait for manual swipe drag
-                }
+                public void onPageSelected(int position) {}
 
                 @Override
                 public void onPageScrollStateChanged(int state) {
                     if (state == androidx.viewpager.widget.ViewPager.SCROLL_STATE_DRAGGING) {
                         if (vp.getCurrentItem() == currentTabList.size() - 1) {
                             if (currentTabList.size() < allCategories.size()) {
-                                currentTabList.add(allCategories.get(currentTabList.size()));
+                                Leaflet_PosterModel nextCat = allCategories.get(currentTabList.size());
+                                currentTabList.add(nextCat);
                                 if (vp.getAdapter() != null) {
                                     vp.getAdapter().notifyDataSetChanged();
                                 }
                                 com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
-                                if (tabs != null) tabs.notifyDataSetChanged();
+                                if (tabs != null) tabs.appendTabBeforeMore(nextCat.getCat_name());
                             }
                         }
                     }
                 }
-            });
+            };
+            vp.addOnPageChangeListener(lazyLoadPageListener);
         }
 
         android.view.View lyTitle = findViewById(R.id.ly_title);
@@ -202,12 +221,22 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         android.view.View icSearchContainer = findViewById(R.id.ic_search_container);
         android.view.View icSearchClose = findViewById(R.id.ic_search_close);
         android.widget.EditText etSearch = findViewById(R.id.et_search);
+        final android.view.View llBottomBar = findViewById(R.id.ll_bottom_bar);
+        final android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
 
         if (icSearchContainer != null) {
             icSearchContainer.setOnClickListener(v -> {
                 lyTitle.setVisibility(android.view.View.GONE);
                 icSearchContainer.setVisibility(android.view.View.GONE);
                 lySearch.setVisibility(android.view.View.VISIBLE);
+                if (llBottomBar != null) {
+                    llBottomBar.setTag("SUPPRESSED");
+                    llBottomBar.setVisibility(android.view.View.GONE);
+                }
+                if (rl_ad != null) {
+                    rl_ad.setTag("SUPPRESSED");
+                    rl_ad.setVisibility(android.view.View.GONE);
+                }
                 etSearch.requestFocus();
                 android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
                 if (imm != null) imm.showSoftInput(etSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
@@ -220,10 +249,63 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                 lySearch.setVisibility(android.view.View.GONE);
                 lyTitle.setVisibility(android.view.View.VISIBLE);
                 icSearchContainer.setVisibility(android.view.View.VISIBLE);
+                if (llBottomBar != null) {
+                    llBottomBar.setTag(null);
+                    llBottomBar.setVisibility(android.view.View.VISIBLE);
+                }
+                if (rl_ad != null) {
+                    rl_ad.setTag(null);
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(Leaflet_TemplateSelectionActivity.this);
+                    if (pref.isBannerAdEnabled("templates")) {
+                        rl_ad.setVisibility(android.view.View.VISIBLE);
+                    }
+                }
                 android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
                 if (imm != null) imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
             });
         }
+
+        if (etSearch != null) {
+            etSearch.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus) {
+                    if (llBottomBar != null) {
+                        llBottomBar.setTag("SUPPRESSED");
+                        llBottomBar.setVisibility(android.view.View.GONE);
+                    }
+                    if (rl_ad != null) {
+                        rl_ad.setTag("SUPPRESSED");
+                        rl_ad.setVisibility(android.view.View.GONE);
+                    }
+                }
+            });
+        }
+
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.attachKeyboardListener(this, isVisible -> {
+            if (llBottomBar != null) {
+                if (isVisible) {
+                    llBottomBar.setTag("SUPPRESSED");
+                    llBottomBar.setVisibility(android.view.View.GONE);
+                    if (rl_ad != null) {
+                        rl_ad.setTag("SUPPRESSED");
+                        rl_ad.setVisibility(android.view.View.GONE);
+                    }
+                } else {
+                    android.view.View currentLySearch = findViewById(R.id.ly_search);
+                    boolean isSearchOpen = currentLySearch != null && currentLySearch.getVisibility() == android.view.View.VISIBLE;
+                    if (!isSearchOpen) {
+                        llBottomBar.setTag(null);
+                        llBottomBar.setVisibility(android.view.View.VISIBLE);
+                        if (rl_ad != null) {
+                            rl_ad.setTag(null);
+                            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(Leaflet_TemplateSelectionActivity.this);
+                            if (pref.isBannerAdEnabled("templates")) {
+                                rl_ad.setVisibility(android.view.View.VISIBLE);
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
         if (etSearch != null) {
             etSearch.addTextChangedListener(new android.text.TextWatcher() {
@@ -232,6 +314,14 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (llBottomBar != null && llBottomBar.getVisibility() != android.view.View.GONE) {
+                        llBottomBar.setTag("SUPPRESSED");
+                        llBottomBar.setVisibility(android.view.View.GONE);
+                    }
+                    if (rl_ad != null && rl_ad.getVisibility() != android.view.View.GONE) {
+                        rl_ad.setTag("SUPPRESSED");
+                        rl_ad.setVisibility(android.view.View.GONE);
+                    }
                     if (allCategories == null) return;
                     currentTabList.clear();
                     String query = s.toString().toLowerCase().trim();
@@ -262,11 +352,12 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.setupBottomNav(this, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.TAB_TEMPLATES);
 
         // Load Banner Ad
-        android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
         if (rl_ad != null) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
             if (pref.isBannerAdEnabled("templates")) {
-                rl_ad.setVisibility(android.view.View.VISIBLE);
+                if (!"SUPPRESSED".equals(rl_ad.getTag()) && !com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.isKeyboardVisible(this)) {
+                    rl_ad.setVisibility(android.view.View.VISIBLE);
+                }
                 if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
                     com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad, "templates");
                 }
@@ -323,16 +414,19 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                 }
                 
                 if (targetIndex != -1) {
+                    com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
+                    boolean added = false;
                     while (currentTabList.size() <= targetIndex) {
-                        currentTabList.add(allCategories.get(currentTabList.size()));
+                        Leaflet_PosterModel nextCat = allCategories.get(currentTabList.size());
+                        currentTabList.add(nextCat);
+                        if (tabs != null) tabs.appendTabBeforeMore(nextCat.getCat_name());
+                        added = true;
                     }
                     
                     androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
                     if (vp != null && vp.getAdapter() != null) {
-                        vp.getAdapter().notifyDataSetChanged();
-                        com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
-                        if (tabs != null) tabs.notifyDataSetChanged();
-                        vp.setCurrentItem(targetIndex);
+                        if (added) vp.getAdapter().notifyDataSetChanged();
+                        vp.setCurrentItem(targetIndex, false);
                     }
                 }
             }
@@ -379,12 +473,20 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 
     @Override
     public void onBackPressed() {
+        android.view.View lySearch = findViewById(R.id.ly_search);
+        android.view.View icSearchClose = findViewById(R.id.ic_search_close);
+        if (lySearch != null && lySearch.getVisibility() == android.view.View.VISIBLE) {
+            if (icSearchClose != null) {
+                icSearchClose.performClick();
+                return;
+            }
+        }
         if (System.currentTimeMillis() - com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.getLastAdDismissedTime() < 800) {
             return;
         }
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "template_selection", "back_button");
         if (getIntent().getBooleanExtra("auto_load", false)) {
-            com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+            com.online.flyer.design.postermaker.Leaflet_MyApplication.showBackInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
                 @Override
                 public void onAdClose() {
                     finish();
@@ -392,7 +494,7 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                 }
             });
         } else {
-            com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+            com.online.flyer.design.postermaker.Leaflet_MyApplication.showBackInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
                 @Override
                 public void onAdClose() {
                     android.content.Intent intent = new android.content.Intent(Leaflet_TemplateSelectionActivity.this, com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity.class);
@@ -424,24 +526,31 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
 //                    return;
 //                }
 //            }
-            if (premium) {
+            boolean shouldLockTemplate = premium
+                    && preferenceClass.isPremiumLockEnabled("templates")
+                    && preferenceClass.isProEditPopupEnabled("templates")
+                    && !preferenceClass.isTemplateUnlocked(post_id);
+            if (shouldLockTemplate) {
                 this.cat_id = cat_id;
                 this.post_id = post_id;
 
                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogShown(this, "template_unlock");
-                Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, "Use Template(One Time)", "Use premium template by watching Ads", materialDialog -> {
+                Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, "Unlock Template", "Watch a short video ad to unlock and use this premium template.", "templates", materialDialog -> {
                     com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "template_unlock", "watch_video");
                     if (materialDialog != null && materialDialog.isShowing())
                         materialDialog.dismiss();
-                    Leaflet_PreferenceClass preferenceClass = new Leaflet_PreferenceClass(this);
-                    if (preferenceClass.getDataType("PremiumAdType") != null && preferenceClass.getDataType("PremiumAdType").equals("Reward")) {
-                        Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_TemplateSelectionActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+                    Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(this);
+                    String adType = pref.getPremiumPosterAdType("templates");
+                    if ("Reward".equalsIgnoreCase(adType)) {
+                        String rewardId = pref.getPremiumPosterRewardAdId("templates");
+                        Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_TemplateSelectionActivity.this, rewardId, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
                             @Override
                             public void onAdClose() {
                                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(Leaflet_TemplateSelectionActivity.this, "template_unlock");
+                                pref.saveTemplateUnlockTime(post_id);
                                 isRewarded = true;
                                 templateSelectionController.startMaterialDialog();
-                                loadPoster(preferenceClass.getDataType("field_0"), cat_id, post_id);
+                                loadPoster(pref.getDataType("field_0"), cat_id, post_id);
                             }
 
                             @Override
@@ -456,9 +565,10 @@ public class Leaflet_TemplateSelectionActivity extends AppCompatActivity impleme
                             @Override
                             public void onAdClose() {
                                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(Leaflet_TemplateSelectionActivity.this, "template_unlock");
+                                pref.saveTemplateUnlockTime(post_id);
                                 isRewarded = true;
                                 templateSelectionController.startMaterialDialog();
-                                loadPoster(preferenceClass.getDataType("field_0"), cat_id, post_id);
+                                loadPoster(pref.getDataType("field_0"), cat_id, post_id);
                             }
 
                             @Override

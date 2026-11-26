@@ -24,6 +24,7 @@ public class Leaflet_TemplatePagerAdapter extends FragmentStatePagerAdapter {
         int catId = posterModels.get(position).getCat_id();
         Leaflet_TemplateFragment templateFragment = new Leaflet_TemplateFragment();
         Bundle bundle = new Bundle();
+        bundle.putInt("adapter_pos", position);
         bundle.putInt("catId", catId);
         bundle.putString("cat_name", posterModels.get(position).getCat_name());
         bundle.putSerializable("posterDataLists", posterModels.get(position).getPoster_list());
@@ -33,6 +34,16 @@ public class Leaflet_TemplatePagerAdapter extends FragmentStatePagerAdapter {
 
     @Override
     public int getItemPosition(@NonNull Object object) {
+        if (object instanceof Fragment) {
+            Bundle args = ((Fragment) object).getArguments();
+            if (args != null) {
+                int pos = args.getInt("adapter_pos", -1);
+                int catId = args.getInt("catId", Integer.MIN_VALUE);
+                if (pos >= 0 && pos < posterModels.size() && posterModels.get(pos).getCat_id() == catId) {
+                    return POSITION_UNCHANGED;
+                }
+            }
+        }
         return POSITION_NONE;
     }
 

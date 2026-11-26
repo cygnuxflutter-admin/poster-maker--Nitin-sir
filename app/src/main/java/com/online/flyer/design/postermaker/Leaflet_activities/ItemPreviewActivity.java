@@ -1,602 +1,1263 @@
 package com.online.flyer.design.postermaker.Leaflet_activities;
 
+
+
 import android.app.Dialog;
+
 import android.content.Context;
+
 import android.content.Intent;
+
 import android.graphics.Color;
+
 import android.graphics.drawable.Drawable;
+
 import android.net.Uri;
+
 import android.os.Build;
+
 import android.os.Bundle;
+
 import android.util.Log;
+
 import android.view.LayoutInflater;
+
 import android.view.View;
+
 import android.view.ViewGroup;
+
 import android.view.Window;
+
 import android.view.WindowManager;
+
 import android.widget.Button;
+
 import android.widget.FrameLayout;
+
 import android.widget.ImageView;
+
 import android.widget.LinearLayout;
+
 import android.widget.ProgressBar;
+
 import android.widget.RelativeLayout;
+
 import android.widget.TextView;
+
 import android.widget.Toast;
 
+
+
 import androidx.annotation.NonNull;
+
 import androidx.annotation.Nullable;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import androidx.cardview.widget.CardView;
+
 import androidx.recyclerview.widget.RecyclerView;
+
 import androidx.viewpager2.widget.ViewPager2;
 
+
+
 import com.bumptech.glide.Glide;
+
 import com.bumptech.glide.load.DataSource;
+
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+
 import com.bumptech.glide.load.engine.GlideException;
+
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
+
 import com.bumptech.glide.request.RequestListener;
+
 import com.bumptech.glide.request.target.Target;
+
 import com.facebook.shimmer.ShimmerFrameLayout;
+
 import com.google.android.gms.ads.AdListener;
+
 import com.google.android.gms.ads.AdLoader;
+
 import com.google.android.gms.ads.AdRequest;
+
 import com.google.android.gms.ads.LoadAdError;
+
 import com.google.android.gms.ads.VideoOptions;
+
 import com.google.android.gms.ads.nativead.MediaView;
+
 import com.google.android.gms.ads.nativead.NativeAd;
+
 import com.google.android.gms.ads.nativead.NativeAdOptions;
+
 import com.google.android.gms.ads.nativead.NativeAdView;
+
 import com.google.firebase.analytics.FirebaseAnalytics;
+
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
+
 import com.online.flyer.design.postermaker.BuildConfig;
+
 import com.online.flyer.design.postermaker.Leaflet_threadTask.Leaflet_DlBgAsync;
+
 import com.online.flyer.design.postermaker.Leaflet_MyApplication;
+
 import com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager;
+
 import com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_RewardVideoManager;
+
 import com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage;
+
 import com.online.flyer.design.postermaker.Leaflet_model.Leaflet_PosterImage;
+
 import com.online.flyer.design.postermaker.Leaflet_model.PreviewItem;
+
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_FavoritesManager;
+
 import com.android.volley.Request;
+
 import com.android.volley.toolbox.StringRequest;
+
 import com.android.volley.toolbox.Volley;
+import com.android.volley.DefaultRetryPolicy;
+import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager;
+
 import com.online.flyer.design.postermaker.Leaflet_model.Leaflet_StickerModel;
+
 import com.online.flyer.design.postermaker.Leaflet_model.Leaflet_TemplateModel;
+
 import com.online.flyer.design.postermaker.Leaflet_model.Leaflet_TextModel;
+
 import com.online.flyer.design.postermaker.Leaflet_threadTask.Leaflet_DlTemplateAsync;
+
 import com.online.flyer.design.postermaker.Leaflet_threadTask.Leaflet_GetPosDetail;
+
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_FileUtils;
+
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_MaterialDialogUtils;
+
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils;
+
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass;
+import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_LockAnimationHelper;
+
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_BlurTransformation;
+
+
 
 import com.online.flyer.design.postermaker.R;
 
+
+
 import org.json.JSONArray;
+
 import org.json.JSONObject;
 
+
+
 import java.io.File;
+
 import java.io.Serializable;
+
 import java.util.ArrayList;
+
 import java.util.HashMap;
+
 import java.util.List;
+
 import java.util.Map;
 
+
+
 /**
+
  * High-performance, immersive Fullscreen Swipeable Preview Screen (Reels / Stories style)
+
  * for both Templates and Backgrounds.
+
  * 
+
  * Exact features:
+
  * 1. ViewPager2 with smooth vertical swiping (Swipe up for more)
+
  * 2. Top bar: Back arrow, Title (Category Name), Subtitle ("Background 2 of 20" / "Template 2 of 27")
+
  * 3. Card: Rounded corners (16dp), full high-res preview, floating top-right heart like button,
+
  *    and floating bottom-center pill "Swipe up for more"
+
  * 4. AdMob Native Ad: Remote-Config controlled with Shimmer placeholder & graceful collapse on failure
+
  * 5. Primary Action CTA Button: Gradient purple-to-magenta with pencil icon:
+
  *    - "Edit Template" (for Templates)
+
  *    - "Use Background" (for Backgrounds)
+
  */
+
 public class ItemPreviewActivity extends AppCompatActivity {
+
+
 
     private static final String TAG = "ItemPreviewActivity";
 
+
+
     // Intent Extra Constants
+
     public static final String EXTRA_PREVIEW_MODE = "extra_preview_mode"; // "mode_template" or "mode_background"
+
     public static final String MODE_TEMPLATE = "mode_template";
+
     public static final String MODE_BACKGROUND = "mode_background";
 
+
+
     public static final String EXTRA_PREVIEW_ITEMS = "extra_preview_items";
+
     public static final String EXTRA_POSTER_IMAGES = "extra_poster_images";
+
     public static final String EXTRA_BG_IMAGES = "extra_bg_images";
+
     public static final String EXTRA_IMAGE_URLS = "extra_image_urls";
+
     public static final String EXTRA_INITIAL_POSITION = "extra_initial_position";
+
     public static final String EXTRA_CATEGORY_NAME = "extra_category_name";
 
+
+
     public static final String EXTRA_SINGLE_IMAGE_URL = "extra_image_url";
+
     public static final String EXTRA_SINGLE_TITLE = "extra_title";
+
     public static final String EXTRA_SINGLE_SUBTITLE = "extra_subtitle";
+
     public static final String EXTRA_SINGLE_CAT_ID = "extra_cat_id";
+
     public static final String EXTRA_SINGLE_POST_ID = "extra_post_id";
+
     public static final String EXTRA_SINGLE_IS_PREMIUM = "extra_is_premium";
 
+
+
     // Views
+
     private ImageView ivBack;
+
     private TextView tvTitle;
+
     private TextView tvSubtitle;
+
     private LinearLayout btnUseTemplate;
+
     private ImageView ivBtnIcon;
+
     private TextView tvBtnText;
+
     private android.widget.ProgressBar pbBtnLoader;
 
+
+
     private ViewPager2 viewPagerPreview;
+
     private PreviewPagerAdapter pagerAdapter;
+
     private final List<PreviewItem> previewItemList = new ArrayList<>();
+
     private int currentPosition = 0;
+
     private String previewMode = MODE_TEMPLATE;
+
     private String categoryName = "";
 
+
+
     // Native Ad Container & Remote Config Controls
+
     private RelativeLayout rlPreviewNativeAd;
+
     private ShimmerFrameLayout shimmerNativeAd;
+
     private FrameLayout flNativeAdContainer;
+
     private NativeAd loadedNativeAd = null;
+
     private boolean isAdLoaded = false;
 
+
+
     // Remote Config Ad settings
+
     private boolean adEnabled = true;
+
     private String adType = "compact";
+
     private int adHeightDp = 95;
+
     private String adUnitId = "";
 
+
+
     // Utilities
+
     private FirebaseAnalytics mFirebaseAnalytics;
+
     private Leaflet_PreferenceClass preferenceClass;
 
+
+
     // Template loading & progress
+
     private Dialog loadingDialog;
+
     private ArrayList<Leaflet_TemplateModel> templateModels;
+
     private ArrayList<Leaflet_StickerModel> sticker_model;
+
     private ArrayList<Leaflet_TextModel> text_model;
+
     private final ArrayList<String> templateDownloadList = new ArrayList<>();
+
     private boolean isRewarded = false;
 
+    // Pre-fetch & Instant Loading
+    private int prefetchedPosition = -1;
+    private int prefetchedCatId = -1;
+    private int prefetchedPostId = -1;
+    private boolean isPrefetchReady = false;
+    private boolean isPrefetchLoading = false;
+    private Runnable pendingEditAction = null;
+    private String prefetchedBgUrl = null;
+    private boolean isBgPrefetchReady = false;
+
+
+
     @Override
+
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
 
+
+
         // Light Status Bar with dark icons
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+
             Window window = getWindow();
+
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+
             window.setStatusBarColor(Color.WHITE);
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+
                 window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+
             }
+
         }
+
+
 
         setContentView(R.layout.activity_item_preview);
 
+
+
         preferenceClass = new Leaflet_PreferenceClass(this);
+
         try {
+
             mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+
         } catch (Exception ignored) {}
 
+
+
         initViews();
+
         parseIntentData();
+
         setupListeners();
+
         setupViewPager();
+
         loadRemoteConfigAndNativeAd();
+
         if (getIntent().getBooleanExtra("is_unlocked_by_reward", false)) {
+
             new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+
                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_CelebrationHelper.showCelebration(
+
                         ItemPreviewActivity.this,
+
                         MODE_BACKGROUND.equals(previewMode) ? "✨ Background Unlocked!" : "🎉 Template Unlocked!"
+
                 );
+
             }, 350);
+
         }
+
     }
 
+
+
     private void initViews() {
+
         View rootLayout = findViewById(R.id.root_preview_layout);
+
         if (rootLayout != null) {
+
             int statusBarHeight = 0;
+
             int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+
             if (resourceId > 0) {
+
                 statusBarHeight = getResources().getDimensionPixelSize(resourceId);
+
             }
+
             final int minTopPadding = statusBarHeight;
 
+
+
             androidx.core.view.ViewCompat.setOnApplyWindowInsetsListener(rootLayout, (v, windowInsets) -> {
+
                 androidx.core.graphics.Insets insets = windowInsets.getInsets(androidx.core.view.WindowInsetsCompat.Type.systemBars());
+
                 int topInset = insets.top > 0 ? insets.top : Math.max(windowInsets.getSystemWindowInsetTop(), minTopPadding);
+
                 int bottomInset = insets.bottom > 0 ? insets.bottom : windowInsets.getSystemWindowInsetBottom();
+
                 v.setPadding(0, topInset, 0, bottomInset);
+
                 return windowInsets;
+
             });
+
             androidx.core.view.ViewCompat.requestApplyInsets(rootLayout);
+
         }
 
+
+
         ivBack = findViewById(R.id.ivBack);
+
         tvTitle = findViewById(R.id.tvTitle);
+
         tvSubtitle = findViewById(R.id.tvSubtitle);
+
         btnUseTemplate = findViewById(R.id.btnUseTemplate);
+
         ivBtnIcon = findViewById(R.id.ivBtnIcon);
+
         tvBtnText = findViewById(R.id.tvBtnText);
+
         pbBtnLoader = findViewById(R.id.pbBtnLoader);
+
+
 
         viewPagerPreview = findViewById(R.id.viewPagerPreview);
 
+
+
         rlPreviewNativeAd = findViewById(R.id.rl_preview_native_ad);
+
         shimmerNativeAd = findViewById(R.id.shimmerNativeAd);
+
         flNativeAdContainer = findViewById(R.id.flNativeAdContainer);
+
     }
 
+
+
     @SuppressWarnings("unchecked")
+
     private void parseIntentData() {
+
         Intent intent = getIntent();
+
         if (intent == null) return;
 
+
+
         if (intent.hasExtra(EXTRA_PREVIEW_MODE)) {
+
             previewMode = intent.getStringExtra(EXTRA_PREVIEW_MODE);
+
         }
+
+
 
         categoryName = intent.getStringExtra(EXTRA_CATEGORY_NAME);
 
+
+
         // 1. Direct PreviewItem list
+
         if (intent.hasExtra(EXTRA_PREVIEW_ITEMS)) {
+
             try {
+
                 Serializable s = intent.getSerializableExtra(EXTRA_PREVIEW_ITEMS);
+
                 if (s instanceof List) {
+
                     previewItemList.addAll((List<PreviewItem>) s);
+
                 }
+
             } catch (Exception e) {
+
                 Log.e(TAG, "Error parsing EXTRA_PREVIEW_ITEMS", e);
+
             }
+
         }
+
+
 
         // 2. Leaflet_PosterImage list (Templates)
+
         if (previewItemList.isEmpty() && intent.hasExtra(EXTRA_POSTER_IMAGES)) {
+
             try {
+
                 Serializable s = intent.getSerializableExtra(EXTRA_POSTER_IMAGES);
+
                 if (s instanceof List) {
+
                     List<Leaflet_PosterImage> posterList = (List<Leaflet_PosterImage>) s;
+
                     int premiumInterval = preferenceClass.getPremiumPosterInterval("templates");
+
                     int rawInitialPosition = intent.getIntExtra("initialPosition", intent.getIntExtra(EXTRA_INITIAL_POSITION, 0));
+
                     int extraCatId = intent.getIntExtra(EXTRA_SINGLE_CAT_ID, intent.getIntExtra("extra_cat_id", 0));
+
                     int targetPostId = intent.getIntExtra("target_post_id", -1);
+
                     boolean targetIsPremium = intent.getBooleanExtra("target_is_premium", false);
+
                     int targetItemIndex = -1;
+
                     int actualPosterCount = 0;
+
                     boolean isLikedList = "Liked Posters".equalsIgnoreCase(categoryName);
+
                     for (int i = 0; i < posterList.size(); i++) {
+
                         Leaflet_PosterImage img = posterList.get(i);
+
                         if (img == null) continue;
+
                         if (img.getCat_id() == 0 && extraCatId != 0) {
+
                             img.setCat_id(extraCatId);
+
                         }
+
                         boolean isThisTheTarget = false;
+
                         if (targetPostId != -1 && img.getPost_id() == targetPostId) {
+
                             isThisTheTarget = true;
+
                         } else if (targetPostId == -1 && i == rawInitialPosition) {
+
                             isThisTheTarget = true;
+
                         }
+
                         if (isThisTheTarget && targetItemIndex == -1) {
+
                             targetItemIndex = previewItemList.size();
+
                         }
+
                         boolean isPremium;
+
                         isPremium = img.isPremium();
+
                         if (isLikedList) {
+
                             isPremium = img.isPremium();
+
                         } else if (premiumInterval > 0) {
+
                             isPremium = isPremium || ((actualPosterCount + 1) % premiumInterval == 0);
+
                         }
+
                         if (isThisTheTarget && targetIsPremium) {
+
                             isPremium = true;
+
                         }
+
                         img.setPremium(isPremium);
+
                         actualPosterCount++;
+
                         PreviewItem pi = PreviewItem.fromPosterImage(img, categoryName, isPremium);
+
                         if (pi != null) {
+
                             if (pi.getCatId() == 0 && extraCatId != 0) {
+
                                 pi.setCatId(extraCatId);
+
                             }
+
+                            if (pi.isPremium() && preferenceClass != null && preferenceClass.isTemplateUnlocked(pi.getPostId())) {
+                                pi.setPreviewUnlocked(true);
+                                pi.setEditUnlocked(true);
+                            }
+
                             previewItemList.add(pi);
+
                         }
+
                     }
+
                     if (targetItemIndex != -1) {
+
                         currentPosition = targetItemIndex;
+
                         if (intent.getBooleanExtra("is_unlocked_by_reward", false) && targetItemIndex < previewItemList.size()) {
                             previewItemList.get(targetItemIndex).setPreviewUnlocked(true);
+                            if (preferenceClass != null && !preferenceClass.isProEditPopupEnabled("templates")) {
+                                previewItemList.get(targetItemIndex).setEditUnlocked(true);
+                            }
                         }
+
                     }
+
                 }
+
             } catch (Exception e) {
+
                 Log.e(TAG, "Error parsing EXTRA_POSTER_IMAGES", e);
+
             }
+
         }
+
+
 
         // 3. Leaflet_BgImage list (Backgrounds)
+
         if (previewItemList.isEmpty() && intent.hasExtra(EXTRA_BG_IMAGES)) {
+
             try {
+
                 Serializable s = intent.getSerializableExtra(EXTRA_BG_IMAGES);
+
                 if (s instanceof List) {
+
                     List<Leaflet_BgImage> bgList = (List<Leaflet_BgImage>) s;
+
                     int premiumInterval = preferenceClass.getPremiumPosterInterval("backgrounds");
+
                     int rawInitialPosition = intent.getIntExtra("initialPosition", intent.getIntExtra(EXTRA_INITIAL_POSITION, 0));
+
                     int targetBgId = intent.getIntExtra("target_bg_id", -1);
+
                     boolean targetIsPremium = intent.getBooleanExtra("target_is_premium", false);
+
                     int targetItemIndex = -1;
+
                     int actualBgCount = 0;
+
                     boolean isLikedList = "Liked Backgrounds".equalsIgnoreCase(categoryName);
+
                     for (int i = 0; i < bgList.size(); i++) {
+
                         Leaflet_BgImage bg = bgList.get(i);
+
                         if (bg == null) continue;
+
                         boolean isThisTheTarget = false;
+
                         if (targetBgId != -1 && bg.getId() == targetBgId) {
+
                             isThisTheTarget = true;
+
                         } else if (targetBgId == -1 && i == rawInitialPosition) {
+
                             isThisTheTarget = true;
+
                         }
+
                         if (isThisTheTarget && targetItemIndex == -1) {
+
                             targetItemIndex = previewItemList.size();
+
                         }
+
                         boolean isPremium;
+
                         if (isLikedList) {
+
                             isPremium = bg.isPremium();
+
                         } else if (premiumInterval > 0) {
+
                             isPremium = ((actualBgCount + 1) % premiumInterval == 0);
+
                         } else {
+
                             isPremium = false;
+
                         }
+
                         if (isThisTheTarget && targetIsPremium) {
+
                             isPremium = true;
+
                         }
+
                         bg.setPremium(isPremium);
+
                         actualBgCount++;
+
                         PreviewItem pi = new PreviewItem(
+
                                 String.valueOf(bg.getId()),
+
                                 categoryName != null ? categoryName : "Background",
+
                                 "Background " + (previewItemList.size() + 1),
+
                                 bg.getImage_url() != null ? bg.getImage_url() : bg.getThumb_url(),
-                                "1:1",
+
+                                "9:16",
+
                                 0,
+
                                 bg.getId(),
+
                                 isPremium
+
                         );
+
+                        if (pi.isPremium() && preferenceClass != null && preferenceClass.isBackgroundUnlocked(pi.getImageUrl())) {
+                            pi.setPreviewUnlocked(true);
+                            pi.setEditUnlocked(true);
+                        }
+
                         previewItemList.add(pi);
+
                     }
+
                     if (targetItemIndex != -1) {
+
                         currentPosition = targetItemIndex;
+
                         if (intent.getBooleanExtra("is_unlocked_by_reward", false) && targetItemIndex < previewItemList.size()) {
                             previewItemList.get(targetItemIndex).setPreviewUnlocked(true);
+                            if (preferenceClass != null && !preferenceClass.isProEditPopupEnabled("backgrounds")) {
+                                previewItemList.get(targetItemIndex).setEditUnlocked(true);
+                            }
                         }
+
                     }
+
                 }
+
             } catch (Exception e) {
+
                 Log.e(TAG, "Error parsing EXTRA_BG_IMAGES", e);
+
             }
+
         }
+
+
 
         // 4. List of image URLs
+
         if (previewItemList.isEmpty() && intent.hasExtra(EXTRA_IMAGE_URLS)) {
+
             try {
+
                 List<String> urls = intent.getStringArrayListExtra(EXTRA_IMAGE_URLS);
+
                 if (urls == null || urls.isEmpty()) {
+
                     String[] arr = intent.getStringArrayExtra(EXTRA_IMAGE_URLS);
+
                     if (arr != null && arr.length > 0) {
+
                         urls = java.util.Arrays.asList(arr);
+
                     }
+
                 }
+
                 if (urls != null) {
+
                     for (int i = 0; i < urls.size(); i++) {
+
                         PreviewItem pi = new PreviewItem(
+
                                 String.valueOf(i),
+
                                 categoryName != null ? categoryName : (MODE_BACKGROUND.equals(previewMode) ? "Background" : "Template"),
+
                                 (MODE_BACKGROUND.equals(previewMode) ? "Background " : "Template ") + (i + 1),
+
                                 urls.get(i), "1:1", 0, i, (i % 3 == 0)
+
                         );
+
+                        if (pi.isPremium() && preferenceClass != null && preferenceClass.isBackgroundUnlocked(pi.getImageUrl())) {
+                            pi.setPreviewUnlocked(true);
+                            pi.setEditUnlocked(true);
+                        }
+
                         previewItemList.add(pi);
+
                     }
+
                 }
+
             } catch (Exception e) {
+
                 Log.e(TAG, "Error parsing EXTRA_IMAGE_URLS", e);
+
             }
+
         }
+
+
 
         // 5. Single item passed
+
         if (previewItemList.isEmpty() && intent.hasExtra(EXTRA_SINGLE_IMAGE_URL)) {
+
             String imgUrl = intent.getStringExtra(EXTRA_SINGLE_IMAGE_URL);
+
             String title = intent.getStringExtra(EXTRA_SINGLE_TITLE);
+
             String subtitle = intent.getStringExtra(EXTRA_SINGLE_SUBTITLE);
+
             int catId = intent.getIntExtra(EXTRA_SINGLE_CAT_ID, 0);
+
             int postId = intent.getIntExtra(EXTRA_SINGLE_POST_ID, 0);
+
             boolean isPremium = intent.getBooleanExtra(EXTRA_SINGLE_IS_PREMIUM, false);
 
+
+
             previewItemList.add(new PreviewItem(
+
                     String.valueOf(postId),
+
                     title != null ? title : (categoryName != null ? categoryName : "Design Preview"),
+
                     subtitle != null ? subtitle : "",
+
                     imgUrl, "1:1", catId, postId, isPremium
+
             ));
+
         }
+
+
 
         // 6. Default Fallbacks if opened empty
+
         if (previewItemList.isEmpty()) {
+
             if (MODE_BACKGROUND.equals(previewMode)) {
+
                 categoryName = "Abstract";
+
                 previewItemList.add(new PreviewItem("1", "Abstract", "Background 1 of 4",
+
                         "https://cygnux.in/postermaker/upload/thumb_image/6ab9f4bd6b15e_28-09-2026__1790571709.png", "1:1", 1, 1, false));
+
                 previewItemList.add(new PreviewItem("2", "Abstract", "Background 2 of 4",
+
                         "https://cygnux.in/postermaker/upload/thumb_image/6ab9f6676bf27_28-09-2026__1790572135.png", "1:1", 1, 2, false));
+
                 previewItemList.add(new PreviewItem("3", "Abstract", "Background 3 of 4",
+
                         "https://cygnux.in/postermaker/upload/thumb_image/6ab9f6952e73a_28-09-2026__1790572181.png", "1:1", 1, 3, false));
+
                 previewItemList.add(new PreviewItem("4", "Abstract", "Background 4 of 4",
+
                         "https://cygnux.in/postermaker/upload/thumb_image/6ab9f6dfd87c9_28-09-2026__1790572255.png", "1:1", 1, 4, true));
+
             } else {
+
                 categoryName = "Raksha Bandhan";
+
                 previewItemList.add(new PreviewItem("1", "Raksha Bandhan", "Template 1 of 4",
+
                         "https://cygnux.in/postermaker/upload/thumb_image/6ab9f4bd6b15e_28-09-2026__1790571709.png", "1:1", 57, 1, false));
+
                 previewItemList.add(new PreviewItem("2", "Raksha Bandhan", "Template 2 of 4",
+
                         "https://cygnux.in/postermaker/upload/thumb_image/6ab9f6676bf27_28-09-2026__1790572135.png", "1:1", 57, 2, false));
+
                 previewItemList.add(new PreviewItem("3", "Raksha Bandhan", "Template 3 of 4",
+
                         "https://cygnux.in/postermaker/upload/thumb_image/6ab9f6952e73a_28-09-2026__1790572181.png", "1:1", 57, 3, false));
+
                 previewItemList.add(new PreviewItem("4", "Raksha Bandhan", "Template 4 of 4",
+
                         "https://cygnux.in/postermaker/upload/thumb_image/6ab9f6dfd87c9_28-09-2026__1790572255.png", "1:1", 57, 4, true));
+
             }
+
         }
+
+
 
         // Initial position
+
         if (currentPosition < 0 || currentPosition >= previewItemList.size()) {
+
             currentPosition = intent.getIntExtra("initialPosition", intent.getIntExtra(EXTRA_INITIAL_POSITION, 0));
-        }
-        if (currentPosition < 0 || currentPosition >= previewItemList.size()) {
-            currentPosition = 0;
+
         }
 
-        // Configure CTA Button text based on mode
-        if (MODE_BACKGROUND.equals(previewMode)) {
-            tvBtnText.setText("Use Background");
-        } else {
-            tvBtnText.setText("Edit Template");
+        if (currentPosition < 0 || currentPosition >= previewItemList.size()) {
+
+            currentPosition = 0;
+
         }
+
+
+
+        // Configure CTA Button text based on mode and lock status
+        updateButtonStateForPosition(currentPosition);
+
     }
+
+
 
     private void setupListeners() {
+
         View flBack = findViewById(R.id.flBack);
+
         if (flBack != null) {
+
             flBack.setOnClickListener(v -> {
+
                 if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+
                 onBackPressed();
+
             });
+
         }
+
+
 
         ivBack.setOnClickListener(v -> {
+
             if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+
             onBackPressed();
+
         });
+
+
 
         btnUseTemplate.setOnClickListener(v -> {
+
             if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+
             onActionClicked();
+
         });
+
     }
+
+
 
     private void setupViewPager() {
+
         // Vertical ViewPager2 (Swipe up for more)
+
         viewPagerPreview.setOrientation(ViewPager2.ORIENTATION_VERTICAL);
 
+
+
         final int initPos = currentPosition;
+
         pagerAdapter = new PreviewPagerAdapter(this, previewItemList, previewMode, categoryName, initPos, (position, isLiked) -> {
+
             // Heart clicked callback
+
             toggleLike(position);
+
         }, position -> {
+
             if (viewPagerPreview != null && position + 1 < previewItemList.size()) {
+
                 viewPagerPreview.setCurrentItem(position + 1, true);
+
             }
+
         }, position -> {
+
             promptUnlockPreview(position);
+
         });
+
         viewPagerPreview.setAdapter(pagerAdapter);
 
+
+
         // Immediate entry at initialPosition
+
         if (!previewItemList.isEmpty()) {
+
             viewPagerPreview.setCurrentItem(initPos, false);
+
             updateTopBar(initPos);
+
+            triggerSilentPrefetch(initPos);
+
             viewPagerPreview.post(() -> {
+
                 viewPagerPreview.setCurrentItem(initPos, false);
+
                 updateTopBar(initPos);
+
+                triggerSilentPrefetch(initPos);
+
             });
+
         }
+
+
 
         viewPagerPreview.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
+
             @Override
+
             public void onPageSelected(int position) {
+
                 super.onPageSelected(position);
+
                 currentPosition = position;
+
                 if (position != initPos && pagerAdapter != null) {
+
                     pagerAdapter.setHasUserSwiped(true);
+
                 }
+
                 updateTopBar(position);
 
+                triggerSilentPrefetch(position);
+
+
+
                 // Fire Firebase Analytics event
+
                 if (mFirebaseAnalytics != null && position >= 0 && position < previewItemList.size()) {
+
                     PreviewItem item = previewItemList.get(position);
+
                     Bundle bundle = new Bundle();
+
                     bundle.putInt("item_position", position);
+
                     bundle.putString("item_id", item.getId());
+
                     bundle.putString("item_title", item.getTitle());
+
                     bundle.putString("preview_mode", previewMode);
+
                     mFirebaseAnalytics.logEvent("preview_item_swiped", bundle);
+
                 }
+
             }
+
         });
+
     }
+
+
 
     private void updateTopBar(int position) {
+
         if (position < 0 || position >= previewItemList.size()) return;
+
         PreviewItem item = previewItemList.get(position);
+
+
 
         String title = (categoryName != null && !categoryName.isEmpty()) ? categoryName : item.getTitle();
+
         tvTitle.setText(title);
 
+
+
         int totalCount = previewItemList.size();
+
         int currentNum = position + 1;
+
         if (MODE_BACKGROUND.equals(previewMode)) {
+
             tvSubtitle.setText("Background " + currentNum + " of " + totalCount);
+
         } else {
+
             tvSubtitle.setText("Template " + currentNum + " of " + totalCount);
+
         }
+
         updateButtonStateForPosition(position);
+
     }
+
+
 
     private void toggleLike(int position) {
+
         if (position < 0 || position >= previewItemList.size()) return;
+
         PreviewItem item = previewItemList.get(position);
+
         String itemId = item.getId();
 
+
+
         boolean currentlyLiked;
+
         if (MODE_BACKGROUND.equals(previewMode)) {
+
             currentlyLiked = Leaflet_FavoritesManager.isBackgroundLiked(this, itemId);
+
             if (!currentlyLiked) {
+
                 Leaflet_BgImage bg = new Leaflet_BgImage(item.getPostId(), item.getImageUrl(), item.getImageUrl());
+
                 bg.setPremium(item.isPremium());
+
                 Leaflet_FavoritesManager.addLikedBackground(this, bg);
+
             } else {
+
                 Leaflet_FavoritesManager.removeLikedBackground(this, itemId);
+
             }
+
         } else {
+
             currentlyLiked = Leaflet_FavoritesManager.isPosterLiked(this, itemId);
+
             if (!currentlyLiked) {
+
                 Leaflet_PosterImage pImg = new Leaflet_PosterImage(
+
                         String.valueOf(item.getPostId()),
+
                         item.getImageUrl(),
+
                         item.getRatio(),
+
                         String.valueOf(item.getCatId())
+
                 );
+
                 pImg.setPremium(item.isPremium());
+
                 Leaflet_FavoritesManager.addLikedPoster(this, pImg);
+
             } else {
+
                 Leaflet_FavoritesManager.removeLikedPoster(this, itemId);
+
             }
+
         }
+
+
 
         if (pagerAdapter != null) {
+
             pagerAdapter.notifyItemChanged(position);
+
+        }
+
+    }
+
+
+
+    private void showLoadingDialog() {
+
+        setButtonLoadingState(true);
+
+    }
+
+
+
+    private void dismissLoadingDialog() {
+
+        setButtonLoadingState(false);
+
+    }
+
+
+
+    private boolean isItemPersistedUnlocked(PreviewItem item) {
+        if (item == null || preferenceClass == null) return false;
+        if (MODE_BACKGROUND.equals(previewMode)) {
+            String key = (item.getImageUrl() != null && !item.getImageUrl().trim().isEmpty())
+                    ? item.getImageUrl().trim()
+                    : String.valueOf(item.getPostId());
+            return preferenceClass.isBackgroundUnlocked(key);
+        }
+        return preferenceClass.isTemplateUnlocked(item.getPostId());
+    }
+
+    private void saveItemUnlockTimestamp(PreviewItem item) {
+        if (item == null || preferenceClass == null) return;
+        if (MODE_BACKGROUND.equals(previewMode)) {
+            String key = (item.getImageUrl() != null && !item.getImageUrl().trim().isEmpty())
+                    ? item.getImageUrl().trim()
+                    : String.valueOf(item.getPostId());
+            preferenceClass.saveBackgroundUnlockTime(key);
+        } else {
+            preferenceClass.saveTemplateUnlockTime(item.getPostId());
         }
     }
 
-    private void showLoadingDialog() {
-        setButtonLoadingState(true);
-    }
-
-    private void dismissLoadingDialog() {
-        setButtonLoadingState(false);
+    public boolean isItemRewardAdRequired(PreviewItem item) {
+        if (item == null) return false;
+        if (!item.isPremium()) return false;
+        if (item.isEditUnlocked() || isItemPersistedUnlocked(item)) return false;
+        String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
+        if (preferenceClass == null || !preferenceClass.isPremiumLockEnabled(itemType)) return false;
+        return preferenceClass.isProEditPopupEnabled(itemType);
     }
 
     private void setButtonLoadingState(boolean isLoading) {
+        setButtonLoadingState(isLoading, currentPosition);
+    }
+
+    private void setButtonLoadingState(boolean isLoading, int position) {
         runOnUiThread(() -> {
             if (btnUseTemplate != null) {
                 btnUseTemplate.setEnabled(!isLoading);
@@ -608,11 +1269,26 @@ public class ItemPreviewActivity extends AppCompatActivity {
             } else {
                 if (pbBtnLoader != null) pbBtnLoader.setVisibility(View.GONE);
                 if (ivBtnIcon != null) ivBtnIcon.setVisibility(View.VISIBLE);
+
+                int pos = (position >= 0 && position < previewItemList.size()) ? position : currentPosition;
+                PreviewItem item = (pos >= 0 && pos < previewItemList.size()) ? previewItemList.get(pos) : null;
+                boolean adRequired = isItemRewardAdRequired(item);
+
+                if (ivBtnIcon != null) {
+                    if (adRequired) {
+                        ivBtnIcon.setImageResource(R.drawable.leaflet_ic_lock);
+                        ivBtnIcon.setColorFilter(Color.WHITE);
+                    } else {
+                        ivBtnIcon.setImageResource(R.drawable.ic_edit_pencil_white);
+                        ivBtnIcon.clearColorFilter();
+                    }
+                }
+
                 if (tvBtnText != null) {
                     if (MODE_BACKGROUND.equals(previewMode)) {
-                        tvBtnText.setText("Use Background");
+                        tvBtnText.setText(adRequired ? "Unlock Background" : "Use Background");
                     } else {
-                        tvBtnText.setText("Edit Template");
+                        tvBtnText.setText(adRequired ? "Unlock & Edit" : "Edit Template");
                     }
                 }
             }
@@ -620,99 +1296,195 @@ public class ItemPreviewActivity extends AppCompatActivity {
     }
 
     private void resetButtonState() {
-        setButtonLoadingState(false);
+        setButtonLoadingState(false, currentPosition);
     }
 
     private void updateButtonStateForPosition(int position) {
         if (position < 0 || position >= previewItemList.size()) return;
-        setButtonLoadingState(false);
+        setButtonLoadingState(false, position);
     }
 
-    private void promptUnlockPreview(final int position) {
-        if (position < 0 || position >= previewItemList.size()) return;
-        final PreviewItem item = previewItemList.get(position);
-        if (!item.isPremium() || item.isPreviewUnlocked()) return;
 
-        String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
-        boolean lockEnabled = preferenceClass.isPremiumPosterLockEnabled();
-        boolean showPopup = preferenceClass.isProEditPopupEnabled(itemType);
-        if (!lockEnabled || !showPopup) {
-            item.setPreviewUnlocked(true);
-            if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
+
+    private void promptUnlockPreview(final int position) {
+
+        if (position < 0 || position >= previewItemList.size()) return;
+
+        final PreviewItem item = previewItemList.get(position);
+
+        if (!item.isPremium() || item.isPreviewUnlocked() || isItemPersistedUnlocked(item)) {
+            if (item.isPremium() && !item.isPreviewUnlocked()) {
+                item.setPreviewUnlocked(true);
+                item.setEditUnlocked(true);
+                if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
+                updateButtonStateForPosition(position);
+            }
             return;
         }
 
-        String title = MODE_BACKGROUND.equals(previewMode) ? "Use Background (One Time)" : "Use Template (One Time)";
+
+
+        String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
+
+        boolean lockEnabled = preferenceClass.isPremiumLockEnabled(itemType);
+
+        boolean showPopup = preferenceClass.isProOpenPopupEnabled(itemType);
+
+        if (!lockEnabled || !showPopup) {
+
+            item.setPreviewUnlocked(true);
+
+            if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
+
+            return;
+
+        }
+
+
+
+        String title = MODE_BACKGROUND.equals(previewMode) ? "Unlock Background" : "Unlock Template";
+
         String desc = MODE_BACKGROUND.equals(previewMode) ? "Watch a short video ad to unlock and use this premium background." : "Watch a short video ad to unlock and use this premium template.";
 
+
+
         Leaflet_MaterialDialogUtils.getInstance().rewardDialog(
+
                 this,
+
                 title,
+
                 desc,
+
                 itemType,
+
                 dialog -> {
+
                     if (dialog != null && dialog.isShowing()) dialog.dismiss();
-                    String adType = preferenceClass.getPremiumPosterAdType();
+
+                    String adType = preferenceClass.getPremiumPosterAdType(itemType);
+
                     if ("Reward".equalsIgnoreCase(adType)) {
-                        Leaflet_RewardVideoManager.showRewardVideoAd(ItemPreviewActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+                        String rewardId = preferenceClass.getPremiumPosterRewardAdId(itemType);
+                        Leaflet_RewardVideoManager.showRewardVideoAd(ItemPreviewActivity.this, rewardId, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+
                             @Override
+
                             public void onAdClose() {
+
+                                saveItemUnlockTimestamp(item);
                                 item.setPreviewUnlocked(true);
+                                item.setEditUnlocked(true);
                                 if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
+                                updateButtonStateForPosition(position);
                                 Toast.makeText(ItemPreviewActivity.this, "Unlocked!", Toast.LENGTH_SHORT).show();
                                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_CelebrationHelper.showCelebration(ItemPreviewActivity.this, MODE_BACKGROUND.equals(previewMode) ? "✨ Background Unlocked!" : "🎉 Template Unlocked!");
                             }
                         });
                     } else {
                         Leaflet_MyApplication.showUnlockInterstitialAd(ItemPreviewActivity.this, () -> {
+                            saveItemUnlockTimestamp(item);
                             item.setPreviewUnlocked(true);
+                            item.setEditUnlocked(true);
                             if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
+                            updateButtonStateForPosition(position);
                             Toast.makeText(ItemPreviewActivity.this, "Unlocked!", Toast.LENGTH_SHORT).show();
+
                         });
+
                     }
+
                 },
+
                 dialog -> {
+
                     if (dialog != null && dialog.isShowing()) dialog.dismiss();
+
                 }
+
         );
+
     }
 
+
+
     private void promptEditUnlock(final int position, final Runnable onUnlockedCallback) {
+
         if (position < 0 || position >= previewItemList.size()) return;
+
         final PreviewItem item = previewItemList.get(position);
-        if (!item.isPremium() || item.isPreviewUnlocked()) {
+
+        if (!item.isPremium() || item.isEditUnlocked() || isItemPersistedUnlocked(item)) {
+            if (item.isPremium()) {
+                item.setPreviewUnlocked(true);
+                item.setEditUnlocked(true);
+            }
             if (onUnlockedCallback != null) onUnlockedCallback.run();
+
             return;
+
         }
+
+
 
         String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
-        boolean lockEnabled = preferenceClass.isPremiumPosterLockEnabled();
+
+        boolean lockEnabled = preferenceClass.isPremiumLockEnabled(itemType);
+
         boolean showPopup = preferenceClass.isProEditPopupEnabled(itemType);
+
         if (!lockEnabled || !showPopup) {
+
             if (onUnlockedCallback != null) onUnlockedCallback.run();
+
             return;
+
         }
 
-        String title = MODE_BACKGROUND.equals(previewMode) ? "Use Background (One Time)" : "Use Template (One Time)";
+
+
+        String title = MODE_BACKGROUND.equals(previewMode) ? "Unlock Background" : "Unlock Template";
+
         String desc = MODE_BACKGROUND.equals(previewMode) ? "Watch a short video ad to unlock and use this premium background." : "Watch a short video ad to unlock and use this premium template.";
 
+
+
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogShown(this, "preview_unlock");
+
         Leaflet_MaterialDialogUtils.getInstance().rewardDialog(
+
                 this,
+
                 title,
+
                 desc,
+
                 itemType,
+
                 dialog -> {
+
                     com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "preview_unlock", "watch_video");
+
                     if (dialog != null && dialog.isShowing()) dialog.dismiss();
-                    String adType = preferenceClass.getPremiumPosterAdType();
+
+                    String adType = preferenceClass.getPremiumPosterAdType(itemType);
+
                     if ("Reward".equalsIgnoreCase(adType)) {
-                        Leaflet_RewardVideoManager.showRewardVideoAd(ItemPreviewActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+                        String rewardId = preferenceClass.getPremiumPosterRewardAdId(itemType);
+                        Leaflet_RewardVideoManager.showRewardVideoAd(ItemPreviewActivity.this, rewardId, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+
                             @Override
+
                             public void onAdClose() {
+
                                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(ItemPreviewActivity.this, "preview_unlock");
+
                                 isRewarded = true;
+
+                                saveItemUnlockTimestamp(item);
+                                item.setEditUnlocked(true);
                                 item.setPreviewUnlocked(true);
+                                updateButtonStateForPosition(position);
                                 if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
                                 if (onUnlockedCallback != null) onUnlockedCallback.run();
                             }
@@ -721,57 +1493,117 @@ public class ItemPreviewActivity extends AppCompatActivity {
                         Leaflet_MyApplication.showUnlockInterstitialAd(ItemPreviewActivity.this, () -> {
                             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(ItemPreviewActivity.this, "preview_unlock");
                             isRewarded = true;
+                            saveItemUnlockTimestamp(item);
+                            item.setEditUnlocked(true);
                             item.setPreviewUnlocked(true);
+                            updateButtonStateForPosition(position);
                             if (pagerAdapter != null) pagerAdapter.notifyItemChanged(position);
+
                             if (onUnlockedCallback != null) onUnlockedCallback.run();
+
                         });
+
                     }
+
                 },
+
                 dialog -> {
+
                     com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "preview_unlock", "cancel");
+
                     if (dialog != null && dialog.isShowing()) dialog.dismiss();
+
                     resetButtonState();
+
                 }
+
         );
+
     }
+
+
 
     private void onActionClicked() {
+
         int actualPos = (viewPagerPreview != null) ? viewPagerPreview.getCurrentItem() : currentPosition;
+
         if (actualPos < 0 || actualPos >= previewItemList.size()) return;
+
         currentPosition = actualPos;
+
         PreviewItem item = previewItemList.get(actualPos);
 
+
+
         if (MODE_BACKGROUND.equals(previewMode)) {
+
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackgroundSelected(this, item.getImageUrl(), item.isPremium() ? "premium" : "free");
+
             // Apply / Use Background
+
             handleUseBackground(item, actualPos);
+
         } else {
+
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logTemplateSelected(this, item.getId(), item.getTitle(), !item.isPremium(), "preview_edit");
+
             // Edit Template
+
             handleEditTemplate(item, actualPos);
+
         }
+
     }
+
+
 
     private void handleUseBackground(PreviewItem item, int position) {
+
         if (!Leaflet_NetworkUtils.isNetworkAvailable(this)) {
+
             Toast.makeText(this, "Make sure you are connected to internet!!", Toast.LENGTH_SHORT).show();
+
             return;
+
         }
+
+
 
         String bgUrl = item.getImageUrl();
+
         if (bgUrl == null || bgUrl.isEmpty()) {
+
             Toast.makeText(this, "Invalid background URL", Toast.LENGTH_SHORT).show();
+
+            return;
+
+        }
+
+
+
+        if (isItemRewardAdRequired(item)) {
+
+            promptEditUnlock(position, () -> downloadAndOpenBackground(bgUrl));
+
+        } else {
+
+            downloadAndOpenBackground(bgUrl);
+
+        }
+
+    }
+
+
+
+    private void downloadAndOpenBackground(String bgUrl) {
+        String localPath = Leaflet_FileUtils.getFile(ItemPreviewActivity.this, bgUrl);
+        boolean fileExists = (localPath != null && !localPath.isEmpty() && new File(localPath).exists());
+
+        if (fileExists || (isBgPrefetchReady && bgUrl.equals(prefetchedBgUrl))) {
+            proceedToOpenBackground(bgUrl);
             return;
         }
 
-        if (item.isPremium() && preferenceClass.isPremiumPosterLockEnabled() && preferenceClass.isProEditPopupEnabled("backgrounds")) {
-            promptEditUnlock(position, () -> downloadAndOpenBackground(bgUrl));
-        } else {
-            downloadAndOpenBackground(bgUrl);
-        }
-    }
-
-    private void downloadAndOpenBackground(String bgUrl) {
         tvBtnText.setText("Opening...");
         btnUseTemplate.setEnabled(false);
         showLoadingDialog();
@@ -783,17 +1615,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
             @Override
             public void onDownloadComplete() {
                 dismissLoadingDialog();
-                String localPath = Leaflet_FileUtils.getFile(ItemPreviewActivity.this, strings.get(0));
-                Intent intent = new Intent(ItemPreviewActivity.this, Leaflet_PosterEditActivity.class);
-                intent.putExtra("bg_path", localPath);
-                intent.putExtra("loadUserFrame", true);
-                intent.putExtra("Temp_Type", "MY_TEMP");
-                if (isRewarded) {
-                    intent.putExtra("show_celebration", true);
-                    intent.putExtra("celebration_message", "✨ Background Unlocked!");
-                }
-                startActivity(intent);
-                finish();
+                proceedToOpenBackground(bgUrl);
             }
 
             @Override
@@ -803,6 +1625,53 @@ public class ItemPreviewActivity extends AppCompatActivity {
                 Toast.makeText(ItemPreviewActivity.this, "Something went wrong downloading background", Toast.LENGTH_SHORT).show();
             }
         }).execute();
+    }
+
+    private void proceedToOpenBackground(String bgUrl) {
+        String mode = getIntent().getStringExtra("mode");
+        if ("user".equals(mode) || getCallingActivity() != null) {
+            Runnable returnResultAction = () -> {
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("image_url", bgUrl);
+                String localPath = Leaflet_FileUtils.getFile(ItemPreviewActivity.this, bgUrl);
+                if (localPath != null && !localPath.isEmpty()) {
+                    resultIntent.putExtra("bg_image", localPath);
+                }
+                boolean isPrem = (currentPosition >= 0 && previewItemList != null && currentPosition < previewItemList.size()) ? previewItemList.get(currentPosition).isPremium() : false;
+                resultIntent.putExtra("is_premium", isPrem);
+                resultIntent.putExtra("is_unlocked_by_reward", isRewarded);
+                setResult(RESULT_OK, resultIntent);
+                finish();
+            };
+
+            if (isRewarded) {
+                returnResultAction.run();
+                isRewarded = false;
+                return;
+            }
+            Leaflet_MyApplication.showInterstitialAd(ItemPreviewActivity.this, returnResultAction::run);
+            return;
+        }
+
+        Runnable openAction = () -> {
+            String path = Leaflet_FileUtils.getFile(ItemPreviewActivity.this, bgUrl);
+            Intent intent = new Intent(ItemPreviewActivity.this, Leaflet_PosterEditActivity.class);
+            intent.putExtra("bg_path", path);
+            intent.putExtra("loadUserFrame", true);
+            intent.putExtra("Temp_Type", "MY_TEMP");
+            if (isRewarded) {
+                intent.putExtra("show_celebration", true);
+                intent.putExtra("celebration_message", "✨ Background Unlocked!");
+            }
+            startActivity(intent);
+        };
+
+        if (isRewarded) {
+            openAction.run();
+            isRewarded = false;
+            return;
+        }
+        Leaflet_MyApplication.showInterstitialAd(ItemPreviewActivity.this, openAction::run);
     }
 
     private void handleEditTemplate(PreviewItem item, int position) {
@@ -825,13 +1694,257 @@ public class ItemPreviewActivity extends AppCompatActivity {
         final int finalCatId = catId;
         final int finalPostId = postId;
 
-        if (item.isPremium() && preferenceClass.isPremiumPosterLockEnabled() && preferenceClass.isProEditPopupEnabled("templates")) {
+        if (isItemRewardAdRequired(item)) {
             promptEditUnlock(position, () -> {
                 isRewarded = true;
-                startLoadingAndOpenTemplate(finalCatId, finalPostId);
+                proceedToOpenTemplate(finalCatId, finalPostId);
             });
         } else {
-            startLoadingAndOpenTemplate(finalCatId, finalPostId);
+            proceedToOpenTemplate(finalCatId, finalPostId);
+        }
+    }
+
+    private void proceedToOpenTemplate(final int catId, final int postId) {
+        // 1. Instant 0ms Open if already pre-fetched
+        if (isPrefetchReady && catId == prefetchedCatId && postId == prefetchedPostId && templateModels != null && !templateModels.isEmpty()) {
+            if (isRewarded) {
+                startPosterEditIntent();
+                isRewarded = false;
+                return;
+            }
+            Leaflet_MyApplication.showInterstitialAd(ItemPreviewActivity.this, ItemPreviewActivity.this::startPosterEditIntent);
+            return;
+        }
+
+        // 2. Pre-fetch still finishing: Show Interstitial while download completes!
+        if (!isRewarded) {
+            Leaflet_MyApplication.showInterstitialAd(ItemPreviewActivity.this, () -> {
+                if (isPrefetchReady && templateModels != null && !templateModels.isEmpty()) {
+                    startPosterEditIntent();
+                } else {
+                    tvBtnText.setText("Opening...");
+                    btnUseTemplate.setEnabled(false);
+                    showLoadingDialog();
+                    pendingEditAction = this::startPosterEditIntent;
+                    if (!isPrefetchLoading) {
+                        loadPosterData(preferenceClass.getDataType("field_0"), catId, postId);
+                    }
+                }
+            });
+        } else {
+            tvBtnText.setText("Opening...");
+            btnUseTemplate.setEnabled(false);
+            showLoadingDialog();
+            pendingEditAction = this::startPosterEditIntent;
+            if (!isPrefetchLoading) {
+                loadPosterData(preferenceClass.getDataType("field_0"), catId, postId);
+            }
+        }
+    }
+
+    private void triggerSilentPrefetch(final int position) {
+        if (position < 0 || position >= previewItemList.size()) return;
+        PreviewItem item = previewItemList.get(position);
+        if (item == null) return;
+
+        if (MODE_BACKGROUND.equals(previewMode)) {
+            final String bgUrl = item.getImageUrl();
+            if (bgUrl == null || bgUrl.isEmpty()) return;
+            if (bgUrl.equals(prefetchedBgUrl) && isBgPrefetchReady) return;
+
+            String localPath = Leaflet_FileUtils.getFile(this, bgUrl);
+            if (localPath != null && !localPath.isEmpty() && new File(localPath).exists()) {
+                prefetchedBgUrl = bgUrl;
+                isBgPrefetchReady = true;
+                return;
+            }
+
+            prefetchedBgUrl = bgUrl;
+            isBgPrefetchReady = false;
+            ArrayList<String> strings = new ArrayList<>();
+            strings.add(bgUrl);
+            new Leaflet_DlBgAsync(this, strings, new Leaflet_DlBgAsync.OnDownloadTemplateListener() {
+                @Override
+                public void onDownloadComplete() {
+                    if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) return;
+                    if (bgUrl.equals(prefetchedBgUrl)) {
+                        isBgPrefetchReady = true;
+                        if (pendingEditAction != null) {
+                            Runnable action = pendingEditAction;
+                            pendingEditAction = null;
+                            dismissLoadingDialog();
+                            action.run();
+                        }
+                    }
+                }
+
+                @Override
+                public void onError() {}
+            }).execute();
+            return;
+        }
+
+        // MODE_TEMPLATE
+        int catId = item.getCatId();
+        int postId = item.getPostId();
+        if (catId == 0) {
+            catId = getIntent().getIntExtra(EXTRA_SINGLE_CAT_ID, getIntent().getIntExtra("extra_cat_id", 0));
+        }
+        if (catId == 0 || postId == 0) return;
+
+        if (catId == prefetchedCatId && postId == prefetchedPostId && isPrefetchReady) {
+            return; // Already prefetched
+        }
+
+        prefetchedPosition = position;
+        prefetchedCatId = catId;
+        prefetchedPostId = postId;
+        isPrefetchReady = false;
+        isPrefetchLoading = true;
+
+        final int finalCatId = catId;
+        final int finalPostId = postId;
+        final String cacheKey = "poster_detail_" + catId + "_" + postId;
+
+        String cachedJson = Leaflet_DataCacheManager.getInstance().getCache(this, cacheKey);
+        if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+            parseAndPrefetchAssets(cachedJson, finalCatId, finalPostId);
+            return;
+        }
+
+        String requestUrl = preferenceClass.getDataType("field_1") + preferenceClass.getDataType("field_34") + preferenceClass.getDataType("field_36");
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, requestUrl, response -> {
+            if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) return;
+            try {
+                JSONObject jsonObject = new JSONObject(response);
+                int error = jsonObject.optInt(preferenceClass.getDataType("field_3"), -1);
+                if (error == 1) {
+                    Leaflet_DataCacheManager.getInstance().saveCache(ItemPreviewActivity.this, cacheKey, response);
+                    parseAndPrefetchAssets(response, finalCatId, finalPostId);
+                } else {
+                    isPrefetchLoading = false;
+                }
+            } catch (Exception e) {
+                isPrefetchLoading = false;
+            }
+        }, error -> {
+            isPrefetchLoading = false;
+        }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> postMap = new HashMap<>();
+                postMap.put(preferenceClass.getDataType("field_47"), preferenceClass.getDataType("field_0"));
+                postMap.put(preferenceClass.getDataType("field_48"), "1");
+                postMap.put(preferenceClass.getDataType("field_46"), String.valueOf(finalCatId));
+                postMap.put(preferenceClass.getDataType("field_10"), String.valueOf(finalPostId));
+                return postMap;
+            }
+        };
+
+        stringRequest.setRetryPolicy(new DefaultRetryPolicy(
+                20000,
+                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        Volley.newRequestQueue(this).add(stringRequest);
+    }
+
+    private void parseAndPrefetchAssets(String jsonResponse, final int catId, final int postId) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+            JSONArray jsonArray = jsonObject.getJSONArray(preferenceClass.getDataType("field_4"));
+            if (jsonArray.length() == 0) {
+                isPrefetchLoading = false;
+                return;
+            }
+
+            new Leaflet_GetPosDetail(preferenceClass, jsonArray, new Leaflet_GetPosDetail.OnGetDataListener() {
+                @Override
+                public void onGetDataComplete(ArrayList<Leaflet_TemplateModel> posterCos) {
+                    if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) return;
+                    if (posterCos == null || posterCos.isEmpty()) {
+                        isPrefetchLoading = false;
+                        return;
+                    }
+
+                    templateModels = posterCos;
+                    sticker_model = posterCos.get(0).getSticker_model();
+                    text_model = posterCos.get(0).getText_model();
+
+                    templateDownloadList.clear();
+                    templateDownloadList.add(posterCos.get(0).getBack_image());
+
+                    for (int i = 0; i < sticker_model.size(); i++) {
+                        if (!sticker_model.get(i).getSt_image().equals("")) {
+                            templateDownloadList.add(preferenceClass.getDataType("field_1") + "/" + sticker_model.get(i).getSt_image());
+                        }
+                    }
+
+                    if (preferenceClass.getInt("download") == 0) {
+                        for (int i = 0; i < text_model.size(); i++) {
+                            String fontFamily = text_model.get(i).getFont_family();
+                            if (fontFamily != null && !fontFamily.trim().isEmpty() && !Leaflet_FileUtils.isAssetExists(fontFamily, ItemPreviewActivity.this)) {
+                                templateDownloadList.add(preferenceClass.getDataType("field_37") + fontFamily);
+                            }
+                        }
+                    }
+
+                    boolean allExist = true;
+                    File rootDir = Leaflet_FileUtils.getRootPath(ItemPreviewActivity.this);
+                    for (String uri : templateDownloadList) {
+                        if (uri == null || uri.trim().isEmpty()) continue;
+                        File f = new File(rootDir, Leaflet_FileUtils.getFileName(uri));
+                        if (!f.exists()) {
+                            allExist = false;
+                            break;
+                        }
+                    }
+
+                    if (allExist) {
+                        isPrefetchReady = true;
+                        isPrefetchLoading = false;
+                        if (pendingEditAction != null) {
+                            Runnable action = pendingEditAction;
+                            pendingEditAction = null;
+                            dismissLoadingDialog();
+                            action.run();
+                        }
+                        return;
+                    }
+
+                    new Leaflet_DlTemplateAsync(ItemPreviewActivity.this, templateDownloadList, new Leaflet_DlTemplateAsync.OnDownloadTemplateListener() {
+                        @Override
+                        public void onDownloadComplete() {
+                            if (isFinishing() || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && isDestroyed())) return;
+                            isPrefetchReady = true;
+                            isPrefetchLoading = false;
+                            if (pendingEditAction != null) {
+                                Runnable action = pendingEditAction;
+                                pendingEditAction = null;
+                                dismissLoadingDialog();
+                                action.run();
+                            }
+                        }
+
+                        @Override
+                        public void onError() {
+                            isPrefetchLoading = false;
+                            if (pendingEditAction != null) {
+                                dismissLoadingDialog();
+                                resetButtonState();
+                                Leaflet_MaterialDialogUtils.getInstance().errorDialog3(ItemPreviewActivity.this, getResources().getString(R.string.something_went_wrong));
+                                pendingEditAction = null;
+                            }
+                        }
+                    }).execute();
+                }
+
+                @Override
+                public void onError() {
+                    isPrefetchLoading = false;
+                }
+            }).execute();
+        } catch (Exception e) {
+            isPrefetchLoading = false;
         }
     }
 
@@ -843,11 +1956,14 @@ public class ItemPreviewActivity extends AppCompatActivity {
     }
 
     private void loadPosterData(String key, final int cat_id, final int pos_id) {
+        final String cacheKey = "poster_detail_" + cat_id + "_" + pos_id;
         String requestUrl = preferenceClass.getDataType("field_1") + preferenceClass.getDataType("field_34") + preferenceClass.getDataType("field_36");
+
         StringRequest stringRequest = new StringRequest(Request.Method.POST, requestUrl, response -> {
             try {
                 JSONObject jsonObject = new JSONObject(response);
                 int error = jsonObject.getInt(preferenceClass.getDataType("field_3"));
+
                 if (error == 0 || error == 404) {
                     dismissLoadingDialog();
                     resetButtonState();
@@ -856,7 +1972,9 @@ public class ItemPreviewActivity extends AppCompatActivity {
                 }
 
                 if (error == 1) {
+                    Leaflet_DataCacheManager.getInstance().saveCache(ItemPreviewActivity.this, cacheKey, response);
                     JSONArray jsonArray = jsonObject.getJSONArray(preferenceClass.getDataType("field_4"));
+
                     if (jsonArray.length() == 0) {
                         dismissLoadingDialog();
                         resetButtonState();
@@ -868,6 +1986,7 @@ public class ItemPreviewActivity extends AppCompatActivity {
                                 templateModels = posterCos;
                                 sticker_model = posterCos.get(0).getSticker_model();
                                 text_model = posterCos.get(0).getText_model();
+
                                 templateDownloadList.clear();
                                 templateDownloadList.add(posterCos.get(0).getBack_image());
 
@@ -891,6 +2010,15 @@ public class ItemPreviewActivity extends AppCompatActivity {
                                     public void onDownloadComplete() {
                                         dismissLoadingDialog();
                                         if (Leaflet_NetworkUtils.isNetworkAvailable(ItemPreviewActivity.this)) {
+                                            isPrefetchReady = true;
+                                            prefetchedCatId = cat_id;
+                                            prefetchedPostId = pos_id;
+                                            if (pendingEditAction != null) {
+                                                Runnable action = pendingEditAction;
+                                                pendingEditAction = null;
+                                                action.run();
+                                                return;
+                                            }
                                             if (isRewarded) {
                                                 startPosterEditIntent();
                                                 isRewarded = false;
@@ -942,575 +2070,1237 @@ public class ItemPreviewActivity extends AppCompatActivity {
                 return postMap;
             }
         };
+
         Volley.newRequestQueue(this).add(stringRequest);
     }
 
     private void startPosterEditIntent() {
+
         Intent intent = new Intent(ItemPreviewActivity.this, Leaflet_PosterEditActivity.class);
+
         intent.putParcelableArrayListExtra("template", templateModels);
+
         intent.putParcelableArrayListExtra("sticker", sticker_model);
+
         intent.putParcelableArrayListExtra("text", text_model);
+
         intent.putExtra("loadUserFrame", false);
+
         intent.putExtra("Temp_Type", "MY_TEMP");
+
         if (isRewarded) {
+
             intent.putExtra("show_celebration", true);
+
             intent.putExtra("celebration_message", "🎉 Template Unlocked!");
+
         }
+
         startActivity(intent);
-        finish();
+
     }
 
+
+
     // =========================================================================
+
     // Dynamic Remote-Config Native Ad Integration
+
     // =========================================================================
+
+
 
     private void loadRemoteConfigAndNativeAd() {
+
         String screenKey = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
+
         adEnabled = preferenceClass.isPreviewNativeAdEnabled(screenKey);
+
         adType = "compact";
+
         adHeightDp = preferenceClass.getPreviewNativeAdHeight();
+
         adUnitId = BuildConfig.DEBUG ? "ca-app-pub-3940256099942544/2247696110" : preferenceClass.getAdsId("NativeUnitID");
 
+
+
         if (!preferenceClass.getBoolean("show_grid_native_ad", true)
+
                 || preferenceClass.getInt("show_grid_native_ad", 1) == 0
+
                 || !preferenceClass.isGridAdEnabled(screenKey)) {
+
             adEnabled = false;
+
         }
+
+
 
         if (!BuildConfig.DEBUG && (adUnitId == null || adUnitId.trim().isEmpty() || "null".equals(adUnitId.trim()))) {
+
             adEnabled = false;
+
         }
+
+
 
         // 1. Firebase Remote Config
+
         try {
+
             JSONObject screenObj = preferenceClass.getScreenAdConfigJson(screenKey);
+
             if (screenObj != null && screenObj.has("preview_native_ad")) {
+
                 parsePreviewAdJson(screenObj);
+
             } else {
+
                 FirebaseRemoteConfig remoteConfig = FirebaseRemoteConfig.getInstance();
+
                 String configJson = remoteConfig.getString("preview_screen");
+
                 if (configJson != null && !configJson.trim().isEmpty() && configJson.trim().startsWith("{")) {
+
                     parsePreviewAdJson(new JSONObject(configJson));
+
                 }
+
             }
+
         } catch (Exception ignored) {}
 
+
+
         applyAdConfigAndFetch();
+
     }
+
+
 
     private void parsePreviewAdJson(JSONObject obj) {
+
         try {
+
             if (obj.has("preview_native_ad")) {
+
                 JSONObject adObj = obj.getJSONObject("preview_native_ad");
+
                 if (adObj.has("enabled")) {
+
                     adEnabled = adObj.optBoolean("enabled", true);
+
                 }
+
                 if (adObj.has("ad_type")) {
+
                     adType = adObj.optString("ad_type", "compact");
+
                 }
+
                 if (adObj.has("height")) {
+
                     adHeightDp = adObj.optInt("height", 95);
+
                 }
+
                 if (adObj.has("ad_id")) {
+
                     String id = adObj.optString("ad_id", "");
+
                     if (!id.isEmpty() && !id.contains("xxxx")) {
+
                         adUnitId = id;
+
                     }
+
                 }
+
             }
+
         } catch (Exception e) {
+
             Log.e(TAG, "Error in parsePreviewAdJson", e);
+
         }
+
     }
+
+
 
     private void updateViewPagerBottomAnchor(boolean isAdVisible) {
+
         if (viewPagerPreview == null) return;
+
         RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) viewPagerPreview.getLayoutParams();
+
         if (lp != null) {
+
             float density = getResources().getDisplayMetrics().density;
+
             if (isAdVisible) {
+
                 lp.addRule(RelativeLayout.ABOVE, R.id.rl_preview_native_ad);
+
                 lp.bottomMargin = (int) (6 * density);
+
             } else {
+
                 lp.addRule(RelativeLayout.ABOVE, R.id.btnUseTemplate);
+
                 lp.bottomMargin = (int) (16 * density);
+
             }
+
             viewPagerPreview.setLayoutParams(lp);
+
         }
+
     }
+
+
 
     private void applyAdConfigAndFetch() {
+
         runOnUiThread(() -> {
+
             if (!adEnabled) {
+
                 if (shimmerNativeAd != null) shimmerNativeAd.stopShimmer();
+
                 rlPreviewNativeAd.setVisibility(View.GONE);
+
                 updateViewPagerBottomAnchor(false);
+
                 return;
+
             }
+
+
 
             if (isAdLoaded && loadedNativeAd != null) {
+
                 rlPreviewNativeAd.setVisibility(View.VISIBLE);
+
                 updateViewPagerBottomAnchor(true);
+
                 return;
+
             }
+
+
 
             float density = getResources().getDisplayMetrics().density;
+
             ViewGroup.LayoutParams lp = rlPreviewNativeAd.getLayoutParams();
+
             lp.height = (int) (adHeightDp * density);
+
             rlPreviewNativeAd.setLayoutParams(lp);
 
+
+
             rlPreviewNativeAd.setVisibility(View.VISIBLE);
+
             updateViewPagerBottomAnchor(true);
+
             shimmerNativeAd.setVisibility(View.VISIBLE);
+
             shimmerNativeAd.startShimmer();
 
+
+
             fetchNativeAd();
+
         });
+
     }
+
+
 
     private void fetchNativeAd() {
+
         String finalAdId = BuildConfig.DEBUG ? "ca-app-pub-3940256099942544/2247696110" : adUnitId;
+
         if (finalAdId == null || finalAdId.trim().isEmpty() || finalAdId.equals("null")) {
+
             rlPreviewNativeAd.setVisibility(View.GONE);
+
             updateViewPagerBottomAnchor(false);
+
             return;
+
         }
+
+
 
         try {
+
             AdLoader.Builder builder = new AdLoader.Builder(this, finalAdId);
+
             builder.forNativeAd(nativeAd -> {
+
                 if (isFinishing() || isDestroyed()) {
+
                     nativeAd.destroy();
+
                     return;
+
                 }
+
                 if (loadedNativeAd != null) {
+
                     loadedNativeAd.destroy();
+
                 }
+
                 loadedNativeAd = nativeAd;
+                final String currentUnitId = finalAdId;
+                nativeAd.setOnPaidEventListener(adValue -> {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logAdRevenue(
+                            ItemPreviewActivity.this, adValue, currentUnitId, "native"
+                    );
+                });
+
                 isAdLoaded = true;
 
+
+
                 shimmerNativeAd.stopShimmer();
+
                 shimmerNativeAd.setVisibility(View.GONE);
 
+
+
                 NativeAdView adView = (NativeAdView) LayoutInflater.from(this).inflate(R.layout.layout_preview_native_ad, flNativeAdContainer, false);
+
                 populateNativeAdView(nativeAd, adView);
 
+
+
                 flNativeAdContainer.removeAllViews();
+
                 flNativeAdContainer.addView(adView);
+
             });
+
+
 
             VideoOptions videoOptions = new VideoOptions.Builder().setStartMuted(true).build();
+
             NativeAdOptions adOptions = new NativeAdOptions.Builder().setVideoOptions(videoOptions).build();
+
             builder.withNativeAdOptions(adOptions);
 
+
+
             builder.withAdListener(new AdListener() {
-                @Override
-                public void onAdLoaded() {
-                    updateViewPagerBottomAnchor(true);
-                }
 
                 @Override
-                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
-                    boolean showShimmerOnFail = preferenceClass.shouldShowNativeShimmerOnFail(MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates");
-                    if (!showShimmerOnFail) {
-                        if (shimmerNativeAd != null) shimmerNativeAd.stopShimmer();
-                        rlPreviewNativeAd.setVisibility(View.GONE);
-                        updateViewPagerBottomAnchor(false);
-                    } else {
-                        rlPreviewNativeAd.setVisibility(View.VISIBLE);
-                        updateViewPagerBottomAnchor(true);
-                    }
+
+                public void onAdLoaded() {
+
+                    updateViewPagerBottomAnchor(true);
+
                 }
+
+
+
+                @Override
+
+                public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+
+                    boolean showShimmerOnFail = preferenceClass.shouldShowNativeShimmerOnFail(MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates");
+
+                    if (!showShimmerOnFail) {
+
+                        if (shimmerNativeAd != null) shimmerNativeAd.stopShimmer();
+
+                        rlPreviewNativeAd.setVisibility(View.GONE);
+
+                        updateViewPagerBottomAnchor(false);
+
+                    } else {
+
+                        rlPreviewNativeAd.setVisibility(View.VISIBLE);
+
+                        updateViewPagerBottomAnchor(true);
+
+                    }
+
+                }
+
             });
 
+
+
             AdLoader adLoader = builder.build();
+
             adLoader.loadAd(new AdRequest.Builder().build());
 
+
+
         } catch (Exception e) {
+
             rlPreviewNativeAd.setVisibility(View.GONE);
+
         }
+
     }
+
+
 
     private void populateNativeAdView(NativeAd nativeAd, NativeAdView adView) {
+
         adView.setHeadlineView(adView.findViewById(R.id.ad_headline));
+
         adView.setBodyView(adView.findViewById(R.id.ad_body));
+
         adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
+
         adView.setIconView(adView.findViewById(R.id.ad_app_icon));
+
         adView.setAdvertiserView(adView.findViewById(R.id.ad_advertiser));
 
+
+
         if (adView.getHeadlineView() != null) {
+
             ((TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
+
         }
+
+
 
         if (adView.getBodyView() != null) {
+
             if (nativeAd.getBody() == null) {
+
                 adView.getBodyView().setVisibility(View.GONE);
+
             } else {
+
                 adView.getBodyView().setVisibility(View.VISIBLE);
+
                 ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+
             }
+
         }
+
+
 
         if (adView.getCallToActionView() != null) {
+
             if (nativeAd.getCallToAction() == null) {
+
                 adView.getCallToActionView().setVisibility(View.INVISIBLE);
+
             } else {
+
                 adView.getCallToActionView().setVisibility(View.VISIBLE);
+
                 ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+
             }
+
         }
+
+
 
         if (adView.getIconView() != null) {
+
             if (nativeAd.getIcon() == null) {
+
                 adView.getIconView().setVisibility(View.GONE);
+
             } else {
+
                 ((ImageView) adView.getIconView()).setImageDrawable(nativeAd.getIcon().getDrawable());
+
                 adView.getIconView().setVisibility(View.VISIBLE);
+
             }
+
         }
+
+
 
         MediaView mediaView = adView.findViewById(R.id.ad_media);
+
         if (mediaView != null) {
+
             if ("medium".equalsIgnoreCase(adType) && adHeightDp >= 180) {
+
                 mediaView.setVisibility(View.VISIBLE);
+
                 adView.setMediaView(mediaView);
+
             } else {
+
                 mediaView.setVisibility(View.GONE);
+
             }
+
         }
+
+
 
         adView.setNativeAd(nativeAd);
+
     }
 
+
+
     @Override
+
     protected void onResume() {
+
         super.onResume();
+
+        dismissLoadingDialog();
+
+        resetButtonState();
+
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "item_preview", MODE_BACKGROUND.equals(previewMode) ? "background" : "template");
+
     }
 
+
+
     @Override
+
     public void onBackPressed() {
+
         if (System.currentTimeMillis() - com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.getLastAdDismissedTime() < 800) {
+
             return;
+
         }
+
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "item_preview", "back_button");
+
         dismissLoadingDialog();
-        Leaflet_MyApplication.showInterstitialAd(this, new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+
+        Leaflet_MyApplication.showBackInterstitialAd(this, new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+
             @Override
+
             public void onAdClose() {
+
                 finish();
+
             }
+
         });
+
     }
+
+
 
     @Override
+
     protected void onDestroy() {
+
         dismissLoadingDialog();
+
+        pendingEditAction = null;
+
         super.onDestroy();
+
         if (loadedNativeAd != null) {
+
             loadedNativeAd.destroy();
+
             loadedNativeAd = null;
+
         }
+
         if (shimmerNativeAd != null) {
+
             shimmerNativeAd.stopShimmer();
+
         }
+
     }
 
+
+
     // =========================================================================
+
     // ViewPager2 Adapter
+
     // =========================================================================
+
+
 
     public interface OnLikeClickListener {
+
         void onLikeClick(int position, boolean isLiked);
+
     }
+
+
 
     public interface OnSwipePromptClickListener {
+
         void onSwipePromptClick(int position);
+
     }
 
+
+
     public interface OnItemUnlockClickListener {
+
         void onItemUnlockClick(int position);
+
     }
+
+
 
     public static class PreviewPagerAdapter extends RecyclerView.Adapter<PreviewPagerAdapter.PreviewViewHolder> {
 
+
+
         private final Context context;
+
         private final List<PreviewItem> items;
+
         private final String previewMode;
+
         private final String categoryName;
+
         private final int initialPosition;
+
         private final OnLikeClickListener onLikeClickListener;
+
         private final OnSwipePromptClickListener onSwipePromptClickListener;
+
         private final OnItemUnlockClickListener onItemUnlockClickListener;
+
         private final Leaflet_PreferenceClass pref;
+
         private boolean hasUserSwiped = false;
 
+
+
         public PreviewPagerAdapter(Context context, List<PreviewItem> items, String previewMode, String categoryName, int initialPosition,
+
                                    OnLikeClickListener listener, OnSwipePromptClickListener swipeListener,
+
                                    OnItemUnlockClickListener unlockListener) {
+
             this.context = context;
+
             this.items = items;
+
             this.previewMode = previewMode;
+
             this.categoryName = categoryName;
+
             this.initialPosition = initialPosition;
+
             this.onLikeClickListener = listener;
+
             this.onSwipePromptClickListener = swipeListener;
+
             this.onItemUnlockClickListener = unlockListener;
+
             this.pref = new Leaflet_PreferenceClass(context);
+
         }
+
+
 
         public void setHasUserSwiped(boolean swiped) {
+
             if (this.hasUserSwiped != swiped) {
+
                 this.hasUserSwiped = swiped;
+
                 notifyItemChanged(initialPosition);
+
             }
+
         }
+
+
 
         @NonNull
+
         @Override
+
         public PreviewViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+
             View view = LayoutInflater.from(context).inflate(R.layout.item_preview, parent, false);
+
             return new PreviewViewHolder(view);
+
         }
 
+
+
         @Override
+
         public void onBindViewHolder(@NonNull PreviewViewHolder holder, int position) {
+
             PreviewItem item = items.get(position);
 
-            // Responsive Aspect Ratio: Keep card at natural flyer/poster proportions (507:700 = 1:1.38)
-            // Centered cleanly in ViewPager so it never blows up into an elongated slab or touches the bottom button
+
+
+            // Responsive Aspect Ratio: Maintain exact poster proportions without any cropping
+
             holder.itemView.post(() -> {
-                int totalHeight = holder.itemView.getHeight();
-                int totalWidth = holder.itemView.getWidth();
-                if (totalHeight > 0 && totalWidth > 0) {
-                    float density = context.getResources().getDisplayMetrics().density;
-                    int horizontalPadding = (int) (32 * density); // 16dp start + 16dp end
-                    int verticalPadding = (int) (16 * density);   // 6dp top + 10dp bottom
-                    int availableWidth = totalWidth - horizontalPadding;
-                    int availableHeight = totalHeight - verticalPadding;
 
-                    int targetCardHeight;
-                    boolean isBackground = MODE_BACKGROUND.equals(previewMode)
-                            || (item.getSubtitle() != null && item.getSubtitle().toLowerCase().contains("background"));
-                    if (isBackground) {
-                        // Backgrounds fill the full preview card area, matching templates
-                        targetCardHeight = availableHeight;
-                    } else {
-                        float ratioMultiplier = 1.38f;
-                        String ratioStr = item.getRatio();
-                        if (ratioStr != null && !ratioStr.isEmpty()) {
-                            if (ratioStr.contains(":")) {
-                                String[] parts = ratioStr.split(":");
-                                try {
-                                    float w = Float.parseFloat(parts[0].trim());
-                                    float h = Float.parseFloat(parts[1].trim());
-                                    if (w > 0) ratioMultiplier = h / w;
-                                } catch (Exception ignored) {}
-                            }
-                        }
+                adjustCardDimensions(holder, item, -1f);
 
-                        int maxCardHeight = (int) (availableWidth * ratioMultiplier);
-                        targetCardHeight = Math.min(availableHeight, maxCardHeight);
-                    }
-
-                    ViewGroup.LayoutParams lp = holder.cardPreview.getLayoutParams();
-                    if (lp != null && lp.height != targetCardHeight) {
-                        lp.height = targetCardHeight;
-                        holder.cardPreview.setLayoutParams(lp);
-                    }
-                }
             });
+
+
 
             holder.progressBarLoading.setVisibility(View.VISIBLE);
 
-            boolean isPremium = item.isPremium();
-            boolean isLockFeatureEnabled = pref.isPremiumPosterLockEnabled();
-            boolean isBlurEnabled = pref.isPremiumPosterBlurEnabled();
-            boolean isPreviewUnlocked = item.isPreviewUnlocked();
 
-            // The '👑 AD' badge is ALWAYS visible on any premium template
+
+            boolean isPremium = item.isPremium();
+
+            String itemType = MODE_BACKGROUND.equals(previewMode) ? "backgrounds" : "templates";
+
+            boolean isLockFeatureEnabled = pref.isPremiumLockEnabled(itemType);
+
+            boolean isBlurEnabled = pref.isPremiumPosterBlurEnabled();
+
+            boolean isPersistedUnlocked = isPremium && (MODE_BACKGROUND.equals(previewMode)
+                    ? pref.isBackgroundUnlocked(item.getImageUrl() != null && !item.getImageUrl().trim().isEmpty() ? item.getImageUrl().trim() : String.valueOf(item.getPostId()))
+                    : pref.isTemplateUnlocked(item.getPostId()));
+
+            boolean isPreviewUnlocked = item.isPreviewUnlocked() || isPersistedUnlocked;
+
+            boolean effectivePremium = isPremium && !isPreviewUnlocked;
+
+
+
+            // Show badge only while still locked
+
             if (holder.tvPremiumBadge != null) {
-                holder.tvPremiumBadge.setVisibility(isPremium ? View.VISIBLE : View.GONE);
+
+                holder.tvPremiumBadge.setVisibility(effectivePremium ? View.VISIBLE : View.GONE);
+
             }
+
             if (holder.llPremiumBadge != null) {
+
                 holder.llPremiumBadge.setVisibility(View.GONE);
+
             }
+
+
 
             // Lock and blur overlay only if locked and preview NOT yet unlocked
-            boolean showLockVisuals = isPremium && isLockFeatureEnabled && !isPreviewUnlocked;
+
+            boolean showLockVisuals = effectivePremium && isLockFeatureEnabled;
+
             if (holder.fl_center_lock != null) {
-                holder.fl_center_lock.setVisibility((showLockVisuals && isBlurEnabled) ? View.VISIBLE : View.GONE);
+                boolean isLockVisible = showLockVisuals;
+                holder.fl_center_lock.setVisibility(isLockVisible ? View.VISIBLE : View.GONE);
+                if (isLockVisible) {
+                    Leaflet_LockAnimationHelper.startLockAnimation(holder.fl_center_lock, holder.iv_center_lock);
+                } else {
+                    Leaflet_LockAnimationHelper.stopLockAnimation(holder.fl_center_lock, holder.iv_center_lock);
+                }
+
                 holder.fl_center_lock.setOnClickListener(v -> {
                     if (onItemUnlockClickListener != null) {
                         onItemUnlockClickListener.onItemUnlockClick(position);
                     }
                 });
             }
+
             if (holder.view_blur_overlay != null) {
+
                 holder.view_blur_overlay.setVisibility((showLockVisuals && isBlurEnabled) ? View.VISIBLE : View.GONE);
+
                 holder.view_blur_overlay.setOnClickListener(v -> {
+
                     if (onItemUnlockClickListener != null) {
+
                         onItemUnlockClickListener.onItemUnlockClick(position);
+
                     }
+
                 });
+
             }
+
+
 
             // Swipe up prompt - ONLY on the first item opened, animated gently, AND ONLY IF THERE IS A NEXT ITEM AND NOT FAVORITES
+
             boolean isFavorites = categoryName != null && (categoryName.toLowerCase().contains("liked") || categoryName.toLowerCase().contains("favorite"));
+
             boolean canSwipeMore = items.size() > 1 && position < items.size() - 1 && !isFavorites;
+
             if (canSwipeMore && position == initialPosition && !hasUserSwiped) {
+
                 holder.llSwipePrompt.setVisibility(View.VISIBLE);
+
                 startSwipeUpAnimation(holder.llSwipePrompt);
+
                 holder.llSwipePrompt.setOnClickListener(v -> {
+
                     if (onSwipePromptClickListener != null) {
+
                         onSwipePromptClickListener.onSwipePromptClick(position);
+
                     }
+
                 });
+
             } else {
+
                 stopSwipeUpAnimation(holder.llSwipePrompt);
+            Leaflet_LockAnimationHelper.stopLockAnimation(holder.fl_center_lock, holder.iv_center_lock);
+
                 holder.llSwipePrompt.setVisibility(View.GONE);
+
                 holder.llSwipePrompt.setOnClickListener(null);
+
             }
+
+
 
             // Like state
+
             boolean isLiked;
+
             if (MODE_BACKGROUND.equals(previewMode)) {
+
                 isLiked = Leaflet_FavoritesManager.isBackgroundLiked(context, item.getId());
+
             } else {
+
                 isLiked = Leaflet_FavoritesManager.isPosterLiked(context, item.getId());
+
             }
+
+
 
             holder.ivItemLike.setImageResource(isLiked ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline);
+
             holder.ivItemLike.setColorFilter(isLiked ? Color.parseColor("#EF4444") : Color.parseColor("#0066FF"));
 
+
+
             holder.btnLikeCard.setOnClickListener(v -> {
+
                 // Scale pop animation
+
                 holder.btnLikeCard.animate()
+
                         .scaleX(1.3f)
+
                         .scaleY(1.3f)
+
                         .setDuration(120)
+
                         .withEndAction(() -> {
+
                             holder.btnLikeCard.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120).start();
+
                             if (onLikeClickListener != null) {
+
                                 onLikeClickListener.onLikeClick(position, !isLiked);
+
                             }
+
                         })
+
                         .start();
+
             });
 
+
+
             // Glide loader with blur if locked, normal otherwise
+
             if (showLockVisuals && isBlurEnabled) {
+
+                float blurRadius = pref.getPremiumPosterBlurRadius();
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    holder.ivPreviewImage.setRenderEffect(android.graphics.RenderEffect.createBlurEffect(25f, 25f, android.graphics.Shader.TileMode.CLAMP));
+
+                    holder.ivPreviewImage.setRenderEffect(android.graphics.RenderEffect.createBlurEffect(blurRadius, blurRadius, android.graphics.Shader.TileMode.CLAMP));
+
                 }
+
+                int r = Math.max(1, Math.min(10, Math.round(blurRadius)));
+
+                com.bumptech.glide.load.Transformation<android.graphics.Bitmap> blurTransform = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+
+                        ? new com.bumptech.glide.load.resource.bitmap.FitCenter()
+
+                        : new Leaflet_BlurTransformation(r, 1);
+
+
+
                 Glide.with(context)
+
                         .load(item.getImageUrl())
-                        .transform(new com.bumptech.glide.load.resource.bitmap.CenterCrop(), new Leaflet_BlurTransformation(20, 3))
+
+                        .transform(new com.bumptech.glide.load.resource.bitmap.FitCenter(), blurTransform)
+
                         .placeholder(R.drawable.bg_preview_ad_card_light)
+
                         .error(R.drawable.bg_preview_ad_card_light)
+
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
+
                         .listener(new RequestListener<Drawable>() {
-                            @Override
-                            public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                                holder.progressBarLoading.setVisibility(View.GONE);
-                                return false;
-                            }
 
                             @Override
-                            public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+
+                            public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+
                                 holder.progressBarLoading.setVisibility(View.GONE);
+
                                 return false;
+
                             }
+
+
+
+                            @Override
+
+                            public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+
+                                holder.progressBarLoading.setVisibility(View.GONE);
+
+                                if (resource != null && resource.getIntrinsicWidth() > 0 && resource.getIntrinsicHeight() > 0) {
+
+                                    float actualRatio = (float) resource.getIntrinsicHeight() / (float) resource.getIntrinsicWidth();
+                                    if (item != null) {
+                                        item.setRatio(resource.getIntrinsicWidth() + ":" + resource.getIntrinsicHeight());
+                                    }
+                                    holder.itemView.post(() -> adjustCardDimensions(holder, item, actualRatio));
+
+                                }
+
+                                return false;
+
+                            }
+
                         })
+
                         .into(holder.ivPreviewImage);
+
             } else {
+
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+
                     holder.ivPreviewImage.setRenderEffect(null);
+
                 }
+
                 Glide.with(context)
+
                         .load(item.getImageUrl())
-                        .transform(new com.bumptech.glide.load.resource.bitmap.CenterCrop())
+
+                        .fitCenter()
+
                         .placeholder(R.drawable.bg_preview_ad_card_light)
+
                         .error(R.drawable.bg_preview_ad_card_light)
+
                         .diskCacheStrategy(DiskCacheStrategy.ALL)
+
                         .transition(DrawableTransitionOptions.withCrossFade())
+
                         .listener(new RequestListener<Drawable>() {
-                            @Override
-                            public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
-                                holder.progressBarLoading.setVisibility(View.GONE);
-                                return false;
-                            }
 
                             @Override
-                            public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+
+                            public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
+
                                 holder.progressBarLoading.setVisibility(View.GONE);
+
                                 return false;
+
                             }
+
+
+
+                            @Override
+
+                            public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
+
+                                holder.progressBarLoading.setVisibility(View.GONE);
+
+                                if (resource != null && resource.getIntrinsicWidth() > 0 && resource.getIntrinsicHeight() > 0) {
+
+                                    float actualRatio = (float) resource.getIntrinsicHeight() / (float) resource.getIntrinsicWidth();
+                                    if (item != null) {
+                                        item.setRatio(resource.getIntrinsicWidth() + ":" + resource.getIntrinsicHeight());
+                                    }
+                                    holder.itemView.post(() -> adjustCardDimensions(holder, item, actualRatio));
+
+                                }
+
+                                return false;
+
+                            }
+
                         })
+
                         .into(holder.ivPreviewImage);
+
             }
+
         }
+
+
+
+        private void adjustCardDimensions(PreviewViewHolder holder, PreviewItem item, float overrideRatio) {
+
+            if (holder == null || holder.itemView == null || holder.cardPreview == null) return;
+
+            int totalHeight = holder.itemView.getHeight();
+
+            int totalWidth = holder.itemView.getWidth();
+
+            if (totalHeight <= 0 || totalWidth <= 0) return;
+
+
+
+            float density = context.getResources().getDisplayMetrics().density;
+
+            int horizontalPadding = (int) (32 * density); // 16dp start + 16dp end
+
+            int verticalPadding = (int) (16 * density);   // 6dp top + 10dp bottom
+
+            int availableWidth = totalWidth - horizontalPadding;
+
+            int availableHeight = totalHeight - verticalPadding;
+
+            if (availableWidth <= 0 || availableHeight <= 0) return;
+
+
+
+            float ratioMultiplier = 1.333f; // Default 3:4 flyer/poster proportion
+
+            if (overrideRatio > 0) {
+                ratioMultiplier = overrideRatio;
+            } else if (MODE_BACKGROUND.equals(previewMode)) {
+                // Backgrounds are portrait/full-bleed canvas: default to matching available canvas proportions
+                if (item != null && item.getRatio() != null && item.getRatio().contains(":") && !item.getRatio().equals("1:1")) {
+                    String[] parts = item.getRatio().split(":");
+                    try {
+                        float w = Float.parseFloat(parts[0].trim());
+                        float h = Float.parseFloat(parts[1].trim());
+                        if (w > 0 && h > 0) ratioMultiplier = h / w;
+                    } catch (Exception ignored) {
+                        ratioMultiplier = (float) availableHeight / (float) availableWidth;
+                    }
+                } else {
+                    ratioMultiplier = (float) availableHeight / (float) availableWidth;
+                }
+            } else if (item != null) {
+                String ratioStr = item.getRatio();
+                if (ratioStr != null && !ratioStr.isEmpty() && ratioStr.contains(":") && !ratioStr.equals("1:1")) {
+                    String[] parts = ratioStr.split(":");
+                    try {
+                        float w = Float.parseFloat(parts[0].trim());
+                        float h = Float.parseFloat(parts[1].trim());
+                        if (w > 0 && h > 0) ratioMultiplier = h / w;
+                    } catch (Exception ignored) {}
+                }
+            }
+
+
+
+            int targetCardWidth;
+
+            int targetCardHeight;
+
+
+
+            // Fit inside availableWidth and availableHeight while strictly preserving aspect ratio:
+
+            if (availableWidth * ratioMultiplier <= availableHeight) {
+
+                targetCardWidth = availableWidth;
+
+                targetCardHeight = (int) (availableWidth * ratioMultiplier);
+
+            } else {
+
+                targetCardHeight = availableHeight;
+
+                targetCardWidth = (int) (availableHeight / ratioMultiplier);
+
+            }
+
+
+
+            ViewGroup.LayoutParams lp = holder.cardPreview.getLayoutParams();
+
+            if (lp != null) {
+
+                boolean changed = false;
+
+                if (lp.width != targetCardWidth) {
+
+                    lp.width = targetCardWidth;
+
+                    changed = true;
+
+                }
+
+                if (lp.height != targetCardHeight) {
+
+                    lp.height = targetCardHeight;
+
+                    changed = true;
+
+                }
+
+                if (changed) {
+
+                    holder.cardPreview.setLayoutParams(lp);
+
+                }
+
+            }
+
+        }
+
+
 
         @Override
         public int getItemCount() {
+
             return items != null ? items.size() : 0;
+
         }
+
+
 
         private void startSwipeUpAnimation(final View view) {
+
             if (view == null) return;
+
             stopSwipeUpAnimation(view);
 
+
+
             float distance = -12f * view.getResources().getDisplayMetrics().density;
+
             android.animation.ObjectAnimator animator = android.animation.ObjectAnimator.ofFloat(view, "translationY", 0f, distance, 0f);
+
             animator.setDuration(1200);
+
             animator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+
             animator.setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator());
+
             animator.start();
+
             view.setTag(R.id.llSwipePrompt, animator);
+
         }
+
+
 
         private void stopSwipeUpAnimation(View view) {
+
             if (view == null) return;
+
             Object tag = view.getTag(R.id.llSwipePrompt);
+
             if (tag instanceof android.animation.ObjectAnimator) {
+
                 ((android.animation.ObjectAnimator) tag).cancel();
+
             }
+
             view.setTag(R.id.llSwipePrompt, null);
+
             view.clearAnimation();
+
             view.setTranslationY(0f);
+
         }
+
+
 
         @Override
+
         public void onViewRecycled(@NonNull PreviewViewHolder holder) {
+
             super.onViewRecycled(holder);
+
             stopSwipeUpAnimation(holder.llSwipePrompt);
+
         }
+
+
 
         static class PreviewViewHolder extends RecyclerView.ViewHolder {
+
             final CardView cardPreview;
+
             final ImageView ivPreviewImage;
+
             final ProgressBar progressBarLoading;
+
             final FrameLayout btnLikeCard;
+
             final ImageView ivItemLike;
+
             final LinearLayout llSwipePrompt;
+
             final View llPremiumBadge;
+
             final TextView tvPremiumBadge;
+
             final View view_blur_overlay;
+
             final FrameLayout fl_center_lock;
 
+            final ImageView iv_center_lock;
+
+
+
             public PreviewViewHolder(@NonNull View itemView) {
+
                 super(itemView);
+
                 cardPreview = itemView.findViewById(R.id.cardPreview);
+
                 ivPreviewImage = itemView.findViewById(R.id.ivPreviewImage);
+
                 progressBarLoading = itemView.findViewById(R.id.progressBarLoading);
+
                 btnLikeCard = itemView.findViewById(R.id.btnLikeCard);
+
                 ivItemLike = itemView.findViewById(R.id.ivItemLike);
+
                 llSwipePrompt = itemView.findViewById(R.id.llSwipePrompt);
+
                 llPremiumBadge = itemView.findViewById(R.id.llPremiumBadge);
+
                 tvPremiumBadge = itemView.findViewById(R.id.tvPremiumBadge);
+
                 view_blur_overlay = itemView.findViewById(R.id.view_blur_overlay);
+
                 fl_center_lock = itemView.findViewById(R.id.fl_center_lock);
+
+                iv_center_lock = itemView.findViewById(R.id.iv_center_lock);
+
             }
+
         }
+
     }
+
 }
+

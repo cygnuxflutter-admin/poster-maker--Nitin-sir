@@ -88,7 +88,7 @@ public class Leaflet_PhotoCropActivity extends AppCompatActivity implements Leaf
 
     @Override
     public void onBackPressed() {
-        com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+        com.online.flyer.design.postermaker.Leaflet_MyApplication.showBackInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
             @Override
             public void onAdClose() {
                 finish();

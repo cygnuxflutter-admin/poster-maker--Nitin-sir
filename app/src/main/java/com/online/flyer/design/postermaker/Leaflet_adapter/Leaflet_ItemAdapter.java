@@ -112,39 +112,66 @@ public class Leaflet_ItemAdapter extends DragItemAdapter<Pair<Long, View>, Leafl
         if (v instanceof Leaflet_ResizableStickerView) {
             if (((Leaflet_ResizableStickerView) v).isMultiTouchEnabled) {
                 holder.img_lock.setImageResource(R.drawable.leaflet_ic_unlock);
+                holder.img_lock.setColorFilter(android.graphics.Color.parseColor("#9CA3AF"));
             } else {
                 holder.img_lock.setImageResource(R.drawable.leaflet_ic_lock);
+                holder.img_lock.setColorFilter(this.activity.getColor(R.color.selected));
             }
         }
         if (v instanceof Leaflet_AutofitTextRel) {
             if (((Leaflet_AutofitTextRel) v).isMultiTouchEnabled) {
                 holder.img_lock.setImageResource(R.drawable.leaflet_ic_unlock);
+                holder.img_lock.setColorFilter(android.graphics.Color.parseColor("#9CA3AF"));
             } else {
                 holder.img_lock.setImageResource(R.drawable.leaflet_ic_lock);
+                holder.img_lock.setColorFilter(this.activity.getColor(R.color.selected));
             }
         }
         final View view = v;
         final ViewHolder viewHolder = holder;
         holder.img_lock.setOnClickListener(v1 -> {
             if (view instanceof Leaflet_ResizableStickerView) {
-                if (((Leaflet_ResizableStickerView) view).isMultiTouchEnabled) {
-                    ((Leaflet_ResizableStickerView) view).isMultiTouchEnabled = ((Leaflet_ResizableStickerView) view).setDefaultTouchListener(false);
-                    viewHolder.img_lock.setImageResource(R.drawable.leaflet_ic_lock);
-                } else {
-                    ((Leaflet_ResizableStickerView) view).isMultiTouchEnabled = ((Leaflet_ResizableStickerView) view).setDefaultTouchListener(true);
+                Leaflet_ResizableStickerView sticker = (Leaflet_ResizableStickerView) view;
+                boolean newState = !sticker.isMultiTouchEnabled;
+                sticker.setDefaultTouchListener(newState);
+                if (newState) {
                     viewHolder.img_lock.setImageResource(R.drawable.leaflet_ic_unlock);
+                    viewHolder.img_lock.setColorFilter(android.graphics.Color.parseColor("#9CA3AF"));
+                    android.widget.Toast.makeText(activity, "Sticker Unlocked", android.widget.Toast.LENGTH_SHORT).show();
+                } else {
+                    viewHolder.img_lock.setImageResource(R.drawable.leaflet_ic_lock);
+                    viewHolder.img_lock.setColorFilter(activity.getColor(R.color.selected));
+                    sticker.setBorderVisibility(false);
+                    if (activity instanceof Leaflet_PosterEditActivity) {
+                        ((Leaflet_PosterEditActivity) activity).hideStickerControl();
+                        ((Leaflet_PosterEditActivity) activity).hideAllControls();
+                    }
+                    android.widget.Toast.makeText(activity, "Sticker Locked", android.widget.Toast.LENGTH_SHORT).show();
+                }
+                if (activity instanceof Leaflet_PosterEditActivity) {
+                    ((Leaflet_PosterEditActivity) activity).updateLockUi(view);
+                }
+            } else if (view instanceof Leaflet_AutofitTextRel) {
+                Leaflet_AutofitTextRel textRel = (Leaflet_AutofitTextRel) view;
+                boolean newState = !textRel.isMultiTouchEnabled;
+                textRel.setDefaultTouchListener(newState);
+                if (newState) {
+                    viewHolder.img_lock.setImageResource(R.drawable.leaflet_ic_unlock);
+                    viewHolder.img_lock.setColorFilter(android.graphics.Color.parseColor("#9CA3AF"));
+                    android.widget.Toast.makeText(activity, "Text Unlocked", android.widget.Toast.LENGTH_SHORT).show();
+                } else {
+                    viewHolder.img_lock.setImageResource(R.drawable.leaflet_ic_lock);
+                    viewHolder.img_lock.setColorFilter(activity.getColor(R.color.selected));
+                    textRel.setBorderVisibility(false);
+                    if (activity instanceof Leaflet_PosterEditActivity) {
+                        ((Leaflet_PosterEditActivity) activity).hideAllControls();
+                    }
+                    android.widget.Toast.makeText(activity, "Text Locked", android.widget.Toast.LENGTH_SHORT).show();
+                }
+                if (activity instanceof Leaflet_PosterEditActivity) {
+                    ((Leaflet_PosterEditActivity) activity).updateLockUi(view);
                 }
             }
-            if (!(view instanceof Leaflet_AutofitTextRel)) {
-                return;
-            }
-            if (((Leaflet_AutofitTextRel) view).isMultiTouchEnabled) {
-                ((Leaflet_AutofitTextRel) view).isMultiTouchEnabled = ((Leaflet_AutofitTextRel) view).setDefaultTouchListener(false);
-                viewHolder.img_lock.setImageResource(R.drawable.leaflet_ic_lock);
-                return;
-            }
-            ((Leaflet_AutofitTextRel) view).isMultiTouchEnabled = ((Leaflet_AutofitTextRel) view).setDefaultTouchListener(true);
-            viewHolder.img_lock.setImageResource(R.drawable.leaflet_ic_unlock);
         });
     }
 

@@ -47,32 +47,35 @@ public class Leaflet_MaterialDialogUtils {
     }
 
     public void errorDialog(Activity activity, String msg) {
-        MaterialDialog materialDialog = new MaterialDialog.Builder(activity)
-                .customView(R.layout.leaflet_error_dialog, false)
-                .contentColor(Color.TRANSPARENT)
-                .backgroundColor(Color.TRANSPARENT)
-                .cancelable(false)
-                .build();
+        if (activity == null || activity.isFinishing()) return;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed()) return;
+        try {
+            MaterialDialog materialDialog = new MaterialDialog.Builder(activity)
+                    .customView(R.layout.leaflet_error_dialog, false)
+                    .contentColor(Color.TRANSPARENT)
+                    .backgroundColor(Color.TRANSPARENT)
+                    .cancelable(false)
+                    .build();
 
-        Objects.requireNonNull(materialDialog.getWindow()).setBackgroundDrawableResource(android.R.color.transparent);
-//        @SuppressLint("ResourceType")
-//        Dialog materialDialog = new Dialog(activity, 16974126);
-//        materialDialog.requestWindowFeature(1);
-//        materialDialog.setContentView(R.layout.error_dialog);
-//        materialDialog.setCancelable(false);
+            if (materialDialog.getWindow() != null) {
+                materialDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            }
 
-        materialDialog.show();
+            materialDialog.show();
 
-        TextView description = (TextView) materialDialog.findViewById(R.id.description);
+            TextView description = (TextView) materialDialog.findViewById(R.id.description);
+            if (description != null) description.setText(msg);
 
-        description.setText(msg);
-
-        TextView btn_ok = (TextView) materialDialog.findViewById(R.id.btn_ok);
-
-        btn_ok.setOnClickListener(v -> {
-            materialDialog.dismiss();
-            activity.finish();
-        });
+            TextView btn_ok = (TextView) materialDialog.findViewById(R.id.btn_ok);
+            if (btn_ok != null) {
+                btn_ok.setOnClickListener(v -> {
+                    try {
+                        materialDialog.dismiss();
+                    } catch (Exception ignored) {}
+                    activity.finish();
+                });
+            }
+        } catch (Exception ignored) {}
     }
 
     public void errorDialog2(Activity activity, String msg) {
@@ -262,6 +265,15 @@ public class Leaflet_MaterialDialogUtils {
         materialDialog.requestWindowFeature(1);
         materialDialog.setContentView(R.layout.leaflet_exitalert_dialog);
         materialDialog.setCancelable(false);
+
+        if (materialDialog.getWindow() != null) {
+            materialDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            materialDialog.getWindow().setLayout(
+                    android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                    android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+            );
+            materialDialog.getWindow().setGravity(android.view.Gravity.CENTER);
+        }
 
         materialDialog.show();
 

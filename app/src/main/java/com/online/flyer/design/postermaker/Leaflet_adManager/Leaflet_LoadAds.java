@@ -50,6 +50,8 @@ public class Leaflet_LoadAds {
             Log.d("AdManager", "Fetching Banner Ad from Firebase (via Prefs): " + bannerId);
         }
 
+        final String finalBannerId = bannerId;
+
         AdView adView = new AdView(activity);
         
         // Calculate full-width adaptive banner size
@@ -96,17 +98,25 @@ public class Leaflet_LoadAds {
             public void onAdLoaded() {
                 Log.d("AdManager", "Banner Ad Loaded");
                 shimmerView.setVisibility(View.GONE);
-                mainLayout.setVisibility(View.VISIBLE);
                 adView.setVisibility(View.VISIBLE);
+                if ("SUPPRESSED".equals(mainLayout.getTag()) || com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.isKeyboardVisible(activity)) {
+                    mainLayout.setVisibility(View.GONE);
+                } else {
+                    mainLayout.setVisibility(View.VISIBLE);
+                }
             }
 
             @Override
             public void onAdFailedToLoad(@NonNull LoadAdError adError) {
-                Log.d("AdManager", "Banner Ad Failed: " + adError.getMessage());
+                Log.e("AdManager", "loadAdmobBannerAd: Banner Ad Failed: " + adError.getMessage() + " [Code: " + adError.getCode() + "] for ID: " + finalBannerId);
                 if (showShimmerOnFail) {
                     adView.setVisibility(View.GONE);
                     shimmerView.setVisibility(View.VISIBLE);
-                    mainLayout.setVisibility(View.VISIBLE);
+                    if ("SUPPRESSED".equals(mainLayout.getTag()) || com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.isKeyboardVisible(activity)) {
+                        mainLayout.setVisibility(View.GONE);
+                    } else {
+                        mainLayout.setVisibility(View.VISIBLE);
+                    }
                 } else {
                     adView.setVisibility(View.GONE);
                     shimmerView.setVisibility(View.GONE);
@@ -122,8 +132,18 @@ public class Leaflet_LoadAds {
             }
         });
 
+                adView.setOnPaidEventListener(adValue -> {
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logAdRevenue(
+                    activity, adValue, finalBannerId, "banner"
+            );
+        });
+
         AdRequest adRequest = new AdRequest.Builder().build();
-        mainLayout.setVisibility(View.VISIBLE); // Show shimmer immediately
+        if ("SUPPRESSED".equals(mainLayout.getTag()) || com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.isKeyboardVisible(activity)) {
+            mainLayout.setVisibility(View.GONE);
+        } else {
+            mainLayout.setVisibility(View.VISIBLE); // Show shimmer immediately
+        }
         adView.loadAd(adRequest);
     }
 }

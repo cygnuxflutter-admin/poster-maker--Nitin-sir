@@ -69,6 +69,14 @@ public class Leaflet_MyApplication extends android.app.Application {
     private static final long AD_DEBOUNCE_INTERVAL = 800; // 800ms debounce
 
     public static void showInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
+        showInterstitialAd(activity, "Opening...", onAdLoadInterface);
+    }
+
+    public static void showBackInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
+        showInterstitialAd(activity, "Please wait...", onAdLoadInterface);
+    }
+
+    public static void showInterstitialAd(Activity activity, String loadingMessage, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
         long currentTime = android.os.SystemClock.elapsedRealtime();
         if (currentTime - lastGlobalAdInvocationTime < AD_DEBOUNCE_INTERVAL) {
             android.util.Log.d("AdDebounce", "showInterstitialAd: duplicate click ignored (" + (currentTime - lastGlobalAdInvocationTime) + "ms)");
@@ -81,28 +89,32 @@ public class Leaflet_MyApplication extends android.app.Application {
                 if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
                 return;
             }
-            final int targetCount = pref.getGlobalInterstitialCount();
-            
-            
+
+            // 1. Frequency Capping: Daily & Hourly limits
+            if (pref.isInterstitialDailyCapReached() || pref.isInterstitialHourlyCapReached()) {
+                android.util.Log.d("AdFrequencyCap", "showInterstitialAd: Daily cap or hourly cap reached. Skipping ad.");
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
+
+            final int targetCount = Math.max(1, pref.getGlobalInterstitialCount());
+
             interstitialClickCount++;
-            
+
             Leaflet_InterstitialAdManager adManager = ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager();
 
-            if (targetCount > 1 && interstitialClickCount % targetCount == targetCount - 1) {
-                adManager.fetchAdMobAd();
-            }
-            
             if (interstitialClickCount % targetCount == 0) {
-                Leaflet_InterstitialAdManager.OnAdLoadInterface wrappedListener = new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
-                    @Override
-                    public void onAdClose() {
-                        if (targetCount == 1) {
-                            adManager.fetchAdMobAd();
-                        }
-                        if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
-                    }
-                };
-                adManager.showInterstitialAd(activity, wrappedListener);
+                // 2. Frequency Capping: Cooldown timer between interstitials
+                if (!pref.isInterstitialCooldownPassed()) {
+                    android.util.Log.d("AdFrequencyCap", "showInterstitialAd: Click target reached (" + interstitialClickCount +
+                            "), but cooldown timer is active. Holding count until cooldown expires.");
+                    interstitialClickCount = targetCount - 1;
+                    if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                    return;
+                }
+
+                // Pure JIT load & show: eliminates wasted preloaded ads when user stops before target click
+                adManager.loadAndShowAdmob(activity, loadingMessage, onAdLoadInterface);
             } else {
                 if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
             }
@@ -120,7 +132,7 @@ public class Leaflet_MyApplication extends android.app.Application {
         lastGlobalAdInvocationTime = currentTime;
         if (activity != null && activity.getApplication() instanceof Leaflet_MyApplication) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(activity);
-            if (!pref.isGlobalInterstitialEnabled()) {
+            if (!pref.isGlobalInterstitialEnabled() || !pref.canShowInterstitialAd()) {
                 if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
                 return;
             }
@@ -160,6 +172,10 @@ public class Leaflet_MyApplication extends android.app.Application {
     }
 
     public static void showSearchInterstitialAd(Activity activity, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
+        showSearchInterstitialAd(activity, "Opening...", onAdLoadInterface);
+    }
+
+    public static void showSearchInterstitialAd(Activity activity, String loadingMessage, Leaflet_InterstitialAdManager.OnAdLoadInterface onAdLoadInterface) {
         long currentTime = android.os.SystemClock.elapsedRealtime();
         if (currentTime - lastGlobalAdInvocationTime < AD_DEBOUNCE_INTERVAL) {
             android.util.Log.d("AdDebounce", "showSearchInterstitialAd: duplicate click ignored");
@@ -176,30 +192,40 @@ public class Leaflet_MyApplication extends android.app.Application {
                 return;
             }
 
+            // 1b. Frequency Capping: Daily & Hourly limits
+            if (pref.isInterstitialDailyCapReached() || pref.isInterstitialHourlyCapReached()) {
+                android.util.Log.d("AdFrequencyCap", "showSearchInterstitialAd: Daily or hourly cap reached. Skipping ad.");
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
+
             // 2. Target interval from Remote Config
-            final int targetCount = pref.getSearchInterstitialCount();
+            final int targetCount = Math.max(1, pref.getSearchInterstitialCount());
 
             // 3. Increment click count
             int currentClickCount = pref.getInt("getSearchClickCount", 0) + 1;
 
             Leaflet_InterstitialAdManager adManager = ((Leaflet_MyApplication) activity.getApplication()).getInterstitialAdManager();
 
-            // 4. SMART PRELOAD: 1 click before target, preload silently
-            int preloadTrigger = Math.max(1, targetCount - 1);
-            if (currentClickCount == preloadTrigger) {
-                adManager.fetchAdMobAd();
-            }
-
-            // 5. If target not reached yet, save count and proceed
+            // 4. If target not reached yet, save count and proceed (Zero premature preload waste)
             if (currentClickCount < targetCount) {
                 pref.setInt("getSearchClickCount", currentClickCount);
                 if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
                 return;
             }
 
-            // 6. Target reached -> reset count to 0 and show ad!
+            // 5. Target reached -> check cooldown
+            if (!pref.isInterstitialCooldownPassed()) {
+                android.util.Log.d("AdFrequencyCap", "showSearchInterstitialAd: Click target reached (" + currentClickCount +
+                        "), but cooldown timer is active. Holding count until cooldown expires.");
+                pref.setInt("getSearchClickCount", targetCount - 1);
+                if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
+                return;
+            }
+
+            // 6. Target reached and cooldown passed -> reset count to 0 and load/show JIT!
             pref.setInt("getSearchClickCount", 0);
-            adManager.showInterstitialAd(activity, () -> {
+            adManager.loadAndShowAdmob(activity, loadingMessage, () -> {
                 if (onAdLoadInterface != null) onAdLoadInterface.onAdClose();
             });
         } else {
@@ -230,7 +256,7 @@ public class Leaflet_MyApplication extends android.app.Application {
                 activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_SECURE);
                 Log.d("ScreenshotSecurity", "Screenshot ALLOWED (FLAG_SECURE cleared) for " + activity.getClass().getSimpleName());
             }
-        } catch (Exception ignored) {}
+        } catch (Throwable ignored) {}
     }
 
     @Override
@@ -276,9 +302,13 @@ public class Leaflet_MyApplication extends android.app.Application {
         com.online.flyer.design.postermaker.Leaflet_service.Leaflet_FirebaseMessagingService.createNotificationChannel(this);
 
         // OneSignal Initialization
-        OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
-        OneSignal.initWithContext(this);
-        OneSignal.setAppId("35b6d659-eeda-4729-b2c0-ebef7ac69e3e");
+        try {
+            OneSignal.setLogLevel(OneSignal.LOG_LEVEL.VERBOSE, OneSignal.LOG_LEVEL.NONE);
+            OneSignal.initWithContext(this);
+            OneSignal.setAppId("35b6d659-eeda-4729-b2c0-ebef7ac69e3e");
+        } catch (Throwable t) {
+            Log.e("Leaflet_MyApplication", "OneSignal init error: " + t.getMessage());
+        }
         // OneSignal.promptForPushNotifications(); // Moved to OnboardingStep1
 
         registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
@@ -330,23 +360,31 @@ public class Leaflet_MyApplication extends android.app.Application {
             @Override public void onActivityDestroyed(@NonNull Activity activity) {}
         });
 
-        android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && cm != null) {
-            cm.registerDefaultNetworkCallback(new android.net.ConnectivityManager.NetworkCallback() {
+        try {
+            android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && cm != null) {
+                cm.registerDefaultNetworkCallback(new android.net.ConnectivityManager.NetworkCallback() {
                 @Override
                 public void onAvailable(@NonNull android.net.Network network) {
                     if (wasDisconnected) {
                         wasDisconnected = false;
                         if (currentActivity != null) {
                             currentActivity.runOnUiThread(() -> {
-                                if (noInternetDialog != null && noInternetDialog.isShowing()) {
-                                    noInternetDialog.dismiss();
-                                }
-                                if (currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity ||
-                                    currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_TemplateSelectionActivity ||
-                                    currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity ||
-                                    currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_SplashScreen) {
-                                    currentActivity.recreate();
+                                try {
+                                    if (noInternetDialog != null && noInternetDialog.isShowing()) {
+                                        noInternetDialog.dismiss();
+                                    }
+                                } catch (Exception ignored) {}
+                                if (currentActivity != null && !currentActivity.isFinishing()) {
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && currentActivity.isDestroyed()) {
+                                        return;
+                                    }
+                                    // NEVER recreate SplashScreen! Doing so races with launch/watchdog and crashes the app
+                                    if (currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity ||
+                                        currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_TemplateSelectionActivity ||
+                                        currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) {
+                                        currentActivity.recreate();
+                                    }
                                 }
                             });
                         }
@@ -361,11 +399,18 @@ public class Leaflet_MyApplication extends android.app.Application {
                     }
                 }
             });
+            }
+        } catch (Throwable t) {
+            Log.e("Leaflet_MyApplication", "registerDefaultNetworkCallback error: " + t.getMessage());
         }
     }
 
     private void checkAndShowDialog() {
-        if (currentActivity == null) return;
+        if (currentActivity == null || currentActivity.isFinishing()) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && currentActivity.isDestroyed()) return;
+        // Never interrupt SplashScreen with persistent modal dialog
+        if (currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_SplashScreen) return;
+
         android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         boolean isConnected = false;
         if (cm != null) {
@@ -382,42 +427,56 @@ public class Leaflet_MyApplication extends android.app.Application {
 
     private void showNoInternetDialog(Activity activity) {
         if (activity == null || activity.isFinishing()) return;
-        noInternetDialog = new android.app.Dialog(activity, 16974126);
-        noInternetDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
-        noInternetDialog.setContentView(R.layout.leaflet_error_dialog);
-        noInternetDialog.setCancelable(false);
-        
-        android.widget.TextView tvTitle = noInternetDialog.findViewById(R.id.title);
-        android.widget.TextView tvDesc = noInternetDialog.findViewById(R.id.description);
-        android.widget.TextView btnOk = noInternetDialog.findViewById(R.id.btn_ok);
-        
-        if (tvTitle != null) tvTitle.setText("No Internet");
-        if (tvDesc != null) tvDesc.setText("Please turn on your internet connection to continue.");
-        if (btnOk != null) {
-            btnOk.setText("Retry");
-            btnOk.setOnClickListener(v -> {
-                android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                boolean connected = false;
-                if (cm != null) {
-                    android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-                    connected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
-                }
-                if (connected) {
-                    noInternetDialog.dismiss();
-                    wasDisconnected = false;
-                    if (currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity ||
-                        currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_TemplateSelectionActivity ||
-                        currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity ||
-                        currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_SplashScreen) {
-                        currentActivity.recreate();
-                    }
-                } else {
-                    android.widget.Toast.makeText(activity, "Still no internet!", android.widget.Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
-        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed()) return;
+        if (activity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_SplashScreen) return;
+
         try {
+            if (noInternetDialog != null && noInternetDialog.isShowing()) {
+                noInternetDialog.dismiss();
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            noInternetDialog = new android.app.Dialog(activity, 16974126);
+            noInternetDialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+            noInternetDialog.setContentView(R.layout.leaflet_error_dialog);
+            noInternetDialog.setCancelable(false);
+            
+            android.widget.TextView tvTitle = noInternetDialog.findViewById(R.id.title);
+            android.widget.TextView tvDesc = noInternetDialog.findViewById(R.id.description);
+            android.widget.TextView btnOk = noInternetDialog.findViewById(R.id.btn_ok);
+            
+            if (tvTitle != null) tvTitle.setText("No Internet");
+            if (tvDesc != null) tvDesc.setText("Please turn on your internet connection to continue.");
+            if (btnOk != null) {
+                btnOk.setText("Retry");
+                btnOk.setOnClickListener(v -> {
+                    android.net.ConnectivityManager cm = (android.net.ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+                    boolean connected = false;
+                    if (cm != null) {
+                        android.net.NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                        connected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+                    }
+                    if (connected) {
+                        try {
+                            if (noInternetDialog != null && noInternetDialog.isShowing()) {
+                                noInternetDialog.dismiss();
+                            }
+                        } catch (Exception ignored) {}
+                        wasDisconnected = false;
+                        if (currentActivity != null && !currentActivity.isFinishing()) {
+                            if (currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity ||
+                                currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_TemplateSelectionActivity ||
+                                currentActivity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) {
+                                currentActivity.recreate();
+                            }
+                        }
+                    } else {
+                        android.widget.Toast.makeText(activity, "Still no internet!", android.widget.Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+            
             noInternetDialog.show();
         } catch (Exception ignored) {}
     }
@@ -437,6 +496,13 @@ public class Leaflet_MyApplication extends android.app.Application {
 
     public interface OnShowAdCompleteListener {
         void onShowAdComplete();
+    }
+
+    public Leaflet_AppOpenManager getAppOpenManager() {
+        if (appOpenManager == null) {
+            appOpenManager = new Leaflet_AppOpenManager(this);
+        }
+        return appOpenManager;
     }
 
     public void showAdIfAvailable(@NonNull Activity activity, @NonNull OnShowAdCompleteListener onShowAdCompleteListener) {

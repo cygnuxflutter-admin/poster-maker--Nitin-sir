@@ -50,16 +50,28 @@ public class Leaflet_TemplateSelectionController {
     }
 
     private void loadTemplates() {
-        showSkeleton();
+        ArrayList<Leaflet_PosterModel> memList = Leaflet_DataCacheManager.getInstance().getMemoryTemplatesCache();
+        if (memList != null && !memList.isEmpty()) {
+            Log.d(TAG, "Loading templates INSTANTLY from memory cache (0ms)!");
+            isDataLoaded = true;
+            setPagerAdapter(memList);
+            getTemplateThumb(preferenceClass.getDataType("field_0"), true);
+            return;
+        }
+
         String cachedJson = Leaflet_DataCacheManager.getInstance().getCache(activity, Leaflet_DataCacheManager.KEY_TEMPLATES);
         if (cachedJson != null && !cachedJson.trim().isEmpty()) {
             Log.d(TAG, "Loading templates from cache...");
-            isDataLoaded = true;
+            if (!isDataLoaded) {
+                showSkeleton();
+            }
+            Leaflet_DataCacheManager.getInstance().warmupTemplatesImages(activity, cachedJson, preferenceClass);
             parseAndDisplayJson(cachedJson, true);
 
             // Silent background refresh to check if admin added new templates
             getTemplateThumb(preferenceClass.getDataType("field_0"), true);
         } else {
+            showSkeleton();
             Log.d(TAG, "No cache found, fetching templates from API...");
             getTemplateThumb(preferenceClass.getDataType("field_0"), false);
         }
@@ -176,19 +188,22 @@ public class Leaflet_TemplateSelectionController {
                     @Override
                     public void onGetDataComplete(ArrayList<Leaflet_PosterModel> posterDataLists) {
                         isDataLoaded = true;
+                        Leaflet_DataCacheManager.getInstance().setMemoryTemplatesCache(posterDataLists);
                         setPagerAdapter(posterDataLists);
                     }
 
                     @Override
                     public void onError() {
+                        hideSkeleton();
                         if (!isSilentOrCache) {
                             dismissMaterialDialog();
                             Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, activity.getResources().getString(R.string.something_went_wrong));
                         }
                     }
-                }).execute();
+                }).executeOnExecutor(android.os.AsyncTask.THREAD_POOL_EXECUTOR);
             }
         } catch (Exception e) {
+            hideSkeleton();
             if (!isSilentOrCache) {
                 dismissMaterialDialog();
                 Leaflet_MaterialDialogUtils.getInstance().errorDialog(activity, e.getMessage());
@@ -210,19 +225,23 @@ public class Leaflet_TemplateSelectionController {
         }
 
         int currentItem = viewPager.getCurrentItem();
+        int targetIndex = -1;
+        if (activity instanceof Leaflet_TemplateSelectionActivity) {
+            targetIndex = ((Leaflet_TemplateSelectionActivity) activity).findTargetCategoryIndex(posterDataLists);
+        }
 
         ArrayList<Leaflet_PosterModel> tabList = new ArrayList<>();
-        int maxItems = Math.min(6, posterDataLists.size());
+        int maxItems = Math.min(posterDataLists.size(), Math.max(6, targetIndex >= 0 ? targetIndex + 1 : 6));
         for (int i = 0; i < maxItems; i++) {
             tabList.add(posterDataLists.get(i));
         }
 
+        int initialIndex = (targetIndex >= 0 && targetIndex < tabList.size())
+                ? targetIndex
+                : (currentItem > 0 && currentItem < tabList.size() ? currentItem : 0);
+
         viewPager.setAdapter(new Leaflet_TemplatePagerAdapter(supportFragmentManager, tabList));
-        if (currentItem > 0 && currentItem < tabList.size()) {
-            viewPager.setCurrentItem(currentItem, false);
-        } else {
-            viewPager.setCurrentItem(0, false);
-        }
+        viewPager.setCurrentItem(initialIndex, false);
         tabs.setViewPager(viewPager);
 
         if (activity instanceof Leaflet_TemplateSelectionActivity) {

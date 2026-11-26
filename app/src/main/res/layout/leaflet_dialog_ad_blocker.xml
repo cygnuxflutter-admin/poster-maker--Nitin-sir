@@ -1,104 +1,133 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:layout_gravity="center">
 
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
         app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="8dp">
+        app:cardCornerRadius="24dp"
+        app:cardElevation="0dp"
+        app:cardMaxElevation="0dp"
+        app:cardUseCompatPadding="false">
 
-        <LinearLayout
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:orientation="vertical"
-            android:padding="24dp">
+            android:layout_height="wrap_content">
 
-            <!-- Red Shield Icon Container -->
-            <FrameLayout
-                android:layout_width="72dp"
-                android:layout_height="72dp"
-                android:background="@drawable/bg_circle_button_flat">
-
-                <ImageView
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:layout_gravity="center"
-                    android:src="@drawable/ic_ad_blocker_shield" />
-            </FrameLayout>
-
-            <!-- Dialog Title -->
-            <TextView
-                android:id="@+id/tvAdBlockTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:fontFamily="@font/leaflet_visbyroundcf_bold"
-                android:gravity="center"
-                android:text="Ad Blocker Detected 🚫"
-                android:textColor="#0F172A"
-                android:textSize="20sp" />
-
-            <!-- Dialog Message -->
-            <TextView
-                android:id="@+id/tvAdBlockMessage"
+            <ScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:fontFamily="@font/leaflet_visbyroundcf_regular"
-                android:gravity="center"
-                android:lineSpacingExtra="4dp"
-                android:text="Poster Maker is supported by ads to remain free. We noticed that you are using an Ad Blocker or Private DNS that blocks ads.\n\nPlease turn off your Ad Blocker or disable Private DNS to continue using the app."
-                android:textColor="#475569"
-                android:textSize="14sp" />
+                android:fillViewport="true"
+                android:overScrollMode="never"
+                android:scrollbars="none">
 
-            <!-- Primary Action: Check Again -->
-            <Button
-                android:id="@+id/btnCheckAgain"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="22dp"
-                android:backgroundTint="#2563EB"
-                android:fontFamily="@font/leaflet_visbyroundcf_bold"
-                android:text="Check Again 🔄"
-                android:textAllCaps="false"
-                android:textColor="@color/white"
-                android:textSize="15sp"
-                app:cornerRadius="12dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingStart="22dp"
+                    android:paddingTop="26dp"
+                    android:paddingEnd="22dp"
+                    android:paddingBottom="24dp">
 
-            <!-- Secondary Action: Open DNS / WiFi Settings -->
-            <Button
-                android:id="@+id/btnOpenSettings"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="8dp"
-                android:backgroundTint="#F1F5F9"
-                android:fontFamily="@font/leaflet_visbyroundcf_bold"
-                android:text="Open Settings ⚙️"
-                android:textAllCaps="false"
-                android:textColor="#1E293B"
-                android:textSize="14sp"
-                app:cornerRadius="12dp" />
+                    <!-- Red Shield Icon Container -->
+                    <FrameLayout
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:background="@drawable/bg_circle_button_flat">
 
-            <!-- Exit App Text Button -->
-            <TextView
+                        <ImageView
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_ad_blocker_shield" />
+                    </FrameLayout>
+
+                    <!-- Dialog Title -->
+                    <TextView
+                        android:id="@+id/tvAdBlockTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                        android:gravity="center"
+                        android:text="Ad Blocker Detected 🚫"
+                        android:textColor="#0F172A"
+                        android:textSize="19sp" />
+
+                    <!-- Dialog Message -->
+                    <TextView
+                        android:id="@+id/tvAdBlockMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="@font/leaflet_visbyroundcf_regular"
+                        android:gravity="center"
+                        android:lineSpacingExtra="3dp"
+                        android:text="Poster Maker is supported by ads to remain free. We noticed that you are using an Ad Blocker or Private DNS that blocks ads.\n\nPlease turn off your Ad Blocker or disable Private DNS to continue using the app."
+                        android:textColor="#475569"
+                        android:textSize="13.5sp" />
+
+                    <!-- Horizontal Action Buttons: Settings & Check Again -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/btnOpenSettings"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:backgroundTint="#F1F5F9"
+                            android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                            android:text="Settings ⚙️"
+                            android:textAllCaps="false"
+                            android:textColor="#1E293B"
+                            android:textSize="14sp"
+                            app:cornerRadius="12dp" />
+
+                        <Button
+                            android:id="@+id/btnCheckAgain"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:backgroundTint="#0066FF"
+                            android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                            android:text="Check Again 🔄"
+                            android:textAllCaps="false"
+                            android:textColor="@color/white"
+                            android:textSize="14sp"
+                            app:cornerRadius="12dp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </ScrollView>
+
+            <!-- Top-Right Close '✕' Button to Exit App -->
+            <ImageView
                 android:id="@+id/btnExitApp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:fontFamily="@font/leaflet_visbyroundcf_bold"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="top|end"
+                android:layout_marginTop="14dp"
+                android:layout_marginEnd="14dp"
+                android:background="@drawable/bg_circle_button_flat"
+                android:contentDescription="Close and Exit App"
                 android:padding="8dp"
-                android:text="Exit App"
-                android:textColor="#94A3B8"
-                android:textSize="13sp" />
+                android:src="@drawable/leaflet_ic_close"
+                app:tint="#64748B" />
 
-        </LinearLayout>
+        </FrameLayout>
     </androidx.cardview.widget.CardView>
-</LinearLayout>
+</FrameLayout>

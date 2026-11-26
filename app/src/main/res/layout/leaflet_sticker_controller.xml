@@ -19,7 +19,7 @@
 
         <RelativeLayout
             android:layout_width="fill_parent"
-            android:layout_height="120.0dip"
+            android:layout_height="100.0dip"
             android:splitMotionEvents="false">
 
             <LinearLayout
@@ -27,171 +27,213 @@
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
                 android:gravity="center"
-                android:orientation="horizontal"
-                android:visibility="visible"
-                android:weightSum="1.0">
+                android:orientation="vertical"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:visibility="visible">
 
-                <RelativeLayout
-                    android:layout_width="0.0dip"
-                    android:layout_height="fill_parent"
-                    android:layout_weight="0.5">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerInParent="true"
-                        android:layout_margin="5dp"
-                        android:orientation="vertical"
-                        android:splitMotionEvents="false">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:orientation="horizontal"
-                            android:weightSum="3">
-
-                            <RelativeLayout
-                                android:id="@+id/sti_btn_up"
-                                android:layout_width="57dp"
-                                android:layout_height="35dp"
-                                android:layout_gravity="center">
-
-                                <ImageView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_gravity="center_horizontal"
-                                    android:background="@drawable/leaflet_btn_rounded_text_bg"
-                                    android:src="@drawable/leaflet_bt_up"
-                                    app:tint="@color/white" />
-                            </RelativeLayout>
-
-                        </LinearLayout>
-
-
-                        <RelativeLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <RelativeLayout
-                                android:id="@+id/sti_btnLeft"
-                                android:layout_width="57dp"
-                                android:layout_height="35dp"
-                                android:layout_alignParentStart="true">
-
-                                <ImageView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:background="@drawable/leaflet_btn_rounded_text_bg"
-                                    android:src="@drawable/leaflet_bt_left"
-                                    app:tint="@color/white" />
-                            </RelativeLayout>
-
-
-                            <RelativeLayout
-                                android:id="@+id/sti_btnRight"
-                                android:layout_width="57dp"
-                                android:layout_height="35dp"
-                                android:layout_alignParentEnd="true">
-
-                                <ImageView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:background="@drawable/leaflet_btn_rounded_text_bg"
-                                    android:src="@drawable/leaflet_bt_right"
-                                    app:tint="@color/white" />
-                            </RelativeLayout>
-
-                        </RelativeLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center"
-                            android:orientation="horizontal">
-
-                            <RelativeLayout
-                                android:id="@+id/sti_btnDown"
-                                android:layout_width="57dp"
-                                android:layout_height="35dp"
-                                android:layout_gravity="center">
-
-                                <ImageView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="match_parent"
-                                    android:layout_gravity="center_horizontal"
-                                    android:background="@drawable/leaflet_btn_rounded_text_bg"
-                                    android:src="@drawable/leaflet_bt_down"
-                                    app:tint="@color/white" />
-                            </RelativeLayout>
-
-                        </LinearLayout>
-
-                    </LinearLayout>
-                </RelativeLayout>
-
+                <!-- Row 1: Action buttons [ Duplicate ] [ Lock ] [ Delete ] -->
                 <LinearLayout
-                    android:layout_width="0.0dip"
-                    android:layout_height="fill_parent"
-                    android:layout_weight="0.4"
-                    android:orientation="vertical"
-                    android:weightSum="3.0">
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
 
+                    <!-- Duplicate Button -->
                     <RelativeLayout
-                        android:layout_width="fill_parent"
-                        android:layout_height="0.0dip"
-                        android:layout_weight="1.0">
+                        android:id="@+id/lay_duplicateSticker"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/leaflet_btn_rounded_text_bg"
+                        android:clickable="true"
+                        android:focusable="true">
 
-
-                        <RelativeLayout
-                            android:id="@+id/lay_duplicateSticker"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_centerInParent="true">
+                            android:layout_centerInParent="true"
+                            android:gravity="center"
+                            android:orientation="horizontal">
 
                             <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_duplicate_copy_white"
+                                app:tint="@color/white" />
+
+                            <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_centerInParent="true"
-                                android:background="@drawable/leaflet_btn_rounded_text_bg"
-                                android:orientation="vertical"
-                                android:src="@drawable/leaflet_bt_duplicate"
-                                app:tint="@color/white">
-
-                            </ImageView>
-
-
-                        </RelativeLayout>
+                                android:layout_marginStart="6dp"
+                                android:fontFamily="@font/leaflet_visbyroundcf_semibold"
+                                android:includeFontPadding="false"
+                                android:text="Duplicate"
+                                android:textColor="@color/white"
+                                android:textSize="12sp" />
+                        </LinearLayout>
                     </RelativeLayout>
 
+                    <!-- Lock Button -->
                     <RelativeLayout
-                        android:layout_width="fill_parent"
-                        android:layout_height="0.0dip"
-                        android:layout_weight="1.0">
+                        android:id="@+id/lay_stk_lock"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/leaflet_btn_rounded_text_bg"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                        <RelativeLayout
-                            android:id="@+id/lay_str_delete"
+                        <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_centerInParent="true">
+                            android:layout_centerInParent="true"
+                            android:gravity="center"
+                            android:orientation="horizontal">
 
                             <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_poster_center_lock"
+                                app:tint="@color/white" />
+
+                            <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_centerInParent="true"
-                                android:background="@drawable/leaflet_btn_rounded_text_bg"
-                                android:orientation="vertical"
-                                android:src="@drawable/leaflet_bt_delete"
-                                app:tint="@color/white">
-
-                            </ImageView>
-
-                        </RelativeLayout>
+                                android:layout_marginStart="6dp"
+                                android:fontFamily="@font/leaflet_visbyroundcf_semibold"
+                                android:includeFontPadding="false"
+                                android:text="Lock"
+                                android:textColor="@color/white"
+                                android:textSize="12sp" />
+                        </LinearLayout>
                     </RelativeLayout>
-                    
+
+                    <!-- Delete Button -->
+                    <RelativeLayout
+                        android:id="@+id/lay_str_delete"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:background="@drawable/leaflet_btn_rounded_text_bg"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerInParent="true"
+                            android:gravity="center"
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/ic_delete_trash_white"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="6dp"
+                                android:fontFamily="@font/leaflet_visbyroundcf_semibold"
+                                android:includeFontPadding="false"
+                                android:text="Delete"
+                                android:textColor="@color/white"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </RelativeLayout>
 
                 </LinearLayout>
+
+                <!-- Row 2: Precision Arrow Buttons [ < ] [ ^ ] [ v ] [ > ] -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <!-- Left Arrow -->
+                    <RelativeLayout
+                        android:id="@+id/sti_btnLeft"
+                        android:layout_width="54dp"
+                        android:layout_height="34dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/leaflet_btn_rounded_text_bg"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_centerInParent="true"
+                            android:src="@drawable/leaflet_bt_left"
+                            app:tint="@color/white" />
+                    </RelativeLayout>
+
+                    <!-- Up Arrow -->
+                    <RelativeLayout
+                        android:id="@+id/sti_btn_up"
+                        android:layout_width="54dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/leaflet_btn_rounded_text_bg"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_centerInParent="true"
+                            android:src="@drawable/leaflet_bt_up"
+                            app:tint="@color/white" />
+                    </RelativeLayout>
+
+                    <!-- Down Arrow -->
+                    <RelativeLayout
+                        android:id="@+id/sti_btnDown"
+                        android:layout_width="54dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="6dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/leaflet_btn_rounded_text_bg"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_centerInParent="true"
+                            android:src="@drawable/leaflet_bt_down"
+                            app:tint="@color/white" />
+                    </RelativeLayout>
+
+                    <!-- Right Arrow -->
+                    <RelativeLayout
+                        android:id="@+id/sti_btnRight"
+                        android:layout_width="54dp"
+                        android:layout_height="34dp"
+                        android:layout_marginStart="6dp"
+                        android:background="@drawable/leaflet_btn_rounded_text_bg"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_centerInParent="true"
+                            android:src="@drawable/leaflet_bt_right"
+                            app:tint="@color/white" />
+                    </RelativeLayout>
+
+                </LinearLayout>
+
             </LinearLayout>
 
             <LinearLayout

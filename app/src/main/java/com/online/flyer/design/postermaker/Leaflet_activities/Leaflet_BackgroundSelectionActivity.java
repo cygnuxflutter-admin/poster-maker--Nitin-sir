@@ -43,6 +43,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     private ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> allCategories;
     private boolean isLoadingBg = false;
     private ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> currentTabList;
+    private androidx.viewpager.widget.ViewPager.OnPageChangeListener lazyLoadPageListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +89,8 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         android.view.View icSearchContainer = findViewById(R.id.ic_search_container);
         android.view.View icSearchClose = findViewById(R.id.ic_search_close);
         android.widget.EditText etSearch = findViewById(R.id.et_search);
+        final android.view.View llBottomBar = findViewById(R.id.ll_bottom_bar);
+        final android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
 
         if (getIntent().getBooleanExtra("auto_load", false)) {
             String autoBgPath = getIntent().getStringExtra("bg_image");
@@ -97,12 +100,10 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 
         if (icSearchContainer != null) {
             icSearchContainer.setOnClickListener(v -> {
-                lyTitle.setVisibility(android.view.View.GONE);
-                icSearchContainer.setVisibility(android.view.View.GONE);
-                lySearch.setVisibility(android.view.View.VISIBLE);
-                etSearch.requestFocus();
-                android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
-                if (imm != null) imm.showSoftInput(etSearch, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+                if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick(800)) return;
+                Intent searchIntent = new Intent(this, Leaflet_SearchActivity.class);
+                searchIntent.putExtra("filter", "backgrounds");
+                startActivity(searchIntent);
             });
         }
 
@@ -112,10 +113,63 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
                 lySearch.setVisibility(android.view.View.GONE);
                 lyTitle.setVisibility(android.view.View.VISIBLE);
                 icSearchContainer.setVisibility(android.view.View.VISIBLE);
+                if (llBottomBar != null) {
+                    llBottomBar.setTag(null);
+                    llBottomBar.setVisibility(android.view.View.VISIBLE);
+                }
+                if (rl_ad != null) {
+                    rl_ad.setTag(null);
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(Leaflet_BackgroundSelectionActivity.this);
+                    if (pref.isBannerAdEnabled("backgrounds")) {
+                        rl_ad.setVisibility(android.view.View.VISIBLE);
+                    }
+                }
                 android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
                 if (imm != null) imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
             });
         }
+
+        if (etSearch != null) {
+            etSearch.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus) {
+                    if (llBottomBar != null) {
+                        llBottomBar.setTag("SUPPRESSED");
+                        llBottomBar.setVisibility(android.view.View.GONE);
+                    }
+                    if (rl_ad != null) {
+                        rl_ad.setTag("SUPPRESSED");
+                        rl_ad.setVisibility(android.view.View.GONE);
+                    }
+                }
+            });
+        }
+
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.attachKeyboardListener(this, isVisible -> {
+            if (llBottomBar != null) {
+                if (isVisible) {
+                    llBottomBar.setTag("SUPPRESSED");
+                    llBottomBar.setVisibility(android.view.View.GONE);
+                    if (rl_ad != null) {
+                        rl_ad.setTag("SUPPRESSED");
+                        rl_ad.setVisibility(android.view.View.GONE);
+                    }
+                } else {
+                    android.view.View currentLySearch = findViewById(R.id.ly_search);
+                    boolean isSearchOpen = currentLySearch != null && currentLySearch.getVisibility() == android.view.View.VISIBLE;
+                    if (!isSearchOpen) {
+                        llBottomBar.setTag(null);
+                        llBottomBar.setVisibility(android.view.View.VISIBLE);
+                        if (rl_ad != null) {
+                            rl_ad.setTag(null);
+                            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(Leaflet_BackgroundSelectionActivity.this);
+                            if (pref.isBannerAdEnabled("backgrounds")) {
+                                rl_ad.setVisibility(android.view.View.VISIBLE);
+                            }
+                        }
+                    }
+                }
+            }
+        });
 
         if (etSearch != null) {
             etSearch.addTextChangedListener(new android.text.TextWatcher() {
@@ -124,6 +178,14 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 
                 @Override
                 public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (llBottomBar != null && llBottomBar.getVisibility() != android.view.View.GONE) {
+                        llBottomBar.setTag("SUPPRESSED");
+                        llBottomBar.setVisibility(android.view.View.GONE);
+                    }
+                    if (rl_ad != null && rl_ad.getVisibility() != android.view.View.GONE) {
+                        rl_ad.setTag("SUPPRESSED");
+                        rl_ad.setVisibility(android.view.View.GONE);
+                    }
                     if (allCategories == null) return;
                     String query = s.toString().toLowerCase().trim();
                     currentTabList.clear();
@@ -153,11 +215,12 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.setupBottomNav(this, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NavUtils.TAB_BACKGROUNDS);
 
         // Load Banner Ad
-        android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
         if (rl_ad != null) {
             com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
             if (pref.isBannerAdEnabled("backgrounds")) {
-                rl_ad.setVisibility(android.view.View.VISIBLE);
+                if (!"SUPPRESSED".equals(rl_ad.getTag()) && !com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.isKeyboardVisible(this)) {
+                    rl_ad.setVisibility(android.view.View.VISIBLE);
+                }
                 if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
                     com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad, "backgrounds");
                 }
@@ -181,64 +244,69 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         selectTargetCategory();
     }
 
-    private void selectTargetCategory() {
-        if (allCategories == null || currentTabList == null) return;
+    public int findTargetCategoryIndex(ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> categories) {
+        if (categories == null || getIntent() == null) return -1;
         String targetCat = getIntent().getStringExtra("category_name");
         String targetCatId = getIntent().getStringExtra("category_id");
-        if (targetCat == null && targetCatId == null) return;
+        if (targetCat == null && targetCatId == null) return -1;
 
-        androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
-        if (vp == null) return;
-
-        int targetIndex = -1;
         // 1. Try matching by category_id
         if (targetCatId != null && !targetCatId.trim().isEmpty()) {
-            for (int i = 0; i < allCategories.size(); i++) {
-                if (String.valueOf(allCategories.get(i).getCategory_id()).equals(targetCatId.trim())) {
-                    targetIndex = i;
-                    break;
+            String cleanId = targetCatId.trim();
+            for (int i = 0; i < categories.size(); i++) {
+                if (String.valueOf(categories.get(i).getCategory_id()).equals(cleanId)) {
+                    return i;
                 }
             }
         }
 
         // 2. Try exact name match (case-insensitive)
-        if (targetIndex == -1 && targetCat != null && !targetCat.trim().isEmpty()) {
+        if (targetCat != null && !targetCat.trim().isEmpty()) {
             String cleanTarget = targetCat.trim().toLowerCase();
-            for (int i = 0; i < allCategories.size(); i++) {
-                String catName = allCategories.get(i).getCategory_name();
+            for (int i = 0; i < categories.size(); i++) {
+                String catName = categories.get(i).getCategory_name();
                 if (catName != null && catName.trim().equalsIgnoreCase(cleanTarget)) {
-                    targetIndex = i;
-                    break;
+                    return i;
                 }
             }
-        }
-
-        // 3. Try partial name match (contains)
-        if (targetIndex == -1 && targetCat != null && !targetCat.trim().isEmpty()) {
-            String cleanTarget = targetCat.trim().toLowerCase();
-            for (int i = 0; i < allCategories.size(); i++) {
-                String catName = allCategories.get(i).getCategory_name();
+            // 3. Try partial name match (contains)
+            for (int i = 0; i < categories.size(); i++) {
+                String catName = categories.get(i).getCategory_name();
                 if (catName != null) {
                     String cleanCat = catName.trim().toLowerCase();
                     if (cleanCat.contains(cleanTarget) || cleanTarget.contains(cleanCat)) {
-                        targetIndex = i;
-                        break;
+                        return i;
                     }
                 }
             }
         }
+        return -1;
+    }
 
-        if (targetIndex != -1) {
-            while (currentTabList.size() <= targetIndex) {
-                currentTabList.add(allCategories.get(currentTabList.size()));
-            }
-            if (vp.getAdapter() != null) {
-                vp.getAdapter().notifyDataSetChanged();
-            }
-            com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
-            if (tabs != null) tabs.notifyDataSetChanged();
-            vp.setCurrentItem(targetIndex);
+    private void selectTargetCategory() {
+        if (allCategories == null || currentTabList == null) return;
+        androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
+        if (vp == null) return;
+
+        int targetIndex = findTargetCategoryIndex(allCategories);
+        if (targetIndex == -1) return;
+
+        if (targetIndex < currentTabList.size() && vp.getCurrentItem() == targetIndex) {
+            return;
         }
+
+        com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
+        boolean added = false;
+        while (currentTabList.size() <= targetIndex) {
+            com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel nextCat = allCategories.get(currentTabList.size());
+            currentTabList.add(nextCat);
+            if (tabs != null) tabs.appendTabBeforeMore(nextCat.getCategory_name());
+            added = true;
+        }
+        if (added && vp.getAdapter() != null) {
+            vp.getAdapter().notifyDataSetChanged();
+        }
+        vp.setCurrentItem(targetIndex, false);
     }
 
     public void onCategoriesLoaded(ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> categories, ArrayList<com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel> tabList) {
@@ -254,31 +322,34 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         
         androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
         if (vp != null) {
-            vp.addOnPageChangeListener(new androidx.viewpager.widget.ViewPager.OnPageChangeListener() {
+            if (lazyLoadPageListener != null) {
+                vp.removeOnPageChangeListener(lazyLoadPageListener);
+            }
+            lazyLoadPageListener = new androidx.viewpager.widget.ViewPager.OnPageChangeListener() {
                 @Override
                 public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {}
 
                 @Override
-                public void onPageSelected(int position) {
-                    // Wait for manual swipe
-                }
+                public void onPageSelected(int position) {}
 
                 @Override
                 public void onPageScrollStateChanged(int state) {
                     if (state == androidx.viewpager.widget.ViewPager.SCROLL_STATE_DRAGGING) {
                         if (vp.getCurrentItem() == currentTabList.size() - 1) {
                             if (currentTabList.size() < allCategories.size()) {
-                                currentTabList.add(allCategories.get(currentTabList.size()));
+                                com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel nextCat = allCategories.get(currentTabList.size());
+                                currentTabList.add(nextCat);
                                 if (vp.getAdapter() != null) {
                                     vp.getAdapter().notifyDataSetChanged();
                                 }
                                 com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
-                                if (tabs != null) tabs.notifyDataSetChanged();
+                                if (tabs != null) tabs.appendTabBeforeMore(nextCat.getCategory_name());
                             }
                         }
                     }
                 }
-            });
+            };
+            vp.addOnPageChangeListener(lazyLoadPageListener);
         }
     }
 
@@ -304,15 +375,48 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
         startActivityForResult(intent, 1001);
     }
 
+    public String getMode() {
+        return mode;
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == 2001 && resultCode == RESULT_OK && data != null) {
             String bgUrl = data.getStringExtra("image_url");
+            String bgImagePath = data.getStringExtra("bg_image");
+            if (bgImagePath == null || bgImagePath.isEmpty()) {
+                if (bgUrl != null) {
+                    bgImagePath = Leaflet_FileUtils.getFile(this, bgUrl);
+                }
+            }
+
+            if ("user".equals(mode)) {
+                if (bgImagePath != null && new File(bgImagePath).exists()) {
+                    Intent result = new Intent();
+                    result.putExtra("local", false);
+                    result.putExtra("bg_image", bgImagePath);
+                    setResult(RESULT_OK, result);
+                    finish();
+                    return;
+                } else if (bgUrl != null && !bgUrl.isEmpty()) {
+                    strings.clear();
+                    strings.add(bgUrl);
+                    downloadTask(strings);
+                    return;
+                }
+            }
+
             boolean isPremium = data.getBooleanExtra("is_premium", false);
+            boolean alreadyUnlocked = data.getBooleanExtra("is_unlocked_by_reward", false);
+            if (alreadyUnlocked) {
+                isRewarded = true;
+            }
             if (bgUrl != null && !bgUrl.isEmpty()) {
-                onPosterClick(bgUrl, isPremium);
+                strings.clear();
+                strings.add(bgUrl);
+                downloadTask(strings);
             }
             return;
         }
@@ -329,16 +433,19 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
                 }
                 
                 if (targetIndex != -1) {
+                    com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
+                    boolean added = false;
                     while (currentTabList.size() <= targetIndex) {
-                        currentTabList.add(allCategories.get(currentTabList.size()));
+                        com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgModel nextCat = allCategories.get(currentTabList.size());
+                        currentTabList.add(nextCat);
+                        if (tabs != null) tabs.appendTabBeforeMore(nextCat.getCategory_name());
+                        added = true;
                     }
                     
                     androidx.viewpager.widget.ViewPager vp = findViewById(R.id.viewPager);
                     if (vp != null && vp.getAdapter() != null) {
-                        vp.getAdapter().notifyDataSetChanged();
-                        com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip tabs = findViewById(R.id.pagerSlidingTabStrip);
-                        if (tabs != null) tabs.notifyDataSetChanged();
-                        vp.setCurrentItem(targetIndex);
+                        if (added) vp.getAdapter().notifyDataSetChanged();
+                        vp.setCurrentItem(targetIndex, false);
                     }
                 }
             }
@@ -391,7 +498,11 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
                         return;
                     }
 
-                    Leaflet_MyApplication.showInterstitialAd(this, this::startIntent);
+                    if ("user".equals(mode)) {
+                        Leaflet_MyApplication.showInterstitialAd(this, this::setPosterIntent);
+                    } else {
+                        Leaflet_MyApplication.showInterstitialAd(this, this::startIntent);
+                    }
 
                 } else {
                     Toast.makeText(this, "Make sure you are connected to internet!!", Toast.LENGTH_SHORT).show();
@@ -423,12 +534,20 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 
     @Override
     public void onBackPressed() {
+        android.view.View lySearch = findViewById(R.id.ly_search);
+        android.view.View icSearchClose = findViewById(R.id.ic_search_close);
+        if (lySearch != null && lySearch.getVisibility() == android.view.View.VISIBLE) {
+            if (icSearchClose != null) {
+                icSearchClose.performClick();
+                return;
+            }
+        }
         if (System.currentTimeMillis() - com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.getLastAdDismissedTime() < 800) {
             return;
         }
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logBackPress(this, "background_selection", "back_button");
         if (getIntent().getBooleanExtra("auto_load", false)) {
-            com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+            com.online.flyer.design.postermaker.Leaflet_MyApplication.showBackInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
                 @Override
                 public void onAdClose() {
                     finish();
@@ -436,7 +555,7 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
                 }
             });
         } else {
-            com.online.flyer.design.postermaker.Leaflet_MyApplication.showInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
+            com.online.flyer.design.postermaker.Leaflet_MyApplication.showBackInterstitialAd(this, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnAdLoadInterface() {
                 @Override
                 public void onAdClose() {
                     android.content.Intent intent = new android.content.Intent(Leaflet_BackgroundSelectionActivity.this, com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_PosterMainActivity.class);
@@ -467,17 +586,24 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
 //            }
             strings.clear();
             strings.add(path);
-            if (premium) {
+            final Leaflet_PreferenceClass pref = new Leaflet_PreferenceClass(this);
+            boolean shouldLockBg = premium
+                    && pref.isPremiumLockEnabled("backgrounds")
+                    && pref.isProEditPopupEnabled("backgrounds")
+                    && !pref.isBackgroundUnlocked(path);
+            if (shouldLockBg) {
                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogShown(this, "background_unlock");
-                Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, "Use Background(One Time)", "Use premium background by watching Ads", materialDialog -> {
+                Leaflet_MaterialDialogUtils.getInstance().rewardDialog(this, "Unlock Background", "Watch a short video ad to unlock and use this premium background.", "backgrounds", materialDialog -> {
                     com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardDialogAction(this, "background_unlock", "watch_video");
 //                    bgSelectionController.startMaterialDialog();
-                    Leaflet_PreferenceClass preferenceClass = new Leaflet_PreferenceClass(this);
-                    if(preferenceClass.getDataType("PremiumAdType")!=null && preferenceClass.getDataType("PremiumAdType").equals("Reward")) {
-                        Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_BackgroundSelectionActivity.this, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+                    String adType = pref.getPremiumPosterAdType("backgrounds");
+                    if ("Reward".equalsIgnoreCase(adType)) {
+                        String rewardId = pref.getPremiumPosterRewardAdId("backgrounds");
+                        Leaflet_RewardVideoManager.showRewardVideoAd(Leaflet_BackgroundSelectionActivity.this, rewardId, new Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
                             @Override
                             public void onAdClose() {
                                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(Leaflet_BackgroundSelectionActivity.this, "background_unlock");
+                                pref.saveBackgroundUnlockTime(path);
                                 isRewarded = true;
                                 downloadTask(strings);
                             }
@@ -489,11 +615,12 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
                                 }
                             }
                         });
-                    }else {
+                    } else {
                         Leaflet_MyApplication.showUnlockInterstitialAd(Leaflet_BackgroundSelectionActivity.this, new Leaflet_InterstitialAdManager.OnAdLoadInterface() {
                             @Override
                             public void onAdClose() {
                                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logRewardAdCompleted(Leaflet_BackgroundSelectionActivity.this, "background_unlock");
+                                pref.saveBackgroundUnlockTime(path);
                                 isRewarded = true;
                                 downloadTask(strings);
                             }
@@ -587,7 +714,11 @@ public class Leaflet_BackgroundSelectionActivity extends AppCompatActivity imple
     private void setPosterIntent() {
         Intent intent = new Intent();
         intent.putExtra("local", local);
-        intent.putExtra("bg_image", Leaflet_FileUtils.getFile(Leaflet_BackgroundSelectionActivity.this, path));
+        String finalPath = path;
+        if (finalPath != null && !finalPath.startsWith("content://") && !finalPath.startsWith("file://") && !new File(finalPath).exists()) {
+            finalPath = Leaflet_FileUtils.getFile(Leaflet_BackgroundSelectionActivity.this, finalPath);
+        }
+        intent.putExtra("bg_image", finalPath);
         setResult(RESULT_OK, intent);
         finish();
     }

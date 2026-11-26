@@ -10,13 +10,19 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatDialog;
 
 import com.online.flyer.design.postermaker.R;
 
@@ -28,7 +34,16 @@ import java.util.concurrent.Executors;
 public class Leaflet_AdBlockerDetector {
     private static final String TAG = "AdBlockerDetector";
     private static final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private static final Handler mainHandler = new Handler(Looper.getMainLooper());
     private static Dialog activeDialog = null;
+
+    static {
+        try {
+            // Prevent JVM from caching negative DNS lookups so "Check Again" always gets fresh DNS results
+            java.security.Security.setProperty("networkaddress.cache.negative.ttl", "0");
+            java.security.Security.setProperty("networkaddress.cache.ttl", "1");
+        } catch (Exception ignored) {}
+    }
 
     public interface AdBlockerCallback {
         void onResult(boolean isAdBlockerActive);
@@ -43,41 +58,52 @@ public class Leaflet_AdBlockerDetector {
             return;
         }
 
-        final Handler mainHandler = new Handler(Looper.getMainLooper());
-
         executor.execute(() -> {
-            boolean isBlocked = checkIsBlocked(context);
-            Log.d(TAG, "AdBlocker Detection Finished: isBlocked = " + isBlocked);
+            boolean isBlocked = false;
+            try {
+                isBlocked = checkIsBlocked(context);
+            } catch (Throwable t) {
+                Log.e(TAG, "Detection error: " + t.getMessage());
+            }
+            final boolean finalResult = isBlocked;
+            Log.d(TAG, "AdBlocker Detection Finished: isBlocked = " + finalResult);
             mainHandler.post(() -> {
                 if (callback != null) {
-                    callback.onResult(isBlocked);
+                    callback.onResult(finalResult);
                 }
             });
         });
     }
 
     private static boolean checkIsBlocked(Context context) {
+        if (context == null) return false;
+
         // 1. Check Android Private DNS Specifier (Android 9+ / API 28+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
-                String privateDns = Settings.Global.getString(context.getContentResolver(), "private_dns_specifier");
-                if (privateDns != null && !privateDns.trim().isEmpty()) {
-                    String s = privateDns.toLowerCase().trim();
-                    Log.d(TAG, "Active Private DNS specifier: " + s);
-                    if (s.contains("adguard") || s.contains("adblock") || s.contains("nextdns")
-                            || s.contains("dnsforge") || s.contains("ahadns") || s.contains("mullvad")
-                            || s.contains("controld") || s.contains("rethink") || s.contains("cleanbrowsing")
-                            || s.contains("block")) {
-                        Log.w(TAG, "Ad-blocking Private DNS detected: " + s);
-                        return true;
+                String mode = Settings.Global.getString(context.getContentResolver(), "private_dns_mode");
+                Log.d(TAG, "Active Private DNS mode: " + mode);
+
+                if ("hostname".equalsIgnoreCase(mode)) {
+                    String privateDns = Settings.Global.getString(context.getContentResolver(), "private_dns_specifier");
+                    if (privateDns != null && !privateDns.trim().isEmpty()) {
+                        String s = privateDns.toLowerCase().trim();
+                        Log.d(TAG, "Active Private DNS specifier: " + s);
+                        if (s.contains("adguard") || s.contains("adblock") || s.contains("nextdns")
+                                || s.contains("dnsforge") || s.contains("ahadns") || s.contains("mullvad")
+                                || s.contains("controld") || s.contains("rethink") || s.contains("cleanbrowsing")
+                                || s.contains("block")) {
+                            Log.w(TAG, "Ad-blocking Private DNS detected: " + s);
+                            return true;
+                        }
                     }
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 Log.e(TAG, "Error checking Private DNS: " + e.getMessage());
             }
         }
 
-        // 2. Control host test (Verify internet is working first)
+        // 2. Control host test (Verify internet is genuinely working and stable)
         boolean isInternetWorking = false;
         try {
             InetAddress control = InetAddress.getByName("www.google.com");
@@ -93,9 +119,9 @@ public class Leaflet_AdBlockerDetector {
             } catch (Exception ignored2) {}
         }
 
-        // If no internet at all, don't falsely flag as ad blocker
+        // If control hosts failed (no internet or unstable), don't falsely flag as ad blocker
         if (!isInternetWorking) {
-            Log.d(TAG, "Internet is offline, skipping DNS adblock check");
+            Log.d(TAG, "Internet is offline or control host unreachable, skipping DNS adblock check");
             return false;
         }
 
@@ -106,53 +132,81 @@ public class Leaflet_AdBlockerDetector {
                 "adservice.google.com"
         };
 
-        int blockedCount = 0;
+        int blackholedCount = 0;
+        int failedCount = 0;
         for (String host : adHosts) {
             try {
                 InetAddress address = InetAddress.getByName(host);
                 String ip = address.getHostAddress();
                 if (ip == null || ip.equals("127.0.0.1") || ip.equals("0.0.0.0") || address.isLoopbackAddress()) {
                     Log.w(TAG, "Host blackholed to loopback: " + host + " -> " + ip);
-                    blockedCount++;
+                    blackholedCount++;
                 }
             } catch (UnknownHostException e) {
                 Log.w(TAG, "Ad host failed to resolve (sinkholed/blocked): " + host);
-                blockedCount++;
-            } catch (Exception e) {
+                failedCount++;
+            } catch (Throwable e) {
                 Log.w(TAG, "Ad host resolution exception: " + host + " -> " + e.getMessage());
-                blockedCount++;
+                failedCount++;
             }
         }
 
-        // If 2 or more ad domains were sinkholed/blocked while internet is confirmed working:
-        return blockedCount >= 2;
+        // Definite ad blocker if ad domains are actively redirected to 127.0.0.1/0.0.0.0,
+        // OR all 3 ad domains completely fail while control host resolved cleanly
+        if (blackholedCount >= 1) {
+            return true;
+        }
+        return failedCount >= 3;
     }
 
     /**
      * Shows the Ad Blocker popup. User must disable blocker and click 'Check Again' or 'Exit'.
+     * Dialog is dynamically scaled to fit perfectly on all screen sizes and densities.
      */
     public static void showAdBlockerDialog(final Activity activity, final Runnable onResolved) {
-        if (activity == null || activity.isFinishing()) return;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed()) return;
+        if (activity == null || activity.isFinishing()) {
+            if (onResolved != null) onResolved.run();
+            return;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed()) {
+            if (onResolved != null) onResolved.run();
+            return;
+        }
 
         if (activeDialog != null && activeDialog.isShowing()) {
             return;
         }
 
         try {
-            final Dialog dialog = new Dialog(activity);
-            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            final AppCompatDialog dialog = new AppCompatDialog(activity, R.style.Theme_AppCompat_Light_Dialog_Alert);
+            dialog.supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
             dialog.setContentView(R.layout.leaflet_dialog_ad_blocker);
             dialog.setCancelable(false);
             dialog.setCanceledOnTouchOutside(false);
 
             if (dialog.getWindow() != null) {
                 dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    dialog.getWindow().setElevation(0f);
+                }
+
+                DisplayMetrics metrics = activity.getResources().getDisplayMetrics();
+                int screenWidth = metrics.widthPixels;
+
+                // Responsive width: 88% of screen width, max 380dp, min 280dp
+                int maxWidth = (int) (380 * metrics.density);
+                int minWidth = (int) (280 * metrics.density);
+                int targetWidth = (int) (screenWidth * 0.88f);
+                if (targetWidth > maxWidth) targetWidth = maxWidth;
+                if (targetWidth < minWidth && screenWidth > minWidth) targetWidth = minWidth;
+
+                dialog.getWindow().setLayout(targetWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+                dialog.getWindow().setGravity(Gravity.CENTER);
             }
 
             final Button btnCheckAgain = dialog.findViewById(R.id.btnCheckAgain);
             final Button btnOpenSettings = dialog.findViewById(R.id.btnOpenSettings);
-            final TextView btnExitApp = dialog.findViewById(R.id.btnExitApp);
+            final View btnExitApp = dialog.findViewById(R.id.btnExitApp);
 
             if (btnCheckAgain != null) {
                 btnCheckAgain.setOnClickListener(v -> {
@@ -162,16 +216,18 @@ public class Leaflet_AdBlockerDetector {
                         btnCheckAgain.setEnabled(true);
                         btnCheckAgain.setText("Check Again 🔄");
                         if (!isStillBlocked) {
-                            Toast.makeText(activity, "Thank you! Ad Blocker disabled.", Toast.LENGTH_SHORT).show();
-                            if (dialog.isShowing()) {
-                                dialog.dismiss();
-                            }
+                            try {
+                                Toast.makeText(activity, "Thank you! Ad Blocker disabled.", Toast.LENGTH_SHORT).show();
+                            } catch (Exception ignored) {}
+                            safeDismissDialog(dialog);
                             activeDialog = null;
                             if (onResolved != null) {
                                 onResolved.run();
                             }
                         } else {
-                            Toast.makeText(activity, "Ad Blocker or Private DNS is still active! Please turn it off.", Toast.LENGTH_LONG).show();
+                            try {
+                                Toast.makeText(activity, "Ad Blocker or Private DNS is still active! Please turn it off in Settings.", Toast.LENGTH_LONG).show();
+                            } catch (Exception ignored) {}
                         }
                     });
                 });
@@ -179,30 +235,68 @@ public class Leaflet_AdBlockerDetector {
 
             if (btnOpenSettings != null) {
                 btnOpenSettings.setOnClickListener(v -> {
-                    Intent intent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+                    Intent intent;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        intent = new Intent("android.settings.NETWORK_PROVIDER_SETTINGS");
+                    } else {
+                        intent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+                    }
                     try {
                         activity.startActivity(intent);
                     } catch (Exception e) {
                         try {
-                            activity.startActivity(new Intent(Settings.ACTION_SETTINGS));
-                        } catch (Exception ignored) {}
+                            activity.startActivity(new Intent(Settings.ACTION_WIRELESS_SETTINGS));
+                        } catch (Exception e2) {
+                            try {
+                                activity.startActivity(new Intent(Settings.ACTION_SETTINGS));
+                            } catch (Exception ignored) {}
+                        }
                     }
                 });
             }
 
             if (btnExitApp != null) {
                 btnExitApp.setOnClickListener(v -> {
-                    if (dialog.isShowing()) {
-                        dialog.dismiss();
-                    }
+                    safeDismissDialog(dialog);
                     activeDialog = null;
-                    activity.finishAffinity();
+                    try {
+                        activity.finishAffinity();
+                    } catch (Exception ignored) {
+                        activity.finish();
+                    }
+                });
+            }
+
+            // Auto re-check when user returns from Settings to the app
+            if (dialog.getWindow() != null && dialog.getWindow().getDecorView() != null) {
+                dialog.getWindow().getDecorView().getViewTreeObserver().addOnWindowFocusChangeListener(new ViewTreeObserver.OnWindowFocusChangeListener() {
+                    @Override
+                    public void onWindowFocusChanged(boolean hasFocus) {
+                        if (hasFocus && dialog.isShowing()) {
+                            detect(activity, isStillBlocked -> {
+                                if (!isStillBlocked && dialog.isShowing()) {
+                                    try {
+                                        Toast.makeText(activity, "Thank you! Ad Blocker disabled.", Toast.LENGTH_SHORT).show();
+                                    } catch (Exception ignored) {}
+                                    safeDismissDialog(dialog);
+                                    activeDialog = null;
+                                    if (onResolved != null) {
+                                        onResolved.run();
+                                    }
+                                }
+                            });
+                        }
+                    }
                 });
             }
 
             dialog.setOnKeyListener((d, keyCode, event) -> {
                 if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_UP) {
-                    activity.finishAffinity();
+                    try {
+                        activity.finishAffinity();
+                    } catch (Exception ignored) {
+                        activity.finish();
+                    }
                     return true;
                 }
                 return false;
@@ -211,17 +305,30 @@ public class Leaflet_AdBlockerDetector {
             activeDialog = dialog;
             dialog.show();
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             Log.e(TAG, "Error displaying Ad Blocker Dialog", e);
+            activeDialog = null;
+            // CRUCIAL: Never allow a display failure to permanently freeze splash screen!
+            if (onResolved != null) {
+                onResolved.run();
+            }
         }
     }
 
     public static void dismissDialog() {
-        if (activeDialog != null && activeDialog.isShowing()) {
-            try {
-                activeDialog.dismiss();
-            } catch (Exception ignored) {}
+        if (activeDialog != null) {
+            safeDismissDialog(activeDialog);
             activeDialog = null;
+        }
+    }
+
+    private static void safeDismissDialog(Dialog dialog) {
+        if (dialog != null) {
+            try {
+                if (dialog.isShowing()) {
+                    dialog.dismiss();
+                }
+            } catch (Exception ignored) {}
         }
     }
 }

@@ -4,9 +4,10 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:shimmer_auto_start="true"
-    app:shimmer_duration="1000"
-    app:shimmer_base_alpha="0.55"
-    app:shimmer_highlight_alpha="0.95">
+    app:shimmer_duration="1200"
+    app:shimmer_base_alpha="0.35"
+    app:shimmer_highlight_alpha="0.85"
+    app:shimmer_direction="left_to_right">
 
     <View
         android:layout_width="match_parent"

@@ -85,20 +85,51 @@
 
                     </RelativeLayout>
 
-                    <LinearLayout
+                    <FrameLayout
+                        android:id="@+id/lay_reset_container"
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
-                        android:layout_weight="1"
-                        android:gravity="center">
+                        android:layout_weight="1">
 
                         <ImageView
                             android:id="@+id/btn_reset"
                             android:layout_width="23dp"
                             android:layout_height="23dp"
+                            android:layout_gravity="center"
                             app:tint="@color/selected"
                             android:src="@drawable/leaflet_ic_n_rotate" />
 
-                    </LinearLayout>
+                        <!-- Changes Indicator Badge Dot -->
+                        <View
+                            android:id="@+id/dot_reset_indicator"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="10dp"
+                            android:layout_marginBottom="9dp"
+                            android:background="@drawable/bg_reset_dot_indicator"
+                            android:visibility="gone" />
+
+                        <!-- Free Limit Countdown / Ad Badge for Reset -->
+                        <TextView
+                            android:id="@+id/badge_reset_limit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="14dp"
+                            android:minWidth="14dp"
+                            android:paddingHorizontal="3dp"
+                            android:layout_gravity="center"
+                            android:layout_marginStart="11dp"
+                            android:layout_marginBottom="9dp"
+                            android:gravity="center"
+                            android:textColor="#FFFFFF"
+                            android:textSize="8.5sp"
+                            android:textStyle="bold"
+                            android:background="@drawable/bg_badge_limit_free"
+                            android:clickable="false"
+                            android:focusable="false"
+                            android:visibility="gone" />
+
+                    </FrameLayout>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -119,35 +150,97 @@
                             android:orientation="horizontal"
                             android:weightSum="2">
 
-                            <RelativeLayout
+                            <FrameLayout
                                 android:id="@+id/edit_undo"
                                 android:layout_width="0dp"
                                 android:layout_height="match_parent"
-                                android:layout_weight="1"
-                                android:gravity="center">
+                                android:layout_weight="1">
 
                                 <ImageView
                                     android:id="@+id/btn_undo"
                                     android:layout_width="23dp"
                                     android:layout_height="23dp"
+                                    android:layout_gravity="center"
                                     app:tint="@color/selected"
                                     android:src="@drawable/leaflet_ic_n_left_rotate" />
-                            </RelativeLayout>
 
-                            <RelativeLayout
+                                <!-- Changes Indicator Badge Dot for Undo -->
+                                <View
+                                    android:id="@+id/dot_undo_indicator"
+                                    android:layout_width="8dp"
+                                    android:layout_height="8dp"
+                                    android:layout_gravity="center"
+                                    android:layout_marginStart="10dp"
+                                    android:layout_marginBottom="9dp"
+                                    android:background="@drawable/bg_undo_dot_indicator"
+                                    android:visibility="gone" />
+
+                                <!-- Free Limit Countdown / Ad Badge for Undo -->
+                                <TextView
+                                    android:id="@+id/badge_undo_limit"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="14dp"
+                                    android:minWidth="14dp"
+                                    android:paddingHorizontal="3dp"
+                                    android:layout_gravity="center"
+                                    android:layout_marginStart="11dp"
+                                    android:layout_marginBottom="9dp"
+                                    android:gravity="center"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="8.5sp"
+                                    android:textStyle="bold"
+                                    android:background="@drawable/bg_badge_limit_free"
+                                    android:clickable="false"
+                                    android:focusable="false"
+                                    android:visibility="gone" />
+
+                            </FrameLayout>
+
+                            <FrameLayout
                                 android:id="@+id/edit_redo"
                                 android:layout_width="0dp"
                                 android:layout_height="match_parent"
-                                android:layout_weight="1"
-                                android:gravity="center">
+                                android:layout_weight="1">
 
                                 <ImageView
                                     android:id="@+id/btn_redo"
                                     android:layout_width="23dp"
                                     android:layout_height="23dp"
+                                    android:layout_gravity="center"
                                     app:tint="@color/selected"
                                     android:src="@drawable/leaflet_ic_n_right_rotate" />
-                            </RelativeLayout>
+
+                                <!-- Changes Indicator Badge Dot for Redo -->
+                                <View
+                                    android:id="@+id/dot_redo_indicator"
+                                    android:layout_width="8dp"
+                                    android:layout_height="8dp"
+                                    android:layout_gravity="center"
+                                    android:layout_marginStart="10dp"
+                                    android:layout_marginBottom="9dp"
+                                    android:background="@drawable/bg_undo_dot_indicator"
+                                    android:visibility="gone" />
+
+                                <!-- Free Limit Countdown / Ad Badge for Redo -->
+                                <TextView
+                                    android:id="@+id/badge_redo_limit"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="14dp"
+                                    android:minWidth="14dp"
+                                    android:paddingHorizontal="3dp"
+                                    android:layout_gravity="center"
+                                    android:layout_marginStart="11dp"
+                                    android:layout_marginBottom="9dp"
+                                    android:gravity="center"
+                                    android:textColor="#FFFFFF"
+                                    android:textSize="8.5sp"
+                                    android:textStyle="bold"
+                                    android:background="@drawable/bg_badge_limit_free"
+                                    android:clickable="false"
+                                    android:focusable="false"
+                                    android:visibility="gone" />
+
+                            </FrameLayout>
                         </LinearLayout>
 
                     </LinearLayout>
@@ -182,6 +275,7 @@
                             android:gravity="center">
                             
                             <ImageView
+                                android:id="@+id/iv_download_icon"
                                 android:layout_width="18dp"
                                 android:layout_height="18dp"
                                 android:src="@drawable/ic_download_white" />
@@ -230,8 +324,9 @@
 
                         <ImageView
                             android:id="@+id/background_img"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:scaleType="fitXY"
                             android:layout_centerInParent="true" />
 
                         <ImageView
@@ -263,6 +358,8 @@
                         android:layout_gravity="end|bottom"
                         android:layout_marginEnd="6dp"
                         android:layout_marginBottom="6dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
                         android:visibility="visible">
 
                         <androidx.cardview.widget.CardView
@@ -282,13 +379,14 @@
 
                         <ImageView
                             android:id="@+id/btn_watermark_remove"
-                            android:layout_width="@dimen/_10sdp"
-                            android:layout_height="@dimen/_10sdp"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
                             android:layout_alignParentEnd="true"
                             android:layout_alignParentTop="true"
-                            android:background="@color/black"
+                            android:background="@drawable/bg_watermark_close"
+                            android:padding="3dp"
                             android:src="@drawable/leaflet_ic_close"
-                            android:visibility="gone" />
+                            android:visibility="visible" />
 
                     </RelativeLayout>
                 </com.online.flyer.design.postermaker.Leaflet_view.Leaflet_AspectRatioFrameLayout>
@@ -502,6 +600,44 @@
                 android:layout_below="@+id/pagerLay" />
 
         </RelativeLayout>
+
+        <!-- Quick Floating Action Toast Chip / Pill (Tactile Feedback) -->
+        <LinearLayout
+            android:id="@+id/lay_floating_pill"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/top_ly"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_editor_floating_pill"
+            android:clickable="true"
+            android:focusable="true"
+            android:elevation="30dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="9dp"
+            android:paddingBottom="9dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/iv_pill_icon"
+                android:layout_width="15dp"
+                android:layout_height="15dp"
+                android:layout_marginEnd="7dp"
+                android:src="@drawable/leaflet_ic_n_left_rotate"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/tv_pill_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:text="Undo"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
+        </LinearLayout>
 
     </RelativeLayout>
 

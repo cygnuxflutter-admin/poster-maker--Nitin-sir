@@ -9,6 +9,8 @@ import android.util.Log;
 
 public class Leaflet_PreferenceClass {
 
+    private static final ThreadLocal<Boolean> IS_RESOLVING_ROOT_CONFIG = ThreadLocal.withInitial(() -> Boolean.FALSE);
+
     private final String IS_FIRST_TIME_LAUNCH = "IsFirstTimeLaunch";
     private final SharedPreferences prefs;
     private Context context;
@@ -914,12 +916,24 @@ public class Leaflet_PreferenceClass {
         return finalJson;
     }
 
+    private static volatile JSONObject cachedRootConfig = null;
+    private static volatile String cachedMasterJsonStr = null;
+
     public JSONObject getRootAdConfigJson() {
+        if (Boolean.TRUE.equals(IS_RESOLVING_ROOT_CONFIG.get())) {
+            return null;
+        }
+        IS_RESOLVING_ROOT_CONFIG.set(Boolean.TRUE);
         try {
             com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
             String masterJson = getMasterConfigJson(rc, context);
             if (masterJson != null && !masterJson.trim().isEmpty() && masterJson.trim().startsWith("{")) {
-                return new JSONObject(masterJson);
+                if (masterJson.equals(cachedMasterJsonStr) && cachedRootConfig != null) {
+                    return cachedRootConfig;
+                }
+                cachedMasterJsonStr = masterJson;
+                cachedRootConfig = new JSONObject(masterJson);
+                return cachedRootConfig;
             }
 
             String acquisitionType = getAcquisitionType();
@@ -945,10 +959,18 @@ public class Leaflet_PreferenceClass {
             for (String rKey : rootKeys) {
                 String rootJson = rc.getString(rKey);
                 if (rootJson != null && !rootJson.trim().isEmpty() && rootJson.trim().startsWith("{")) {
-                    return new JSONObject(rootJson);
+                    if (rootJson.equals(cachedMasterJsonStr) && cachedRootConfig != null) {
+                        return cachedRootConfig;
+                    }
+                    cachedMasterJsonStr = rootJson;
+                    cachedRootConfig = new JSONObject(rootJson);
+                    return cachedRootConfig;
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        } finally {
+            IS_RESOLVING_ROOT_CONFIG.set(Boolean.FALSE);
+        }
         return null;
     }
 
@@ -1338,6 +1360,32 @@ public class Leaflet_PreferenceClass {
 
     public boolean isSplashFallbackInterstitialEnabled() {
         if (getInt("splashscreen", 1) == 0 || !getBoolean("splashscreen", true)) return false;
+
+        try {
+            // Support both "app_open_fallback_interstitial" and "show_fallback_interstitial"
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("app_open_fallback_interstitial")) {
+                    return parseJsonBoolOrInt(root, "app_open_fallback_interstitial", false);
+                }
+                if (root.has("ad_data")) {
+                    JSONObject adData = root.optJSONObject("ad_data");
+                    if (adData != null && adData.has("app_open_fallback_interstitial")) {
+                        return parseJsonBoolOrInt(adData, "app_open_fallback_interstitial", false);
+                    }
+                }
+            }
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue("app_open_fallback_interstitial");
+                if (rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                    String s = rcVal.asString().trim();
+                    if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                    if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                }
+            }
+        } catch (Exception ignored) {}
+
         if (getInt("show_fallback_interstitial", 0) == 0 || !getBoolean("show_fallback_interstitial", false)) return false;
 
         try {
@@ -1351,6 +1399,19 @@ public class Leaflet_PreferenceClass {
         } catch (Exception ignored) {}
 
         return getInt("show_fallback_interstitial", 0) == 1;
+    }
+
+    private boolean parseJsonBoolOrInt(JSONObject obj, String key, boolean def) {
+        if (obj == null || !obj.has(key)) return def;
+        Object val = obj.opt(key);
+        if (val instanceof Boolean) return (Boolean) val;
+        if (val instanceof Number) return ((Number) val).intValue() == 1;
+        if (val instanceof String) {
+            String s = ((String) val).trim();
+            if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+            if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+        }
+        return def;
     }
 
         public String getSplashFallbackInterstitialAdId() {
@@ -1445,6 +1506,40 @@ public class Leaflet_PreferenceClass {
         } catch (Exception ignored) {}
 
         return getInt("cooldown_seconds", 2);
+    }
+
+    public int getMinBackgroundSeconds() {
+        try {
+            JSONObject fgObj = getForegroundAppOpenConfigJson();
+            if (fgObj != null && fgObj.has("min_background_seconds")) {
+                return Math.max(0, fgObj.optInt("min_background_seconds", 5));
+            }
+
+            JSONObject rootObj = getRootAdConfigJson();
+            if (rootObj != null) {
+                if (rootObj.has("min_background_seconds")) {
+                    return Math.max(0, rootObj.optInt("min_background_seconds", 5));
+                }
+                if (rootObj.has("ad_data")) {
+                    JSONObject adData = rootObj.optJSONObject("ad_data");
+                    if (adData != null && adData.has("min_background_seconds")) {
+                        return Math.max(0, adData.optInt("min_background_seconds", 5));
+                    }
+                }
+            }
+
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                String val = rc.getString("min_background_seconds");
+                if (val != null && !val.trim().isEmpty() && !val.equals("null")) {
+                    try {
+                        return Math.max(0, Integer.parseInt(val.trim()));
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception ignored) {}
+
+        return Math.max(0, getInt("min_background_seconds", 5));
     }
 
     public int getGalleryCooldownSeconds() {
@@ -1920,6 +2015,20 @@ public class Leaflet_PreferenceClass {
 
     public int getOnboardingNativeAdHeight(int step) {
         try {
+            // 1. Check Root Master Config JSON (User's live JSON) FIRST
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                String stepKey = "onboarding_" + step + "_native_height";
+                if (root.has(stepKey)) {
+                    int h = root.optInt(stepKey, 0);
+                    if (h > 0) return h;
+                }
+                if (root.has("onboarding_native_height")) {
+                    int h = root.optInt("onboarding_native_height", 0);
+                    if (h > 0) return h;
+                }
+            }
+
             com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
 
             // 1. Check direct step height key (e.g. onboarding_1_native_height)
@@ -1966,22 +2075,63 @@ public class Leaflet_PreferenceClass {
 
     public boolean isOnboardingNativeAdEnabled(int step) {
         try {
-            JSONObject obj = getOnboardingConfigJson();
-            if (obj != null) {
-                // 1. Check step-specific config: onboarding_1.show_native_ad
-                JSONObject stepObj = obj.optJSONObject("onboarding_" + step);
-                if (stepObj != null && stepObj.has("show_native_ad")) {
-                    return stepObj.optBoolean("show_native_ad", true);
+            // 1. Check Root Master Config JSON (User's live JSON) FIRST
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                for (String k : new String[]{"show_onboarding_native", "onboarding_native_enabled"}) {
+                    if (root.has(k)) {
+                        Object val = root.opt(k);
+                        if (val instanceof Boolean && !((Boolean) val)) return false;
+                        if (val instanceof Number && ((Number) val).intValue() == 0) return false;
+                        if (val instanceof String) {
+                            String s = ((String) val).trim();
+                            if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                        }
+                    }
                 }
-                // 2. Check global native_ad.enabled in onboarding JSON
-                JSONObject nativeAdObj = obj.optJSONObject("native_ad");
-                if (nativeAdObj != null && nativeAdObj.has("enabled")) {
-                    return nativeAdObj.optBoolean("enabled", true);
+                String stepKey = "onboarding_" + step + "_native";
+                if (root.has(stepKey)) {
+                    Object val = root.opt(stepKey);
+                    if (val instanceof Boolean) return (Boolean) val;
+                    if (val instanceof Number) return ((Number) val).intValue() == 1;
+                    if (val instanceof String) {
+                        String s = ((String) val).trim();
+                        if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                        if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                    }
+                }
+                if (root.has("onboarding")) {
+                    JSONObject obj = root.optJSONObject("onboarding");
+                    if (obj != null) {
+                        JSONObject stepObj = obj.optJSONObject("onboarding_" + step);
+                        if (stepObj != null && stepObj.has("show_native_ad")) {
+                            return stepObj.optBoolean("show_native_ad", true);
+                        }
+                        JSONObject nativeAdObj = obj.optJSONObject("native_ad");
+                        if (nativeAdObj != null && nativeAdObj.has("enabled")) {
+                            return nativeAdObj.optBoolean("enabled", true);
+                        }
+                    }
+                }
+            }
+
+            // 2. Direct individual Remote Config keys
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                com.google.firebase.remoteconfig.FirebaseRemoteConfigValue globalVal = rc.getValue("show_onboarding_native");
+                if (globalVal != null && globalVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                    String s = globalVal.asString().trim();
+                    if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                }
+                com.google.firebase.remoteconfig.FirebaseRemoteConfigValue stepVal = rc.getValue("onboarding_" + step + "_native");
+                if (stepVal != null && stepVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                    String s = stepVal.asString().trim();
+                    if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                    if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
                 }
             }
         } catch (Exception ignored) {}
 
-        // Fallback to flat Remote Config / prefs
         boolean globalShow = getInt("show_onboarding_native", 1) == 1;
         boolean stepShow = getInt("onboarding_" + step + "_native", 1) == 1;
         return globalShow && stepShow;
@@ -1989,9 +2139,40 @@ public class Leaflet_PreferenceClass {
 
     public boolean isMasterOnboardingInterstitialEnabled() {
         try {
-            JSONObject obj = getOnboardingConfigJson();
-            if (obj != null && obj.has("is_interstitial_enabled")) {
-                return obj.optBoolean("is_interstitial_enabled", true);
+            // 1. Check Root Master Config JSON (User's live JSON) FIRST
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                for (String k : new String[]{"show_onboarding_interstitial", "onboarding_interstitial_enabled", "onboarding_is_interstitial_enabled"}) {
+                    if (root.has(k)) {
+                        Object val = root.opt(k);
+                        if (val instanceof Boolean) return (Boolean) val;
+                        if (val instanceof Number) return ((Number) val).intValue() == 1;
+                        if (val instanceof String) {
+                            String s = ((String) val).trim();
+                            if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                            if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                        }
+                    }
+                }
+                if (root.has("onboarding")) {
+                    JSONObject obj = root.optJSONObject("onboarding");
+                    if (obj != null && obj.has("is_interstitial_enabled")) {
+                        return obj.optBoolean("is_interstitial_enabled", true);
+                    }
+                }
+            }
+
+            // 2. Direct individual Remote Config keys
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                for (String k : new String[]{"show_onboarding_interstitial", "onboarding_interstitial_enabled", "onboarding_is_interstitial_enabled"}) {
+                    com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(k);
+                    if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                        String s = rcVal.asString().trim();
+                        if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                        if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                    }
+                }
             }
         } catch (Exception ignored) {}
         return getInt("onboarding_is_interstitial_enabled", getInt("show_onboarding_interstitial", 1)) == 1;
@@ -2002,11 +2183,40 @@ public class Leaflet_PreferenceClass {
             return false;
         }
         try {
-            JSONObject obj = getOnboardingConfigJson();
-            if (obj != null) {
-                JSONObject stepObj = obj.optJSONObject("onboarding_" + step);
-                if (stepObj != null && stepObj.has("next_interstitial")) {
-                    return stepObj.optBoolean("next_interstitial", step != 3);
+            // 1. Check Root Master Config JSON (User's live JSON) FIRST!
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                String key = "onboarding_" + step + "_interstitial";
+                if (root.has(key)) {
+                    Object val = root.opt(key);
+                    if (val instanceof Boolean) return (Boolean) val;
+                    if (val instanceof Number) return ((Number) val).intValue() == 1;
+                    if (val instanceof String) {
+                        String s = ((String) val).trim();
+                        if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                        if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                    }
+                }
+                if (root.has("onboarding")) {
+                    JSONObject obj = root.optJSONObject("onboarding");
+                    if (obj != null) {
+                        JSONObject stepObj = obj.optJSONObject("onboarding_" + step);
+                        if (stepObj != null && stepObj.has("next_interstitial")) {
+                            return stepObj.optBoolean("next_interstitial", true);
+                        }
+                    }
+                }
+            }
+
+            // 2. Direct individual Remote Config key
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                String key = "onboarding_" + step + "_interstitial";
+                com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(key);
+                if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                    String s = rcVal.asString().trim();
+                    if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                    if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
                 }
             }
         } catch (Exception ignored) {}
@@ -2306,6 +2516,168 @@ public class Leaflet_PreferenceClass {
         return "";
     }
 
+
+    // =========================================================================
+    // Interstitial Frequency Capping & Cooldown Config (Remote Config)
+    // =========================================================================
+
+    public int getInterstitialCooldownSeconds() {
+        try {
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("interstitial_cooldown_seconds")) return root.optInt("interstitial_cooldown_seconds", 60);
+                if (root.has("cooldown_seconds")) return root.optInt("cooldown_seconds", 60);
+                if (root.has("interstitial_ad")) {
+                    JSONObject obj = root.optJSONObject("interstitial_ad");
+                    if (obj != null && obj.has("cooldown_seconds")) {
+                        return obj.optInt("cooldown_seconds", 60);
+                    }
+                }
+            }
+            JSONObject obj = getInterstitialConfigJson();
+            if (obj != null && obj.has("cooldown_seconds")) {
+                return obj.optInt("cooldown_seconds", 60);
+            }
+        } catch (Exception ignored) {}
+        int rcVal = getInt("interstitial_cooldown_seconds", -1);
+        if (rcVal >= 0) return rcVal;
+        return 60; // Default 60 seconds cooldown between interstitials
+    }
+
+    public int getInterstitialDailyCap() {
+        try {
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("interstitial_daily_cap")) return root.optInt("interstitial_daily_cap", 7);
+                if (root.has("daily_cap")) return root.optInt("daily_cap", 7);
+                if (root.has("interstitial_ad")) {
+                    JSONObject obj = root.optJSONObject("interstitial_ad");
+                    if (obj != null && obj.has("daily_cap")) {
+                        return obj.optInt("daily_cap", 7);
+                    }
+                }
+            }
+            JSONObject obj = getInterstitialConfigJson();
+            if (obj != null && obj.has("daily_cap")) {
+                return obj.optInt("daily_cap", 7);
+            }
+        } catch (Exception ignored) {}
+        int rcVal = getInt("interstitial_daily_cap", -1);
+        if (rcVal >= 0) return rcVal;
+        return 7; // Default max 7 interstitials per user per day (0 = unlimited)
+    }
+
+    public int getInterstitialHourlyCap() {
+        try {
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("interstitial_hourly_cap")) return root.optInt("interstitial_hourly_cap", 3);
+                if (root.has("hourly_cap")) return root.optInt("hourly_cap", 3);
+                if (root.has("interstitial_ad")) {
+                    JSONObject obj = root.optJSONObject("interstitial_ad");
+                    if (obj != null && obj.has("hourly_cap")) {
+                        return obj.optInt("hourly_cap", 3);
+                    }
+                }
+            }
+            JSONObject obj = getInterstitialConfigJson();
+            if (obj != null && obj.has("hourly_cap")) {
+                return obj.optInt("hourly_cap", 3);
+            }
+        } catch (Exception ignored) {}
+        int rcVal = getInt("interstitial_hourly_cap", -1);
+        if (rcVal >= 0) return rcVal;
+        return 3; // Default max 3 interstitials per hour (0 = unlimited)
+    }
+
+    public int getInterstitialDailyCount() {
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date());
+        String lastDate = getString("interstitial_daily_date", "");
+        if (!today.equals(lastDate)) {
+            return 0;
+        }
+        return getInt("interstitial_daily_count", 0);
+    }
+
+    public int getInterstitialHourlyCount() {
+        long now = System.currentTimeMillis();
+        long windowStart = getLong("interstitial_hourly_window_start", 0);
+        if (windowStart <= 0 || (now - windowStart) >= 3600000L) {
+            return 0;
+        }
+        return getInt("interstitial_hourly_count", 0);
+    }
+
+    public boolean isInterstitialDailyCapReached() {
+        int dailyCap = getInterstitialDailyCap();
+        if (dailyCap <= 0) return false; // 0 or negative = unlimited
+        return getInterstitialDailyCount() >= dailyCap;
+    }
+
+    public boolean isInterstitialHourlyCapReached() {
+        int hourlyCap = getInterstitialHourlyCap();
+        if (hourlyCap <= 0) return false; // 0 or negative = unlimited
+        return getInterstitialHourlyCount() >= hourlyCap;
+    }
+
+    public boolean isInterstitialCooldownPassed() {
+        int cooldown = getInterstitialCooldownSeconds();
+        if (cooldown <= 0) return true; // 0 or negative = no cooldown required
+        long lastTime = getLong("interstitial_last_shown_time", 0);
+        if (lastTime <= 0) return true; // First ad ever
+        long elapsedSeconds = (System.currentTimeMillis() - lastTime) / 1000;
+        return elapsedSeconds >= cooldown;
+    }
+
+    public boolean canShowInterstitialAd() {
+        if (!isGlobalInterstitialEnabled()) {
+            return false;
+        }
+        if (isInterstitialDailyCapReached()) {
+            android.util.Log.d("AdFrequencyCap", "Interstitial Ad blocked: Daily cap (" + getInterstitialDailyCap() + ") reached. Today's count: " + getInterstitialDailyCount());
+            return false;
+        }
+        if (isInterstitialHourlyCapReached()) {
+            android.util.Log.d("AdFrequencyCap", "Interstitial Ad blocked: Hourly cap (" + getInterstitialHourlyCap() + ") reached. This hour's count: " + getInterstitialHourlyCount());
+            return false;
+        }
+        if (!isInterstitialCooldownPassed()) {
+            long elapsed = (System.currentTimeMillis() - getLong("interstitial_last_shown_time", 0)) / 1000;
+            android.util.Log.d("AdFrequencyCap", "Interstitial Ad blocked: Cooldown active (" + elapsed + "s elapsed, requires " + getInterstitialCooldownSeconds() + "s)");
+            return false;
+        }
+        return true;
+    }
+
+    public void recordInterstitialAdShown() {
+        long now = System.currentTimeMillis();
+        setLong("interstitial_last_shown_time", now);
+
+        // Daily count tracking
+        String today = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date(now));
+        String lastDate = getString("interstitial_daily_date", "");
+        int dailyCount = 1;
+        if (today.equals(lastDate)) {
+            dailyCount = getInt("interstitial_daily_count", 0) + 1;
+        }
+        setString("interstitial_daily_date", today);
+        setInt("interstitial_daily_count", dailyCount);
+
+        // Hourly count tracking (rolling 1-hour window)
+        long windowStart = getLong("interstitial_hourly_window_start", 0);
+        int hourlyCount = 1;
+        if (windowStart > 0 && (now - windowStart) < 3600000L) {
+            hourlyCount = getInt("interstitial_hourly_count", 0) + 1;
+        } else {
+            setLong("interstitial_hourly_window_start", now);
+        }
+        setInt("interstitial_hourly_count", hourlyCount);
+
+        android.util.Log.d("AdFrequencyCap", "Interstitial Ad Recorded -> Daily: " + dailyCount + "/" + getInterstitialDailyCap() +
+                ", Hourly: " + hourlyCount + "/" + getInterstitialHourlyCap() +
+                ", Cooldown: " + getInterstitialCooldownSeconds() + "s");
+    }
+
     // =========================================================================
     // Reward Timer Config (Remote Config)
     // =========================================================================
@@ -2338,6 +2710,13 @@ public class Leaflet_PreferenceClass {
 
     public boolean isRewardTimerEnabled() {
         try {
+            JSONObject root = getRootAdConfigJson();
+            if (root != null && root.has("reward_timer_enabled")) {
+                Object val = root.opt("reward_timer_enabled");
+                if (val instanceof Boolean) return (Boolean) val;
+                if (val instanceof Number) return ((Number) val).intValue() == 1;
+                if (val instanceof String) return "1".equals(val) || "true".equalsIgnoreCase((String) val);
+            }
             JSONObject obj = getRewardTimerConfigJson();
             if (obj != null && obj.has("enabled")) {
                 return obj.optBoolean("enabled", true);
@@ -2352,9 +2731,11 @@ public class Leaflet_PreferenceClass {
         try {
             JSONObject root = getRootAdConfigJson();
             if (root != null) {
-                if (root.has("reward_timer_seconds")) {
-                    int sec = root.optInt("reward_timer_seconds", 0);
-                    if (sec > 0) return sec;
+                int mins = root.optInt("reward_timer_minutes", -1);
+                int secs = root.optInt("reward_timer_seconds", -1);
+                if (mins >= 0 || secs >= 0) {
+                    int totalSecs = (mins > 0 ? mins * 60 : 0) + (secs > 0 ? secs : 0);
+                    if (totalSecs > 0) return totalSecs;
                 }
                 if (root.has("editor_timer_seconds")) {
                     int sec = root.optInt("editor_timer_seconds", 0);
@@ -2362,13 +2743,21 @@ public class Leaflet_PreferenceClass {
                 }
             }
             JSONObject obj = getRewardTimerConfigJson();
-            if (obj != null && obj.has("timer_seconds")) {
-                int sec = obj.optInt("timer_seconds", 50);
-                if (sec > 0) return sec;
+            if (obj != null) {
+                int mins = obj.optInt("timer_minutes", obj.optInt("reward_timer_minutes", -1));
+                int secs = obj.optInt("timer_seconds", obj.optInt("reward_timer_seconds", -1));
+                if (mins >= 0 || secs >= 0) {
+                    int totalSecs = (mins > 0 ? mins * 60 : 0) + (secs > 0 ? secs : 0);
+                    if (totalSecs > 0) return totalSecs;
+                }
             }
         } catch (Exception ignored) {}
-        int sec = getInt("reward_timer_seconds", 0);
-        if (sec > 0) return sec;
+        int mins = getInt("reward_timer_minutes", -1);
+        int sec = getInt("reward_timer_seconds", -1);
+        if (mins >= 0 || sec >= 0) {
+            int totalSecs = (mins > 0 ? mins * 60 : 0) + (sec > 0 ? sec : 0);
+            if (totalSecs > 0) return totalSecs;
+        }
         sec = getInt("editor_timer_seconds", 0);
         if (sec > 0) return sec;
         return 50;
@@ -2394,16 +2783,40 @@ public class Leaflet_PreferenceClass {
     public JSONObject getUndoRedoConfigJson() {
         try {
             JSONObject root = getRootAdConfigJson();
-            if (root != null && root.has("undo_redo")) {
-                JSONObject obj = root.optJSONObject("undo_redo");
-                if (obj != null) return obj;
+            if (root != null) {
+                if (root.has("editor")) {
+                    JSONObject editorObj = root.optJSONObject("editor");
+                    if (editorObj != null && editorObj.has("undo_redo")) {
+                        JSONObject obj = editorObj.optJSONObject("undo_redo");
+                        if (obj != null) return obj;
+                    }
+                }
+                if (root.has("undo_redo")) {
+                    JSONObject obj = root.optJSONObject("undo_redo");
+                    if (obj != null) return obj;
+                }
             }
             com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
-            String[] rootKeys = new String[]{"ads_config", "screens_config", "editor", "app_ads"};
+            String editorStr = rc.getString("editor");
+            if (editorStr != null && !editorStr.trim().isEmpty() && editorStr.trim().startsWith("{")) {
+                try {
+                    JSONObject editorObj = new JSONObject(editorStr);
+                    if (editorObj.has("undo_redo")) {
+                        return editorObj.optJSONObject("undo_redo");
+                    }
+                } catch (Exception ignored) {}
+            }
+            String[] rootKeys = new String[]{"ads_config", "screens_config", "app_ads"};
             for (String rKey : rootKeys) {
                 String rootJson = rc.getString(rKey);
                 if (rootJson != null && !rootJson.trim().isEmpty() && rootJson.trim().startsWith("{")) {
                     JSONObject rootObj = new JSONObject(rootJson);
+                    if (rootObj.has("editor")) {
+                        JSONObject editorObj = rootObj.optJSONObject("editor");
+                        if (editorObj != null && editorObj.has("undo_redo")) {
+                            return editorObj.optJSONObject("undo_redo");
+                        }
+                    }
                     if (rootObj.has("undo_redo")) {
                         return rootObj.optJSONObject("undo_redo");
                     }
@@ -2419,9 +2832,17 @@ public class Leaflet_PreferenceClass {
 
     public boolean isUndoRedoAdEnabled() {
         try {
+            // 1. Check Root Master Config JSON FIRST
             JSONObject root = getRootAdConfigJson();
             if (root != null) {
-                for (String k : new String[]{"undo_redo_ad_enabled", "undo_redo_enabled", "show_undo_redo_ad"}) {
+                if (root.has("editor")) {
+                    JSONObject editorObj = root.optJSONObject("editor");
+                    if (editorObj != null && editorObj.has("undo_redo")) {
+                        JSONObject ur = editorObj.optJSONObject("undo_redo");
+                        if (ur != null && ur.has("enabled")) return ur.optBoolean("enabled", true);
+                    }
+                }
+                for (String k : new String[]{"undo_redo_ad_enabled", "editor_undo_redo_ad_enabled", "undo_redo_enabled", "show_undo_redo_ad"}) {
                     if (root.has(k)) {
                         Object val = root.opt(k);
                         if (val instanceof Boolean) return (Boolean) val;
@@ -2434,25 +2855,41 @@ public class Leaflet_PreferenceClass {
                     }
                 }
             }
+
+            // 2. Direct individual Remote Config keys
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                for (String k : new String[]{"undo_redo_ad_enabled", "editor_undo_redo_ad_enabled", "undo_redo_enabled", "show_undo_redo_ad"}) {
+                    String s = rc.getString(k);
+                    if (s != null && !s.trim().isEmpty()) {
+                        s = s.trim();
+                        if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                        if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                    }
+                }
+            }
+
             JSONObject obj = getUndoRedoConfigJson();
             if (obj != null && obj.has("enabled")) {
                 return obj.optBoolean("enabled", true);
             }
-            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
-            for (String k : new String[]{"undo_redo_ad_enabled", "undo_redo_enabled", "show_undo_redo_ad"}) {
-                String s = rc.getString(k);
-                if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
-                if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
-            }
         } catch (Exception ignored) {}
-        return false;
+        return true;
     }
 
     public int getUndoRedoFreeActions() {
         try {
+            // 1. Check Root Master Config JSON FIRST
             JSONObject root = getRootAdConfigJson();
             if (root != null) {
-                for (String k : new String[]{"undo_redo_free_actions", "undo_redo_count", "undo_redo_action_count"}) {
+                if (root.has("editor")) {
+                    JSONObject editorObj = root.optJSONObject("editor");
+                    if (editorObj != null && editorObj.has("undo_redo")) {
+                        JSONObject ur = editorObj.optJSONObject("undo_redo");
+                        if (ur != null && ur.has("free_actions_allowed")) return ur.optInt("free_actions_allowed", 1);
+                    }
+                }
+                for (String k : new String[]{"undo_redo_free_actions", "editor_free_undo_redo_allowed", "undo_redo_count", "undo_redo_action_count"}) {
                     if (root.has(k)) {
                         Object val = root.opt(k);
                         if (val instanceof Number) return ((Number) val).intValue();
@@ -2462,46 +2899,303 @@ public class Leaflet_PreferenceClass {
                     }
                 }
             }
-            JSONObject obj = getUndoRedoConfigJson();
-            if (obj != null && obj.has("free_actions_allowed")) {
-                return obj.optInt("free_actions_allowed", 0);
-            }
+
+            // 2. Direct individual Remote Config keys
             com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
-            for (String k : new String[]{"undo_redo_free_actions", "undo_redo_count", "undo_redo_action_count"}) {
-                String s = rc.getString(k);
-                if (s != null && !s.trim().isEmpty() && !s.equals("null")) {
-                    try { return Integer.parseInt(s.trim()); } catch (Exception ignored) {}
+            if (rc != null) {
+                for (String k : new String[]{"undo_redo_free_actions", "editor_free_undo_redo_allowed", "undo_redo_count", "undo_redo_action_count"}) {
+                    String s = rc.getString(k);
+                    if (s != null && !s.trim().isEmpty()) {
+                        try {
+                            int v = Integer.parseInt(s.trim());
+                            if (v >= 0) return v;
+                        } catch (Exception ignored) {}
+                    }
                 }
             }
+
+            JSONObject obj = getUndoRedoConfigJson();
+            if (obj != null && obj.has("free_actions_allowed")) {
+                return obj.optInt("free_actions_allowed", 1);
+            }
         } catch (Exception ignored) {}
-        return getInt("undo_redo_free_actions", 0);
+        return 1;
     }
 
     public String getUndoRedoAdType() {
         try {
+            // 1. Check Root Master Config JSON FIRST
             JSONObject root = getRootAdConfigJson();
-            if (root != null && root.has("undo_redo_ad_type")) {
-                String t = root.optString("undo_redo_ad_type", "").trim();
-                if (!t.isEmpty() && !t.equals("null")) return t;
+            if (root != null) {
+                if (root.has("editor")) {
+                    JSONObject editorObj = root.optJSONObject("editor");
+                    if (editorObj != null && editorObj.has("undo_redo")) {
+                        JSONObject ur = editorObj.optJSONObject("undo_redo");
+                        if (ur != null && ur.has("ad_type")) return ur.optString("ad_type", "reward");
+                    }
+                }
+                for (String k : new String[]{"undo_redo_ad_type", "editor_undo_redo_ad_type"}) {
+                    if (root.has(k)) {
+                        String t = root.optString(k, "").trim();
+                        if (!t.isEmpty() && !t.equals("null")) return t;
+                    }
+                }
             }
+
+            // 2. Direct individual Remote Config keys (only if set remotely)
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                for (String k : new String[]{"undo_redo_ad_type", "editor_undo_redo_ad_type"}) {
+                    com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(k);
+                    if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                        String rcType = rcVal.asString().trim();
+                        if (!rcType.isEmpty() && !rcType.equals("null")) return rcType;
+                    }
+                }
+            }
+
             JSONObject obj = getUndoRedoConfigJson();
             if (obj != null && obj.has("ad_type")) {
                 return obj.optString("ad_type", "reward");
             }
-            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
-            String rcType = rc.getString("undo_redo_ad_type");
-            if (rcType != null && !rcType.trim().isEmpty() && !rcType.equals("null")) return rcType.trim();
         } catch (Exception ignored) {}
         return "reward";
     }
 
     public String getUndoRedoAdId() {
         try {
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            for (String k : new String[]{"editor_undo_redo_ad_id", "undo_redo_ad_id"}) {
+                String id = rc.getString(k);
+                if (id != null && !id.trim().isEmpty() && !id.equals("null") && !id.contains("xxxx")) {
+                    String nativeId = getAdsId("NativeUnitID");
+                    if ((nativeId.isEmpty() || !id.equals(nativeId)) && !id.contains("5807970180")) {
+                        return id.trim();
+                    }
+                }
+            }
+
             JSONObject obj = getUndoRedoConfigJson();
             if (obj != null && obj.has("ad_id")) {
                 String id = obj.optString("ad_id", "").trim();
                 if (!id.isEmpty() && !id.equals("null") && !id.contains("xxxx")) {
-                    return id;
+                    String nativeId = getAdsId("NativeUnitID");
+                    if ((nativeId.isEmpty() || !id.equals(nativeId)) && !id.contains("5807970180")) {
+                        return id;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return getAdsId("RewardVideoUnitID");
+    }
+
+    // =========================================================================
+    // Reset Canvas Config (Remote Config)
+    // =========================================================================
+
+    public JSONObject getResetConfigJson() {
+        try {
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("editor")) {
+                    JSONObject editorObj = root.optJSONObject("editor");
+                    if (editorObj != null && editorObj.has("reset")) {
+                        JSONObject obj = editorObj.optJSONObject("reset");
+                        if (obj != null) return obj;
+                    }
+                }
+                if (root.has("reset")) {
+                    JSONObject obj = root.optJSONObject("reset");
+                    if (obj != null) return obj;
+                }
+            }
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            String editorStr = rc.getString("editor");
+            if (editorStr != null && !editorStr.trim().isEmpty() && editorStr.trim().startsWith("{")) {
+                try {
+                    JSONObject editorObj = new JSONObject(editorStr);
+                    if (editorObj.has("reset")) {
+                        return editorObj.optJSONObject("reset");
+                    }
+                } catch (Exception ignored) {}
+            }
+            String[] rootKeys = new String[]{"ads_config", "screens_config", "app_ads"};
+            for (String rKey : rootKeys) {
+                String rootJson = rc.getString(rKey);
+                if (rootJson != null && !rootJson.trim().isEmpty() && rootJson.trim().startsWith("{")) {
+                    JSONObject rootObj = new JSONObject(rootJson);
+                    if (rootObj.has("editor")) {
+                        JSONObject editorObj = rootObj.optJSONObject("editor");
+                        if (editorObj != null && editorObj.has("reset")) {
+                            return editorObj.optJSONObject("reset");
+                        }
+                    }
+                    if (rootObj.has("reset")) {
+                        return rootObj.optJSONObject("reset");
+                    }
+                }
+            }
+            String jsonStr = rc.getString("reset");
+            if (jsonStr != null && !jsonStr.trim().isEmpty() && jsonStr.trim().startsWith("{")) {
+                return new JSONObject(jsonStr);
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    public boolean isResetAdEnabled() {
+        try {
+            // 1. Check Root Master Config JSON FIRST
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("editor")) {
+                    JSONObject editorObj = root.optJSONObject("editor");
+                    if (editorObj != null && editorObj.has("reset")) {
+                        JSONObject res = editorObj.optJSONObject("reset");
+                        if (res != null && res.has("enabled")) return res.optBoolean("enabled", true);
+                    }
+                }
+                for (String k : new String[]{"reset_ad_enabled", "editor_reset_ad_enabled", "reset_enabled", "show_reset_ad"}) {
+                    if (root.has(k)) {
+                        Object val = root.opt(k);
+                        if (val instanceof Boolean) return (Boolean) val;
+                        if (val instanceof Number) return ((Number) val).intValue() == 1;
+                        if (val instanceof String) {
+                            String s = ((String) val).trim();
+                            if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                            if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                        }
+                    }
+                }
+            }
+
+            // 2. Direct individual Remote Config keys
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                for (String k : new String[]{"reset_ad_enabled", "editor_reset_ad_enabled", "reset_enabled", "show_reset_ad"}) {
+                    String s = rc.getString(k);
+                    if (s != null && !s.trim().isEmpty()) {
+                        s = s.trim();
+                        if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                        if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                    }
+                }
+            }
+
+            JSONObject obj = getResetConfigJson();
+            if (obj != null && obj.has("enabled")) {
+                return obj.optBoolean("enabled", true);
+            }
+        } catch (Exception ignored) {}
+        return true;
+    }
+
+    public int getResetFreeActions() {
+        try {
+            // 1. Check Root Master Config JSON FIRST
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("editor")) {
+                    JSONObject editorObj = root.optJSONObject("editor");
+                    if (editorObj != null && editorObj.has("reset")) {
+                        JSONObject res = editorObj.optJSONObject("reset");
+                        if (res != null && res.has("free_actions_allowed")) return res.optInt("free_actions_allowed", 1);
+                    }
+                }
+                for (String k : new String[]{"reset_free_actions", "editor_free_reset_allowed", "reset_count", "reset_action_count"}) {
+                    if (root.has(k)) {
+                        Object val = root.opt(k);
+                        if (val instanceof Number) return ((Number) val).intValue();
+                        if (val instanceof String) {
+                            try { return Integer.parseInt(((String) val).trim()); } catch (Exception ignored) {}
+                        }
+                    }
+                }
+            }
+
+            // 2. Direct individual Remote Config keys
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                for (String k : new String[]{"reset_free_actions", "editor_free_reset_allowed", "reset_count", "reset_action_count"}) {
+                    String s = rc.getString(k);
+                    if (s != null && !s.trim().isEmpty()) {
+                        try {
+                            int v = Integer.parseInt(s.trim());
+                            if (v >= 0) return v;
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+
+            JSONObject obj = getResetConfigJson();
+            if (obj != null && obj.has("free_actions_allowed")) {
+                return obj.optInt("free_actions_allowed", 1);
+            }
+        } catch (Exception ignored) {}
+        return 1;
+    }
+
+    public String getResetAdType() {
+        try {
+            // 1. Check Root Master Config JSON FIRST
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("editor")) {
+                    JSONObject editorObj = root.optJSONObject("editor");
+                    if (editorObj != null && editorObj.has("reset")) {
+                        JSONObject res = editorObj.optJSONObject("reset");
+                        if (res != null && res.has("ad_type")) return res.optString("ad_type", "reward");
+                    }
+                }
+                for (String k : new String[]{"reset_ad_type", "editor_reset_ad_type"}) {
+                    if (root.has(k)) {
+                        String t = root.optString(k, "").trim();
+                        if (!t.isEmpty() && !t.equals("null")) return t;
+                    }
+                }
+            }
+
+            // 2. Direct individual Remote Config keys (only if set remotely)
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                for (String k : new String[]{"reset_ad_type", "editor_reset_ad_type"}) {
+                    com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(k);
+                    if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                        String rcType = rcVal.asString().trim();
+                        if (!rcType.isEmpty() && !rcType.equals("null")) return rcType;
+                    }
+                }
+            }
+
+            JSONObject obj = getResetConfigJson();
+            if (obj != null && obj.has("ad_type")) {
+                return obj.optString("ad_type", "reward");
+            }
+        } catch (Exception ignored) {}
+        return "reward";
+    }
+
+    public String getResetAdId() {
+        try {
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            for (String k : new String[]{"editor_reset_ad_id", "reset_ad_id"}) {
+                String id = rc.getString(k);
+                if (id != null && !id.trim().isEmpty() && !id.equals("null") && !id.contains("xxxx")) {
+                    String nativeId = getAdsId("NativeUnitID");
+                    if ((nativeId.isEmpty() || !id.equals(nativeId)) && !id.contains("5807970180")) {
+                        return id.trim();
+                    }
+                }
+            }
+
+            JSONObject obj = getResetConfigJson();
+            if (obj != null && obj.has("ad_id")) {
+                String id = obj.optString("ad_id", "").trim();
+                if (!id.isEmpty() && !id.equals("null") && !id.contains("xxxx")) {
+                    String nativeId = getAdsId("NativeUnitID");
+                    if ((nativeId.isEmpty() || !id.equals(nativeId)) && !id.contains("5807970180")) {
+                        return id;
+                    }
                 }
             }
         } catch (Exception ignored) {}
@@ -2579,8 +3273,23 @@ public class Leaflet_PreferenceClass {
         try {
             JSONObject root = getRootAdConfigJson();
             if (root != null) {
-                if (root.has("premium_poster_lock_enabled")) {
-                    return getBoolean("premium_poster_lock_enabled", true);
+                for (String k : new String[]{
+                        "premium_poster_lock_enabled",
+                        "show_open_reward_popup",
+                        "show_edit_reward_popup",
+                        "show_template_edit_reward_popup",
+                        "show_background_edit_reward_popup",
+                        "premium_reward_popup_enabled"
+                }) {
+                    if (root.has(k)) {
+                        Object val = root.opt(k);
+                        if (val instanceof Boolean && (Boolean) val) return true;
+                        if (val instanceof Number && ((Number) val).intValue() == 1) return true;
+                        if (val instanceof String) {
+                            String s = ((String) val).trim();
+                            if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                        }
+                    }
                 }
                 if (root.has("premium_poster_lock")) {
                     JSONObject obj = root.optJSONObject("premium_poster_lock");
@@ -2591,9 +3300,13 @@ public class Leaflet_PreferenceClass {
             }
             com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
             if (rc != null) {
-                com.google.firebase.remoteconfig.FirebaseRemoteConfigValue val = rc.getValue("premium_poster_lock_enabled");
-                if (val != null && val.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
-                    return val.asBoolean();
+                for (String k : new String[]{"premium_poster_lock_enabled", "show_open_reward_popup", "show_edit_reward_popup", "show_template_edit_reward_popup", "show_background_edit_reward_popup"}) {
+                    com.google.firebase.remoteconfig.FirebaseRemoteConfigValue val = rc.getValue(k);
+                    if (val != null && val.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                        String s = val.asString().trim();
+                        if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                        if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                    }
                 }
             }
             JSONObject obj = getPremiumPosterLockConfigJson();
@@ -2604,15 +3317,61 @@ public class Leaflet_PreferenceClass {
         return getBoolean("premium_poster_lock_enabled", true);
     }
 
+    public boolean isPremiumLockEnabled(String itemType) {
+        try {
+            boolean isBg = (itemType != null && (itemType.toLowerCase().contains("bg") || itemType.toLowerCase().contains("background")));
+            String specificKey = isBg ? "background_premium_enabled" : "templates_premium_enabled";
+
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has(specificKey)) {
+                    return parseJsonBoolOrInt(root, specificKey, true);
+                }
+                if (root.has("ad_data")) {
+                    JSONObject adData = root.optJSONObject("ad_data");
+                    if (adData != null && adData.has(specificKey)) {
+                        return parseJsonBoolOrInt(adData, specificKey, true);
+                    }
+                }
+            }
+
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(specificKey);
+                if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                    String s = rcVal.asString().trim();
+                    if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                    if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                }
+            }
+
+            JSONObject premObj = getPremiumConfigJson();
+            if (premObj != null) {
+                String key = isBg ? "background" : "templates";
+                JSONObject target = premObj.optJSONObject(key);
+                if (target != null && target.has("enabled")) {
+                    return target.optBoolean("enabled", true);
+                }
+            }
+        } catch (Exception ignored) {}
+        return isPremiumPosterLockEnabled();
+    }
+
     public boolean isPremiumPosterBlurEnabled() {
         try {
             JSONObject root = getRootAdConfigJson();
             if (root != null) {
-                if (root.has("premium_poster_blur_enabled")) {
-                    return getBoolean("premium_poster_blur_enabled", false);
-                }
-                if (root.has("poster_blur_enabled")) {
-                    return getBoolean("poster_blur_enabled", false);
+                for (String k : new String[]{"premium_poster_blur_enabled", "poster_blur_enabled"}) {
+                    if (root.has(k)) {
+                        Object val = root.opt(k);
+                        if (val instanceof Boolean) return (Boolean) val;
+                        if (val instanceof Number) return ((Number) val).intValue() == 1;
+                        if (val instanceof String) {
+                            String s = ((String) val).trim();
+                            if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                            if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                        }
+                    }
                 }
                 if (root.has("premium_poster_lock")) {
                     JSONObject obj = root.optJSONObject("premium_poster_lock");
@@ -3137,34 +3896,40 @@ public class Leaflet_PreferenceClass {
 
     public int getPremiumPosterInterval(String itemType) {
         try {
-            boolean isBg = (itemType != null && itemType.toLowerCase().contains("bg"));
+            boolean isBg = (itemType != null && (itemType.toLowerCase().contains("bg") || itemType.toLowerCase().contains("background")));
+            String[] specificKeys = isBg
+                    ? new String[]{"background_premium_interval", "background_pro_interval"}
+                    : new String[]{"templates_premium_interval", "template_pro_interval"};
 
             // 1. Root Master Config JSON (User's live config from remote)
             JSONObject rootObj = getRootAdConfigJson();
             if (rootObj != null) {
-                String k = isBg ? "background_pro_interval" : "template_pro_interval";
-                if (rootObj.has(k)) {
-                    int v = rootObj.optInt(k, 0);
-                    if (v > 0) return v;
+                for (String k : specificKeys) {
+                    if (rootObj.has(k)) {
+                        int v = rootObj.optInt(k, -1);
+                        if (v >= 0) return v;
+                    }
                 }
                 if (rootObj.has("PremiumPostCount")) {
-                    int v = rootObj.optInt("PremiumPostCount", 0);
-                    if (v > 0) return v;
+                    int v = rootObj.optInt("PremiumPostCount", -1);
+                    if (v >= 0) return v;
                 }
                 if (rootObj.has("premium_post_count")) {
-                    int v = rootObj.optInt("premium_post_count", 0);
-                    if (v > 0) return v;
+                    int v = rootObj.optInt("premium_post_count", -1);
+                    if (v >= 0) return v;
                 }
                 if (rootObj.has("ad_data")) {
                     JSONObject adData = rootObj.optJSONObject("ad_data");
                     if (adData != null) {
-                        if (adData.has(k)) {
-                            int v = adData.optInt(k, 0);
-                            if (v > 0) return v;
+                        for (String k : specificKeys) {
+                            if (adData.has(k)) {
+                                int v = adData.optInt(k, -1);
+                                if (v >= 0) return v;
+                            }
                         }
                         if (adData.has("PremiumPostCount")) {
-                            int v = adData.optInt("PremiumPostCount", 0);
-                            if (v > 0) return v;
+                            int v = adData.optInt("PremiumPostCount", -1);
+                            if (v >= 0) return v;
                         }
                     }
                 }
@@ -3173,19 +3938,20 @@ public class Leaflet_PreferenceClass {
             // 2. Direct Remote Config keys from server (VALUE_SOURCE_REMOTE)
             com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
             if (rc != null) {
-                String specificKey = isBg ? "background_pro_interval" : "template_pro_interval";
-                com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(specificKey);
-                if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
-                    try {
-                        int v = Integer.parseInt(rcVal.asString().trim());
-                        if (v > 0) return v;
-                    } catch (NumberFormatException ignored) {}
+                for (String specificKey : specificKeys) {
+                    com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(specificKey);
+                    if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                        try {
+                            int v = Integer.parseInt(rcVal.asString().trim());
+                            if (v >= 0) return v;
+                        } catch (NumberFormatException ignored) {}
+                    }
                 }
                 com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcPostCount = rc.getValue("PremiumPostCount");
                 if (rcPostCount != null && rcPostCount.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
                     try {
                         int v = Integer.parseInt(rcPostCount.asString().trim());
-                        if (v > 0) return v;
+                        if (v >= 0) return v;
                     } catch (NumberFormatException ignored) {}
                 }
             }
@@ -3196,17 +3962,17 @@ public class Leaflet_PreferenceClass {
                 String key = isBg ? "background" : "templates";
                 JSONObject target = premObj.optJSONObject(key);
                 if (target != null && target.has("interval")) {
-                    int val = target.optInt("interval", 0);
-                    if (val > 0) return val;
+                    int val = target.optInt("interval", -1);
+                    if (val >= 0) return val;
                 }
                 String altKey = isBg ? "background_interval" : "template_interval";
                 if (premObj.has(altKey)) {
-                    int val = premObj.optInt(altKey, 0);
-                    if (val > 0) return val;
+                    int val = premObj.optInt(altKey, -1);
+                    if (val >= 0) return val;
                 }
                 if (premObj.has("interval")) {
-                    int val = premObj.optInt("interval", 0);
-                    if (val > 0) return val;
+                    int val = premObj.optInt("interval", -1);
+                    if (val >= 0) return val;
                 }
             }
         } catch (Exception ignored) {}
@@ -3217,7 +3983,7 @@ public class Leaflet_PreferenceClass {
         try {
             JSONObject premObj = getPremiumConfigJson();
             if (premObj != null) {
-                String key = (itemType != null && itemType.toLowerCase().contains("bg")) ? "background" : "templates";
+                String key = (itemType != null && (itemType.toLowerCase().contains("bg") || itemType.toLowerCase().contains("background"))) ? "background" : "templates";
                 JSONObject target = premObj.optJSONObject(key);
                 if (target != null && target.has("ad_type")) {
                     return target.optString("ad_type", "reward");
@@ -3229,13 +3995,35 @@ public class Leaflet_PreferenceClass {
 
     public String getPremiumPosterRewardAdId(String itemType) {
         try {
+            boolean isBg = (itemType != null && (itemType.toLowerCase().contains("bg") || itemType.toLowerCase().contains("background")));
+            String directKey = isBg ? "background_reward_ad_id" : "templates_reward_ad_id";
+
+            JSONObject rootObj = getRootAdConfigJson();
+            if (rootObj != null && rootObj.has(directKey)) {
+                String id = rootObj.optString(directKey, "").trim();
+                if (!id.isEmpty() && !id.equals("null") && !id.contains("xxxx")) return id;
+            }
+
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(directKey);
+                if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                    String id = rcVal.asString().trim();
+                    if (!id.isEmpty() && !id.equals("null") && !id.contains("xxxx")) return id;
+                }
+            }
+
             JSONObject premObj = getPremiumConfigJson();
             if (premObj != null) {
-                String key = (itemType != null && itemType.toLowerCase().contains("bg")) ? "background" : "templates";
+                String key = isBg ? "background" : "templates";
                 JSONObject target = premObj.optJSONObject(key);
-                if (target != null && target.has("reward_ad_id")) {
-                    String id = target.optString("reward_ad_id", "").trim();
-                    if (!id.isEmpty() && !id.contains("xxxx")) return id;
+                if (target != null) {
+                    for (String k : new String[]{"reward_ad_id", "ad_id"}) {
+                        if (target.has(k)) {
+                            String id = target.optString(k, "").trim();
+                            if (!id.isEmpty() && !id.equals("null") && !id.contains("xxxx")) return id;
+                        }
+                    }
                 }
             }
         } catch (Exception ignored) {}
@@ -3246,7 +4034,7 @@ public class Leaflet_PreferenceClass {
         try {
             JSONObject premObj = getPremiumConfigJson();
             if (premObj != null) {
-                String key = (itemType != null && itemType.toLowerCase().contains("bg")) ? "background" : "templates";
+                String key = (itemType != null && (itemType.toLowerCase().contains("bg") || itemType.toLowerCase().contains("background"))) ? "background" : "templates";
                 JSONObject target = premObj.optJSONObject(key);
                 if (target != null && target.has("interstitial_ad_id")) {
                     String id = target.optString("interstitial_ad_id", "").trim();
@@ -3255,6 +4043,166 @@ public class Leaflet_PreferenceClass {
             }
         } catch (Exception ignored) {}
         return getAdsId("InterstitalAdunitID");
+    }
+
+    // =========================================================================
+    // Time-Based Unlock Duration & Persistence (24h default / custom / -1 permanent)
+    // =========================================================================
+
+    /**
+     * Resolves how long an unlocked template/background remains unlocked in milliseconds.
+     * Supports Remote Config minutes, hours, or -1 (permanent). Default = 24 hours.
+     */
+    public long getUnlockDurationMs(String itemType) {
+        boolean isBg = (itemType != null && (itemType.toLowerCase().contains("bg") || itemType.toLowerCase().contains("background")));
+        String[] minKeys = isBg
+                ? new String[]{"background_unlocked_duration_minutes", "unlocked_duration_minutes"}
+                : new String[]{"templates_unlocked_duration_minutes", "unlocked_duration_minutes"};
+        String[] hourKeys = isBg
+                ? new String[]{"background_unlocked_duration_hours", "unlocked_duration_hours"}
+                : new String[]{"templates_unlocked_duration_hours", "unlocked_duration_hours"};
+
+        try {
+            JSONObject rootObj = getRootAdConfigJson();
+            JSONObject premObj = getPremiumConfigJson();
+            JSONObject targetPrem = premObj != null ? premObj.optJSONObject(isBg ? "background" : "templates") : null;
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+
+            // 1. Check minutes override (root -> ad_data -> premium_config.<type> -> direct RC)
+            if (rootObj != null) {
+                for (String k : minKeys) {
+                    if (rootObj.has(k)) {
+                        long m = rootObj.optLong(k, 0);
+                        if (m < 0) return -1L;
+                        if (m > 0) return m * 60_000L;
+                    }
+                }
+                JSONObject adData = rootObj.optJSONObject("ad_data");
+                if (adData != null) {
+                    for (String k : minKeys) {
+                        if (adData.has(k)) {
+                            long m = adData.optLong(k, 0);
+                            if (m < 0) return -1L;
+                            if (m > 0) return m * 60_000L;
+                        }
+                    }
+                }
+            }
+            if (targetPrem != null && targetPrem.has("unlocked_duration_minutes")) {
+                long m = targetPrem.optLong("unlocked_duration_minutes", 0);
+                if (m < 0) return -1L;
+                if (m > 0) return m * 60_000L;
+            }
+            if (rc != null) {
+                for (String k : minKeys) {
+                    com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(k);
+                    if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                        try {
+                            long m = Long.parseLong(rcVal.asString().trim());
+                            if (m < 0) return -1L;
+                            if (m > 0) return m * 60_000L;
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+            }
+
+            // 2. Check hours config (root -> ad_data -> premium_config.<type> -> direct RC)
+            if (rootObj != null) {
+                for (String k : hourKeys) {
+                    if (rootObj.has(k)) {
+                        long h = rootObj.optLong(k, 24);
+                        if (h < 0) return -1L;
+                        return h * 3_600_000L;
+                    }
+                }
+                JSONObject adData = rootObj.optJSONObject("ad_data");
+                if (adData != null) {
+                    for (String k : hourKeys) {
+                        if (adData.has(k)) {
+                            long h = adData.optLong(k, 24);
+                            if (h < 0) return -1L;
+                            return h * 3_600_000L;
+                        }
+                    }
+                }
+            }
+            if (targetPrem != null && targetPrem.has("unlocked_duration_hours")) {
+                long h = targetPrem.optLong("unlocked_duration_hours", 24);
+                if (h < 0) return -1L;
+                return h * 3_600_000L;
+            }
+            if (rc != null) {
+                for (String k : hourKeys) {
+                    com.google.firebase.remoteconfig.FirebaseRemoteConfigValue rcVal = rc.getValue(k);
+                    if (rcVal != null && rcVal.getSource() == com.google.firebase.remoteconfig.FirebaseRemoteConfig.VALUE_SOURCE_REMOTE) {
+                        try {
+                            long h = Long.parseLong(rcVal.asString().trim());
+                            if (h < 0) return -1L;
+                            return h * 3_600_000L;
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+
+        // Default = 24 Hours
+        return 24L * 3_600_000L;
+    }
+
+    public void saveTemplateUnlockTime(int postId) {
+        if (postId <= 0 || prefs == null) return;
+        prefs.edit().putLong("poster_unlock_time_" + postId, System.currentTimeMillis()).apply();
+    }
+
+    public boolean isTemplateUnlocked(int postId) {
+        if (postId <= 0 || prefs == null) return false;
+        String key = "poster_unlock_time_" + postId;
+        long unlockTime = prefs.getLong(key, 0L);
+        if (unlockTime <= 0L) return false;
+
+        long durationMs = getUnlockDurationMs("templates");
+        if (durationMs < 0L) return true; // -1 = Permanent unlock
+        if (durationMs == 0L) {
+            prefs.edit().remove(key).apply();
+            return false;
+        }
+
+        long elapsed = System.currentTimeMillis() - unlockTime;
+        if (elapsed >= 0L && elapsed < durationMs) {
+            return true;
+        }
+
+        // Expired -> clear timestamp and re-lock
+        prefs.edit().remove(key).apply();
+        return false;
+    }
+
+    public void saveBackgroundUnlockTime(String bgPathOrId) {
+        if (bgPathOrId == null || bgPathOrId.trim().isEmpty() || prefs == null) return;
+        prefs.edit().putLong("bg_unlock_time_" + bgPathOrId.trim(), System.currentTimeMillis()).apply();
+    }
+
+    public boolean isBackgroundUnlocked(String bgPathOrId) {
+        if (bgPathOrId == null || bgPathOrId.trim().isEmpty() || prefs == null) return false;
+        String key = "bg_unlock_time_" + bgPathOrId.trim();
+        long unlockTime = prefs.getLong(key, 0L);
+        if (unlockTime <= 0L) return false;
+
+        long durationMs = getUnlockDurationMs("backgrounds");
+        if (durationMs < 0L) return true; // -1 = Permanent unlock
+        if (durationMs == 0L) {
+            prefs.edit().remove(key).apply();
+            return false;
+        }
+
+        long elapsed = System.currentTimeMillis() - unlockTime;
+        if (elapsed >= 0L && elapsed < durationMs) {
+            return true;
+        }
+
+        // Expired -> clear timestamp and re-lock
+        prefs.edit().remove(key).apply();
+        return false;
     }
 
     public boolean isExitDialogNativeAdEnabled() {
@@ -3479,6 +4427,123 @@ public class Leaflet_PreferenceClass {
             }
         } catch (Exception ignored) {}
         return false;
+    }
+
+
+    public float getPremiumPosterBlurRadius() {
+        try {
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                if (root.has("premium_poster_blur_radius")) {
+                    double r = root.optDouble("premium_poster_blur_radius", 0);
+                    if (r > 0) return (float) r;
+                }
+                if (root.has("blur_radius")) {
+                    double r = root.optDouble("blur_radius", 0);
+                    if (r > 0) return (float) r;
+                }
+            }
+            int r = getInt("premium_poster_blur_radius", 0);
+            if (r > 0) return (float) r;
+            r = getInt("blur_radius", 0);
+            if (r > 0) return (float) r;
+        } catch (Exception ignored) {}
+        return 2.5f;
+    }
+
+    public boolean isWatermarkRemovePopupEnabled() {
+        try {
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                for (String k : new String[]{"watermark_remove_popup_enabled", "show_watermark_remove_popup", "watermark_popup_enabled"}) {
+                    if (root.has(k)) {
+                        Object val = root.opt(k);
+                        if (val instanceof Boolean) return (Boolean) val;
+                        if (val instanceof Number) return ((Number) val).intValue() == 1;
+                        if (val instanceof String) {
+                            String s = ((String) val).trim();
+                            if ("0".equals(s) || "false".equalsIgnoreCase(s)) return false;
+                            if ("1".equals(s) || "true".equalsIgnoreCase(s)) return true;
+                        }
+                    }
+                }
+            }
+
+            JSONObject obj = getDownloadRewardConfigJson();
+            if (obj != null) {
+                for (String k : new String[]{"watermark_remove_popup_enabled", "show_watermark_remove_popup", "watermark_popup_enabled"}) {
+                    if (obj.has(k)) {
+                        return obj.optBoolean(k, true);
+                    }
+                }
+            }
+
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                for (String k : new String[]{"watermark_remove_popup_enabled", "show_watermark_remove_popup", "watermark_popup_enabled"}) {
+                    String val = rc.getString(k);
+                    if ("false".equalsIgnoreCase(val) || "0".equals(val)) return false;
+                    if ("true".equalsIgnoreCase(val) || "1".equals(val)) return true;
+                }
+            }
+        } catch (Exception ignored) {}
+        return true;
+    }
+
+    public void setString(String key, String value) {
+        if (prefs != null) prefs.edit().putString(key, value).apply();
+    }
+
+    public String getString(String key, String def) {
+        if (prefs != null) return prefs.getString(key, def);
+        return def;
+    }
+
+    public long getRemoteConfigTimeoutMs() {
+        return 2500L;
+    }
+
+    public long getSplashWatchdogTimeoutMs() {
+        try {
+            JSONObject root = getRootAdConfigJson();
+            if (root != null) {
+                for (String k : new String[]{"splash_watchdog_timeout_ms", "splash_ad_wait_ms"}) {
+                    if (root.has(k)) {
+                        long v = root.optLong(k, -1L);
+                        if (v >= 500L) return v;
+                    }
+                }
+                if (root.has("ad_data")) {
+                    JSONObject adData = root.optJSONObject("ad_data");
+                    if (adData != null) {
+                        for (String k : new String[]{"splash_watchdog_timeout_ms", "splash_ad_wait_ms"}) {
+                            if (adData.has(k)) {
+                                long v = adData.optLong(k, -1L);
+                                if (v >= 500L) return v;
+                            }
+                        }
+                    }
+                }
+            }
+            JSONObject splashObj = getSplashConfigJson();
+            if (splashObj != null && splashObj.has("watchdog_timeout_ms")) {
+                long v = splashObj.optLong("watchdog_timeout_ms", -1L);
+                if (v >= 500L) return v;
+            }
+            com.google.firebase.remoteconfig.FirebaseRemoteConfig rc = com.google.firebase.remoteconfig.FirebaseRemoteConfig.getInstance();
+            if (rc != null) {
+                for (String k : new String[]{"splash_watchdog_timeout_ms", "splash_ad_wait_ms"}) {
+                    String s = rc.getString(k);
+                    if (s != null && !s.trim().isEmpty() && !s.equals("null")) {
+                        try {
+                            long v = Long.parseLong(s.trim());
+                            if (v >= 500L) return v;
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return 3500L;
     }
 
 }

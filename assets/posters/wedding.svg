@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840" width="600" height="840">
+  <defs>
+    <linearGradient id="w_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF5EF"/>
+      <stop offset="50%" stop-color="#F5EBE1"/>
+      <stop offset="100%" stop-color="#EFE2D3"/>
+    </linearGradient>
+    <linearGradient id="w_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D4AF37"/>
+      <stop offset="50%" stop-color="#AA7C11"/>
+      <stop offset="100%" stop-color="#D4AF37"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="840" rx="24" fill="url(#w_bg)"/>
+
+  <!-- Delicate Gold Double Border -->
+  <rect x="30" y="30" width="540" height="780" rx="16" fill="none" stroke="url(#w_gold)" stroke-width="1.5" opacity="0.6"/>
+  <rect x="42" y="42" width="516" height="756" rx="12" fill="none" stroke="url(#w_gold)" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Floral / Botanical branch motifs -->
+  <g fill="none" stroke="url(#w_gold)" stroke-width="1.5" opacity="0.8">
+    <!-- Top wreath -->
+    <path d="M 220 120 Q 300 80 380 120"/>
+    <path d="M 240 100 Q 255 85 260 105"/>
+    <path d="M 280 90 Q 295 75 300 95"/>
+    <path d="M 320 90 Q 335 75 340 95"/>
+    <path d="M 355 100 Q 370 85 375 105"/>
+    <!-- Intertwined Rings -->
+    <circle cx="285" cy="180" r="24" stroke="url(#w_gold)" stroke-width="2.5"/>
+    <circle cx="315" cy="180" r="24" stroke="url(#w_gold)" stroke-width="2.5"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="300" y="270" text-anchor="middle" fill="#8C6D37" font-family="'Cinzel', 'Playfair Display', serif" font-weight="400" font-size="18" letter-spacing="8">SAVE THE DATE</text>
+  <text x="300" y="320" text-anchor="middle" fill="#71717A" font-family="'Playfair Display', serif" font-weight="400" font-size="16" font-style="italic">FOR THE WEDDING OF</text>
+
+  <text x="300" y="410" text-anchor="middle" fill="#27272A" font-family="'Playfair Display', serif" font-weight="700" font-size="52">Elena</text>
+  <text x="300" y="465" text-anchor="middle" fill="url(#w_gold)" font-family="'Great Vibes', cursive, serif" font-weight="400" font-size="44">&amp;</text>
+  <text x="300" y="535" text-anchor="middle" fill="#27272A" font-family="'Playfair Display', serif" font-weight="700" font-size="52">Lucas</text>
+
+  <line x1="200" y1="575" x2="400" y2="575" stroke="url(#w_gold)" stroke-width="1" opacity="0.6"/>
+
+  <text x="300" y="620" text-anchor="middle" fill="#8C6D37" font-family="'Cinzel', serif" font-weight="600" font-size="18" letter-spacing="4">OCTOBER 14, 2026</text>
+  <text x="300" y="655" text-anchor="middle" fill="#52525B" font-family="'Playfair Display', serif" font-weight="400" font-size="16">AT FOUR O'CLOCK IN THE AFTERNOON</text>
+  <text x="300" y="690" text-anchor="middle" fill="#71717A" font-family="'Playfair Display', serif" font-weight="400" font-size="14">VILLA BELLA VISTA • FLORENCE, ITALY</text>
+
+  <g transform="translate(200, 730)">
+    <rect width="200" height="42" rx="21" fill="none" stroke="url(#w_gold)" stroke-width="1.5"/>
+    <text x="100" y="26" text-anchor="middle" fill="#8C6D37" font-family="'Cinzel', serif" font-weight="600" font-size="13" letter-spacing="3">FORMAL INVITATION</text>
+  </g>
+</svg>

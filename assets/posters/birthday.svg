@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840" width="600" height="840">
+  <defs>
+    <linearGradient id="b_bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCE7F3"/>
+      <stop offset="50%" stop-color="#F3E8FF"/>
+      <stop offset="100%" stop-color="#E0E7FF"/>
+    </linearGradient>
+    <linearGradient id="b_pink" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="b_gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <filter id="b_shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#EC4899" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="600" height="840" rx="24" fill="url(#b_bg)"/>
+
+  <!-- Confetti Elements -->
+  <g opacity="0.75">
+    <rect x="80" y="80" width="12" height="24" rx="3" fill="#EC4899" transform="rotate(25 80 80)"/>
+    <rect x="500" y="90" width="10" height="22" rx="3" fill="#8B5CF6" transform="rotate(-35 500 90)"/>
+    <rect x="120" y="240" width="14" height="8" rx="2" fill="#F59E0B" transform="rotate(45 120 240)"/>
+    <rect x="470" y="260" width="16" height="10" rx="2" fill="#10B981" transform="rotate(-20 470 260)"/>
+    <circle cx="160" cy="140" r="7" fill="#F43F5E"/>
+    <circle cx="430" cy="120" r="8" fill="#3B82F6"/>
+    <circle cx="200" cy="300" r="6" fill="#F59E0B"/>
+    <circle cx="480" cy="400" r="7" fill="#EC4899"/>
+    <path d="M 60 380 Q 90 350 70 320" stroke="#8B5CF6" stroke-width="3" fill="none"/>
+    <path d="M 520 460 Q 550 430 530 400" stroke="#EC4899" stroke-width="3" fill="none"/>
+  </g>
+
+  <!-- 3D Balloons -->
+  <!-- Left Balloon (Pink) -->
+  <g transform="translate(140, 160)">
+    <ellipse cx="60" cy="80" rx="55" ry="70" fill="url(#b_pink)" filter="url(#b_shadow)"/>
+    <ellipse cx="45" cy="55" rx="14" ry="24" fill="#FFFFFF" opacity="0.45" transform="rotate(-25 45 55)"/>
+    <polygon points="56,150 64,150 60,158" fill="#DB2777"/>
+    <path d="M 60 158 Q 50 200 65 240" stroke="#CBD5E1" stroke-width="1.5" fill="none"/>
+  </g>
+
+  <!-- Right Balloon (Gold) -->
+  <g transform="translate(340, 140)">
+    <ellipse cx="60" cy="80" rx="58" ry="74" fill="url(#b_gold)" filter="url(#b_shadow)"/>
+    <ellipse cx="44" cy="52" rx="15" ry="26" fill="#FFFFFF" opacity="0.5" transform="rotate(-25 44 52)"/>
+    <polygon points="56,154 64,154 60,162" fill="#B45309"/>
+    <path d="M 60 162 Q 70 210 55 250" stroke="#CBD5E1" stroke-width="1.5" fill="none"/>
+  </g>
+
+  <!-- Center Balloon (Purple Accent) -->
+  <g transform="translate(240, 90)">
+    <ellipse cx="60" cy="85" rx="64" ry="80" fill="#A855F7" filter="url(#b_shadow)"/>
+    <ellipse cx="45" cy="55" rx="16" ry="28" fill="#FFFFFF" opacity="0.5" transform="rotate(-25 45 55)"/>
+    <polygon points="56,165 64,165 60,173" fill="#7E22CE"/>
+    <path d="M 60 173 Q 65 220 58 280" stroke="#CBD5E1" stroke-width="1.5" fill="none"/>
+  </g>
+
+  <!-- Ribbon Pill Badge -->
+  <rect x="180" y="370" width="240" height="36" rx="18" fill="#FFFFFF" filter="url(#b_shadow)"/>
+  <text x="300" y="393" text-anchor="middle" fill="#8B5CF6" font-family="'Poppins', sans-serif" font-weight="700" font-size="13" letter-spacing="3">LET'S CELEBRATE</text>
+
+  <!-- Typography -->
+  <text x="300" y="460" text-anchor="middle" fill="#1E293B" font-family="'Poppins', sans-serif" font-weight="800" font-size="34" letter-spacing="2">HAPPY</text>
+  <text x="300" y="535" text-anchor="middle" fill="url(#b_pink)" font-family="'Playfair Display', serif" font-weight="900" font-size="64" font-style="italic">Birthday</text>
+
+  <!-- Age Circle -->
+  <g transform="translate(260, 560)">
+    <circle cx="40" cy="40" r="38" fill="url(#b_gold)" filter="url(#b_shadow)"/>
+    <circle cx="40" cy="40" r="32" fill="#FFFFFF"/>
+    <text x="40" y="49" text-anchor="middle" fill="#D97706" font-family="'Poppins', sans-serif" font-weight="900" font-size="28">25</text>
+  </g>
+
+  <text x="300" y="680" text-anchor="middle" fill="#334155" font-family="'Poppins', sans-serif" font-weight="700" font-size="20">SOPHIA'S BIRTHDAY BASH</text>
+  <text x="300" y="710" text-anchor="middle" fill="#64748B" font-family="'Poppins', sans-serif" font-weight="500" font-size="14">SATURDAY, AUGUST 22 • 8:00 PM</text>
+  <text x="300" y="734" text-anchor="middle" fill="#94A3B8" font-family="'Poppins', sans-serif" font-weight="400" font-size="13">SKYLINE ROOFTOP LOUNGE</text>
+
+  <g transform="translate(180, 760)">
+    <rect width="240" height="48" rx="24" fill="url(#b_pink)"/>
+    <text x="120" y="30" text-anchor="middle" fill="#FFFFFF" font-family="'Poppins', sans-serif" font-weight="700" font-size="15" letter-spacing="1">RSVP TODAY</text>
+  </g>
+</svg>

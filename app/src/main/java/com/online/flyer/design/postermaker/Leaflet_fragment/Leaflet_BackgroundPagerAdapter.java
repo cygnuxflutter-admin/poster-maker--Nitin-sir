@@ -24,6 +24,7 @@ public class Leaflet_BackgroundPagerAdapter extends FragmentStatePagerAdapter {
     public Fragment getItem(int position) {
         Leaflet_BackgroundFragment backgroundFragment = new Leaflet_BackgroundFragment();
         Bundle bundle = new Bundle();
+        bundle.putInt("adapter_pos", position);
         bundle.putSerializable("posterDataLists", posterDataLists.get(position).getCategory_list());
         bundle.putString("category_name", posterDataLists.get(position).getCategory_name());
         backgroundFragment.setArguments(bundle);
@@ -32,6 +33,17 @@ public class Leaflet_BackgroundPagerAdapter extends FragmentStatePagerAdapter {
 
     @Override
     public int getItemPosition(@NonNull Object object) {
+        if (object instanceof Fragment) {
+            Bundle args = ((Fragment) object).getArguments();
+            if (args != null) {
+                int pos = args.getInt("adapter_pos", -1);
+                String catName = args.getString("category_name");
+                if (pos >= 0 && pos < posterDataLists.size()
+                        && catName != null && catName.equals(posterDataLists.get(pos).getCategory_name())) {
+                    return POSITION_UNCHANGED;
+                }
+            }
+        }
         return POSITION_NONE;
     }
 

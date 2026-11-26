@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 840" width="600" height="840">
+  <defs>
+    <linearGradient id="t_bg" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7"/>
+      <stop offset="40%" stop-color="#06B6D4"/>
+      <stop offset="70%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <radialGradient id="t_sun" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FEF08A"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0.2"/>
+    </radialGradient>
+  </defs>
+  <rect width="600" height="840" rx="24" fill="url(#t_bg)"/>
+
+  <!-- Golden Sun -->
+  <circle cx="300" cy="400" r="130" fill="url(#t_sun)"/>
+
+  <!-- Tropical Mountains / Ocean Horizon -->
+  <polygon points="0,520 180,440 340,510 500,430 600,500 600,600 0,600" fill="#0C4A6E" opacity="0.6"/>
+  <rect x="0" y="550" width="600" height="290" fill="#0F172A" opacity="0.85"/>
+
+  <!-- Ocean Waves -->
+  <path d="M 0 570 Q 150 560 300 570 Q 450 580 600 570" stroke="#38BDF8" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M 0 600 Q 150 590 300 600 Q 450 610 600 600" stroke="#38BDF8" stroke-width="1.5" fill="none" opacity="0.3"/>
+
+  <!-- Palm Tree Silhouettes -->
+  <g fill="#020617">
+    <!-- Left Palm Trunk -->
+    <path d="M 60 840 Q 90 600 130 420 Q 115 600 100 840 Z"/>
+    <!-- Left Palm Leaves -->
+    <path d="M 130 420 Q 80 370 0 380 Q 70 410 130 420 Z"/>
+    <path d="M 130 420 Q 110 330 40 310 Q 100 370 130 420 Z"/>
+    <path d="M 130 420 Q 160 310 220 330 Q 170 380 130 420 Z"/>
+    <path d="M 130 420 Q 200 370 250 420 Q 180 430 130 420 Z"/>
+  </g>
+
+  <!-- Flight Path -->
+  <path d="M 100 200 Q 300 120 500 160" stroke="#FFFFFF" stroke-width="2" stroke-dasharray="6 6" fill="none" opacity="0.7"/>
+  <!-- Airplane icon -->
+  <g transform="translate(500, 160) rotate(15)">
+    <path d="M 0 0 L -18 -8 L -12 0 L -24 3 L -12 3 L -18 8 Z" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Pill Badge -->
+  <rect x="180" y="60" width="240" height="36" rx="18" fill="#FFFFFF" opacity="0.9"/>
+  <text x="300" y="83" text-anchor="middle" fill="#0284C7" font-family="'Poppins', sans-serif" font-weight="800" font-size="13" letter-spacing="4">PARADISE ESCAPE</text>
+
+  <!-- Typography -->
+  <text x="300" y="160" text-anchor="middle" fill="#FFFFFF" font-family="'Poppins', sans-serif" font-weight="900" font-size="34" letter-spacing="4">DISCOVER</text>
+  <text x="300" y="250" text-anchor="middle" fill="#FEF08A" font-family="'Impact', 'Arial Black', sans-serif" font-size="82" letter-spacing="6">BALI</text>
+
+  <text x="300" y="660" text-anchor="middle" fill="#FFFFFF" font-family="'Poppins', sans-serif" font-weight="700" font-size="22" letter-spacing="2">7 DAYS TROPICAL TOUR</text>
+  <text x="300" y="695" text-anchor="middle" fill="#94A3B8" font-family="'Poppins', sans-serif" font-weight="500" font-size="14">VILLAS • SURFING • TEMPLES • WATERFALLS</text>
+
+  <g transform="translate(180, 740)">
+    <rect width="240" height="52" rx="26" fill="#F59E0B"/>
+    <text x="120" y="33" text-anchor="middle" fill="#0F172A" font-family="'Poppins', sans-serif" font-weight="800" font-size="16" letter-spacing="2">BOOK VACATION</text>
+  </g>
+</svg>

@@ -44,11 +44,19 @@ public class Leaflet_AllCategoriesActivity extends AppCompatActivity {
         View icSearch = findViewById(R.id.ic_search);
         View icSearchClose = findViewById(R.id.ic_search_close);
         android.widget.EditText etSearch = findViewById(R.id.et_search);
+        final android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
+
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
+        final boolean isBannerEnabled = pref.getInt("show_banner_templates", 1) == 1 && pref.getAdsId("BannerAdunitID") != null;
 
         icSearch.setOnClickListener(v -> {
             lyTitle.setVisibility(View.GONE);
             icSearch.setVisibility(View.GONE);
             lySearch.setVisibility(View.VISIBLE);
+            if (rl_ad != null) {
+                rl_ad.setTag("SUPPRESSED");
+                rl_ad.setVisibility(View.GONE);
+            }
             etSearch.requestFocus();
             android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
@@ -61,9 +69,40 @@ public class Leaflet_AllCategoriesActivity extends AppCompatActivity {
             lySearch.setVisibility(View.GONE);
             lyTitle.setVisibility(View.VISIBLE);
             icSearch.setVisibility(View.VISIBLE);
+            if (rl_ad != null) {
+                rl_ad.setTag(null);
+                if (isBannerEnabled && !com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.isKeyboardVisible(Leaflet_AllCategoriesActivity.this)) {
+                    rl_ad.setVisibility(View.VISIBLE);
+                }
+            }
             android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.hideSoftInputFromWindow(etSearch.getWindowToken(), 0);
+            }
+        });
+
+        if (etSearch != null) {
+            etSearch.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus && rl_ad != null) {
+                    rl_ad.setTag("SUPPRESSED");
+                    rl_ad.setVisibility(View.GONE);
+                }
+            });
+        }
+
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_KeyboardUtils.attachKeyboardListener(this, isVisible -> {
+            if (rl_ad != null) {
+                if (isVisible) {
+                    rl_ad.setTag("SUPPRESSED");
+                    rl_ad.setVisibility(View.GONE);
+                } else {
+                    View currentLySearch = findViewById(R.id.ly_search);
+                    boolean isSearchOpen = currentLySearch != null && currentLySearch.getVisibility() == View.VISIBLE;
+                    if (!isSearchOpen && isBannerEnabled) {
+                        rl_ad.setTag(null);
+                        rl_ad.setVisibility(View.VISIBLE);
+                    }
+                }
             }
         });
 
@@ -73,6 +112,10 @@ public class Leaflet_AllCategoriesActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (rl_ad != null && rl_ad.getVisibility() != View.GONE) {
+                    rl_ad.setTag("SUPPRESSED");
+                    rl_ad.setVisibility(View.GONE);
+                }
                 if (allCategoriesList == null) return;
                 filteredCategoriesList.clear();
                 String query = s.toString().toLowerCase().trim();
@@ -95,10 +138,8 @@ public class Leaflet_AllCategoriesActivity extends AppCompatActivity {
         });
 
         // Load Banner Ad
-        android.widget.RelativeLayout rl_ad = findViewById(R.id.rl_ad);
         if (rl_ad != null) {
-            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass pref = new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass(this);
-            if (pref.getInt("show_banner_templates", 1) == 1 && pref.getAdsId("BannerAdunitID") != null) {
+            if (isBannerEnabled) {
                 rl_ad.setVisibility(android.view.View.VISIBLE);
                 if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_NetworkUtils.isNetworkAvailable(this)) {
                     com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_LoadAds.loadAdmobBannerAd(this, rl_ad);
@@ -107,6 +148,19 @@ public class Leaflet_AllCategoriesActivity extends AppCompatActivity {
                 rl_ad.setVisibility(android.view.View.GONE);
             }
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        View lySearch = findViewById(R.id.ly_search);
+        View icSearchClose = findViewById(R.id.ic_search_close);
+        if (lySearch != null && lySearch.getVisibility() == View.VISIBLE) {
+            if (icSearchClose != null) {
+                icSearchClose.performClick();
+                return;
+            }
+        }
+        super.onBackPressed();
     }
 
     private CategoriesAdapter adapter;

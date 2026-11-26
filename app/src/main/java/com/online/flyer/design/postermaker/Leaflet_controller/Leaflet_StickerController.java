@@ -42,7 +42,7 @@ public class Leaflet_StickerController {
     private final Activity activity;
     private final LinearLayout ly_controlsShow, lay_colorOpacity, ly_stk_rotation;
     private final ImageView pick_hue_color;
-    private final RelativeLayout sti_btn_up, sti_btnLeft, sti_btnRight, sti_btnDown, lay_duplicateSticker, lay_str_delete;
+    private final RelativeLayout sti_btn_up, sti_btnLeft, sti_btnRight, sti_btnDown, lay_duplicateSticker, lay_str_delete, lay_stk_lock;
     private final TextView stk_view_rotate;
     private final SeekBar alpha_seekBar;
     private final Leaflet_LineColorPicker hue_seekBar;
@@ -77,6 +77,7 @@ public class Leaflet_StickerController {
         sti_btnDown = activity.findViewById(R.id.sti_btnDown);
         lay_duplicateSticker = activity.findViewById(R.id.lay_duplicateSticker);
         lay_str_delete = activity.findViewById(R.id.lay_str_delete);
+        lay_stk_lock = activity.findViewById(R.id.lay_stk_lock);
 
         alpha_seekBar = activity.findViewById(R.id.alpha_seekBar);
         hue_seekBar = activity.findViewById(R.id.hue_seekBar);
@@ -252,6 +253,20 @@ public class Leaflet_StickerController {
                 resizableStickerView.deleteSticker();
             }
         });
+
+        if (lay_stk_lock != null) {
+            lay_stk_lock.setOnClickListener(v -> {
+                if (resizableStickerView != null) {
+                    resizableStickerView.setDefaultTouchListener(false);
+                    resizableStickerView.setBorderVisibility(false);
+                    if (activity instanceof Leaflet_PosterEditActivity) {
+                        ((Leaflet_PosterEditActivity) activity).hideAllControls();
+                        ((Leaflet_PosterEditActivity) activity).updateLockUi(resizableStickerView);
+                        ((Leaflet_PosterEditActivity) activity).showFloatingPill("🔒 Sticker Locked", R.drawable.ic_poster_center_lock);
+                    }
+                }
+            });
+        }
 
     }
 

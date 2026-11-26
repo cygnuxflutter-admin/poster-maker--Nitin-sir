@@ -13,8 +13,8 @@ android {
         applicationId "com.online.flyer.design.postermaker"
         minSdk 24
         targetSdk 36
-        versionCode 9
-        versionName "2.3"
+        versionCode 12
+        versionName "2.6"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

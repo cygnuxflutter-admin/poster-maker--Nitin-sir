@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.TypedValue;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
@@ -15,6 +16,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -33,6 +35,7 @@ public class Leaflet_OnboardingStep3Activity extends AppCompatActivity {
     private ImageView btnBack;
     private RelativeLayout nativeAdContainer;
     private TextView btnContinue;
+    private ProgressBar progressContinue;
 
     // Step 3 Views (1-Click Sharing Mockup & Viral Simulation)
     private View glowBgStep3;
@@ -79,11 +82,11 @@ public class Leaflet_OnboardingStep3Activity extends AppCompatActivity {
         initViews();
         setupListeners();
 
-        // Setup Ads
-        String customInterId = preferenceClass.getOnboardingInterstitialAdId();
-        interstitialAdManager = new Leaflet_InterstitialAdManager(this, customInterId);
-        if (preferenceClass.isMasterOnboardingInterstitialEnabled() && preferenceClass.isOnboardingInterstitialEnabled(3)) {
-            interstitialAdManager.fetchAdMobAd();
+        // Setup Ads — Use shared MyApplication manager & true JIT load on Continue click (zero onCreate preload waste).
+        if (getApplication() instanceof com.online.flyer.design.postermaker.Leaflet_MyApplication) {
+            interstitialAdManager = ((com.online.flyer.design.postermaker.Leaflet_MyApplication) getApplication()).getInterstitialAdManager();
+        } else {
+            interstitialAdManager = new Leaflet_InterstitialAdManager(this);
         }
 
         loadNativeAd();
@@ -113,6 +116,7 @@ public class Leaflet_OnboardingStep3Activity extends AppCompatActivity {
         btnBack = findViewById(R.id.btn_back);
         nativeAdContainer = findViewById(R.id.native_ad_container);
         btnContinue = findViewById(R.id.btn_continue);
+        progressContinue = findViewById(R.id.progress_continue);
 
         glowBgStep3 = findViewById(R.id.glow_bg_step3);
         cardSharePoster = findViewById(R.id.card_share_poster);
@@ -149,11 +153,89 @@ public class Leaflet_OnboardingStep3Activity extends AppCompatActivity {
         isTransitioning = true;
         if (btnContinue != null) btnContinue.setEnabled(false);
 
-        boolean showInter = preferenceClass.isOnboardingInterstitialEnabled(3);
-        if (showInter && interstitialAdManager != null && interstitialAdManager.isAdmobAdAvailable()) {
-            interstitialAdManager.showInterstitialAd(Leaflet_OnboardingStep3Activity.this, this::finishOnboarding);
+        boolean showInter = preferenceClass.isMasterOnboardingInterstitialEnabled()
+                && preferenceClass.isOnboardingInterstitialEnabled(3)
+                && preferenceClass.canShowInterstitialAd();
+        if (showInter && interstitialAdManager != null) {
+            if (interstitialAdManager.isAdmobAdAvailable()) {
+                interstitialAdManager.showInterstitialAd(Leaflet_OnboardingStep3Activity.this, this::finishOnboarding);
+            } else {
+                showButtonLoaderThenNavigate(this::finishOnboarding);
+            }
         } else {
             finishOnboarding();
+        }
+    }
+
+    /**
+     * JIT Button Loader: Shows a normal white progress spinner directly ON the Continue button.
+     * Keeps screen clean without any dialogs. If the ad loads within 1.5s, shows ad, else navigates forward.
+     */
+    private void showButtonLoaderThenNavigate(Runnable onComplete) {
+        if (isFinishing() || isDestroyed()) {
+            onComplete.run();
+            return;
+        }
+
+        final CharSequence originalText = btnContinue != null ? btnContinue.getText() : "Get Started  →";
+        if (btnContinue != null) {
+            btnContinue.setText("");
+            btnContinue.setEnabled(false);
+        }
+        if (progressContinue != null) {
+            progressContinue.setVisibility(View.VISIBLE);
+        }
+
+        final boolean[] adHandled = {false};
+        final Handler handler = new Handler(Looper.getMainLooper());
+
+        // JIT: Fetch ad only on button click
+        interstitialAdManager.fetchAdMobAd();
+
+        // Timeout: 4 seconds max
+        Runnable timeoutRunnable = () -> {
+            if (!adHandled[0]) {
+                adHandled[0] = true;
+                handler.removeCallbacksAndMessages(null);
+                restoreButtonState(originalText);
+                onComplete.run();
+            }
+        };
+        handler.postDelayed(timeoutRunnable, 4000);
+
+        // Check every 150ms if ad finished loading or failed
+        Runnable checkAdRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (adHandled[0] || isFinishing() || isDestroyed()) {
+                    handler.removeCallbacksAndMessages(null);
+                    return;
+                }
+                if (interstitialAdManager != null && interstitialAdManager.isAdmobAdAvailable()) {
+                    adHandled[0] = true;
+                    handler.removeCallbacksAndMessages(null);
+                    restoreButtonState(originalText);
+                    interstitialAdManager.showInterstitialAd(Leaflet_OnboardingStep3Activity.this, onComplete::run);
+                } else if (interstitialAdManager == null || !interstitialAdManager.isLoading()) {
+                    adHandled[0] = true;
+                    handler.removeCallbacksAndMessages(null);
+                    restoreButtonState(originalText);
+                    onComplete.run();
+                } else {
+                    handler.postDelayed(this, 150);
+                }
+            }
+        };
+        handler.postDelayed(checkAdRunnable, 150);
+    }
+
+    private void restoreButtonState(CharSequence originalText) {
+        if (progressContinue != null) {
+            progressContinue.setVisibility(View.GONE);
+        }
+        if (btnContinue != null) {
+            btnContinue.setText(originalText);
+            btnContinue.setEnabled(true);
         }
     }
 
@@ -197,20 +279,38 @@ public class Leaflet_OnboardingStep3Activity extends AppCompatActivity {
             nativeAdContainer.setVisibility(View.GONE);
             nativeAdContainer.setTag(null);
         } else {
-            int customHeightDp = preferenceClass.getOnboardingNativeAdHeight(3);
+            // Calculate Device-Responsive Height
+            int responsiveHeightDp = getResponsiveOnboardingAdHeight(3);
             ViewGroup.LayoutParams lp = nativeAdContainer.getLayoutParams();
             if (lp != null) {
-                if (customHeightDp > 0) {
-                    int heightPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, customHeightDp, getResources().getDisplayMetrics());
-                    lp.height = heightPx;
-                } else {
-                    lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
-                }
+                int heightPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, responsiveHeightDp, getResources().getDisplayMetrics());
+                lp.height = heightPx;
                 nativeAdContainer.setLayoutParams(lp);
             }
+            nativeAdContainer.setBackgroundResource(R.drawable.bg_preview_ad_card_light);
             nativeAdContainer.setVisibility(View.VISIBLE);
             String customId = preferenceClass.getOnboardingNativeAdId(3);
-            Leaflet_NativeAdUtil.loadOnboardingNativeAd(nativeAdContainer, this, customId);
+            Leaflet_NativeAdUtil.loadOnboardingNativeAd(nativeAdContainer, this, customId, responsiveHeightDp);
+        }
+    }
+
+    private int getResponsiveOnboardingAdHeight(int step) {
+        int rcHeightDp = preferenceClass.getOnboardingNativeAdHeight(step);
+        if (rcHeightDp > 0) {
+            return rcHeightDp; // Directly respect height from Remote Config (e.g. 185, 220, 280)
+        }
+
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        float screenHeightDp = dm.heightPixels / dm.density;
+
+        if (screenHeightDp < 680) {
+            return 110;
+        } else if (screenHeightDp < 760) {
+            return 160;
+        } else if (screenHeightDp < 840) {
+            return 185;
+        } else {
+            return 210;
         }
     }
 
@@ -606,6 +706,7 @@ public class Leaflet_OnboardingStep3Activity extends AppCompatActivity {
         com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logScreenView(this, "onboarding_step3");
         isTransitioning = false;
         if (btnContinue != null) btnContinue.setEnabled(true);
+        restoreButtonState("Get Started  →");
         startScreen3ContinuousFloating();
         startScreen3ShareCycle();
         startButtonPulseAnimation();

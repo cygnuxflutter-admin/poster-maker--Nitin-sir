@@ -7,6 +7,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.google.android.gms.ads.AdValue;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
 public class Leaflet_AnalyticsUtils {
@@ -215,5 +216,34 @@ public class Leaflet_AnalyticsUtils {
         bundle.putString("target", safeStr(target)); // "play_store" (4-5 stars) or "internal_feedback" (1-3 stars)
         bundle.putString("trigger", safeStr(trigger)); // "home", "share", "manual"
         logEvent(context, "rating_dialog_submitted", bundle);
+    }
+    // =========================================================================
+    // 9. AD REVENUE TRACKING (AdMob ILRD to Firebase Analytics)
+    // =========================================================================
+
+    public static void logAdRevenue(@Nullable Context context, @NonNull AdValue adValue, @Nullable String adUnitId, @NonNull String adFormat) {
+        if (context == null || adValue == null) return;
+        try {
+            FirebaseAnalytics analytics = getAnalytics(context);
+            if (analytics != null) {
+                double revenue = adValue.getValueMicros() / 1000000.0;
+                String unitId = (adUnitId != null && !adUnitId.trim().isEmpty()) ? adUnitId.trim() : "unknown";
+
+                Bundle params = new Bundle();
+                params.putString(FirebaseAnalytics.Param.AD_PLATFORM, "admob");
+                params.putString(FirebaseAnalytics.Param.AD_SOURCE, "admob");
+                params.putString(FirebaseAnalytics.Param.AD_FORMAT, safeStr(adFormat));
+                params.putString(FirebaseAnalytics.Param.AD_UNIT_NAME, safeStr(unitId));
+                params.putString("ad_unit_id", safeStr(unitId));
+                params.putString(FirebaseAnalytics.Param.CURRENCY, adValue.getCurrencyCode());
+                params.putDouble(FirebaseAnalytics.Param.VALUE, revenue);
+                params.putInt("precision_type", adValue.getPrecisionType());
+
+                analytics.logEvent(FirebaseAnalytics.Event.AD_IMPRESSION, params);
+                Log.d(TAG, "Logged ILRD Revenue: format=" + adFormat + ", value=" + revenue + " " + adValue.getCurrencyCode() + " [" + unitId + "]");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error logging ad revenue: " + e.getMessage());
+        }
     }
 }

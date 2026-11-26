@@ -134,7 +134,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginBottom="10dp"
         android:layout_below="@+id/top_ly"
-        android:visibility="gone">
+        android:visibility="visible">
 
         <com.online.flyer.design.postermaker.Leaflet_view.Leaflet_PagerSlidingTabStrip
             android:id="@+id/pagerSlidingTabStrip"
@@ -158,7 +158,7 @@
         android:layout_height="match_parent"
         android:layout_above="@+id/ll_bottom_bar"
         android:layout_below="@+id/viewPagerLay"
-        android:visibility="gone">
+        android:visibility="visible">
 
         <androidx.viewpager.widget.ViewPager
             android:id="@+id/viewPager"
@@ -175,7 +175,7 @@
         android:layout_height="match_parent"
         android:layout_below="@+id/top_ly"
         android:layout_above="@id/bottom_ly"
-        android:visibility="visible" />
+        android:visibility="gone" />
 
 
     <LinearLayout

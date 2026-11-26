@@ -5,8 +5,24 @@
         <value>1</value>
     </entry>
     <entry>
+        <key>BannerAdunitID</key>
+        <value>ca-app-pub-7915560734124811/1184742625</value>
+    </entry>
+    <entry>
+        <key>InterstitalAdunitID</key>
+        <value>ca-app-pub-7915560734124811/6506808330</value>
+    </entry>
+    <entry>
         <key>NativeUnitID</key>
         <value>ca-app-pub-7915560734124811/5807970180</value>
+    </entry>
+    <entry>
+        <key>RewardVideoUnitID</key>
+        <value>ca-app-pub-7915560734124811/3188089435</value>
+    </entry>
+    <entry>
+        <key>google_Rw_ID</key>
+        <value>ca-app-pub-7915560734124811/4221969500</value>
     </entry>
     <entry>
         <key>show_preview_native</key>
@@ -106,27 +122,106 @@
         <key>undo_redo</key>
         <value>{
   "enabled": true,
-  "free_actions_allowed": 0,
+  "free_actions_allowed": 3,
   "ad_type": "reward",
-  "ad_id": "ca-app-pub-7915560734124811/5807970180"
+  "ad_id": "ca-app-pub-7915560734124811/3188089435"
 }</value>
+    </entry>
+    <entry>
+        <key>editor_undo_redo_ad_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>editor_free_undo_redo_allowed</key>
+        <value>3</value>
+    </entry>
+    <entry>
+        <key>editor_undo_redo_ad_type</key>
+        <value>reward</value>
+    </entry>
+    <entry>
+        <key>editor_undo_redo_ad_id</key>
+        <value>ca-app-pub-7915560734124811/3188089435</value>
+    </entry>
+    <entry>
+        <key>reset</key>
+        <value>{
+  "enabled": true,
+  "free_actions_allowed": 1,
+  "ad_type": "reward",
+  "ad_id": "ca-app-pub-7915560734124811/3188089435"
+}</value>
+    </entry>
+    <entry>
+        <key>editor_reset_ad_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>editor_free_reset_allowed</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>editor_reset_ad_type</key>
+        <value>reward</value>
+    </entry>
+    <entry>
+        <key>editor_reset_ad_id</key>
+        <value>ca-app-pub-7915560734124811/3188089435</value>
+    </entry>
+    <entry>
+        <key>reset_ad_enabled</key>
+        <value>true</value>
+    </entry>
+    <entry>
+        <key>reset_free_actions</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>reset_ad_type</key>
+        <value>reward</value>
+    </entry>
+    <entry>
+        <key>reset_ad_id</key>
+        <value>ca-app-pub-7915560734124811/3188089435</value>
     </entry>
     <entry>
         <key>reward_timer</key>
         <value>{
   "enabled": true,
   "timer_seconds": 50,
-  "ad_id": "ca-app-pub-7915560734124811/5807970180"
+  "ad_id": "ca-app-pub-7915560734124811/3188089435"
 }</value>
+    </entry>
+    <entry>
+        <key>reward_timer_minutes</key>
+        <value>0</value>
+    </entry>
+    <entry>
+        <key>reward_timer_seconds</key>
+        <value>50</value>
     </entry>
     <entry>
         <key>interstitial_ad</key>
         <value>{
   "enabled": true,
   "count": 4,
-  "edit_count": 3,
+  "cooldown_seconds": 60,
+  "daily_cap": 7,
+  "hourly_cap": 3,
   "ad_id": "ca-app-pub-7915560734124811/6506808330"
 }</value>
+    </entry>
+    <entry>
+        <key>interstitial_cooldown_seconds</key>
+        <value>60</value>
+    </entry>
+    <entry>
+        <key>interstitial_daily_cap</key>
+        <value>7</value>
+    </entry>
+    <entry>
+        <key>interstitial_hourly_cap</key>
+        <value>3</value>
     </entry>
     <entry>
         <key>interstitial_ad_count</key>
@@ -139,10 +234,6 @@
     <entry>
         <key>interstitialAdStatus</key>
         <value>4</value>
-    </entry>
-    <entry>
-        <key>EditScreenAdCount</key>
-        <value>3</value>
     </entry>
     <entry>
         <key>loading_screen</key>
@@ -178,10 +269,11 @@
         <value>{
   "enabled": true,
   "ad_id": "ca-app-pub-7915560734124811/1238169780",
-  "cooldown_seconds": 2,
+  "min_background_seconds": 5,
+  "cooldown_seconds": 30,
   "gallery_cooldown_seconds": 0,
-  "suppress_on_intent": false,
-  "suppress_on_ad_click": false
+  "suppress_on_intent": true,
+  "suppress_on_ad_click": true
 }</value>
     </entry>
     <entry>
@@ -189,7 +281,7 @@
         <value>{
   "banner_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-7915560734124811/5807970180"
+    "ad_id": "ca-app-pub-7915560734124811/1184742625"
   },
   "preview_native_ad": {
     "enabled": true,
@@ -212,7 +304,7 @@
         <value>{
   "banner_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-7915560734124811/5807970180"
+    "ad_id": "ca-app-pub-7915560734124811/1184742625"
   },
   "preview_native_ad": {
     "enabled": true,
@@ -235,7 +327,7 @@
         <value>{
   "banner_ad": {
     "enabled": true,
-    "ad_id": "ca-app-pub-7915560734124811/5807970180"
+    "ad_id": "ca-app-pub-7915560734124811/1184742625"
   }
 }</value>
     </entry>
@@ -255,6 +347,18 @@
     </entry>
     <entry>
         <key>show_native_exit</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_image_dialog_native</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_save_dialog_native</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>show_leave_dialog_native</key>
         <value>1</value>
     </entry>
     <entry>
@@ -347,11 +451,16 @@
   "enabled": true,
   "free_downloads": 0,
   "remove_watermark": true,
+  "watermark_remove_popup_enabled": true,
   "ad_type": "reward",
   "native_ad": {
     "enabled": true
   }
 }</value>
+    </entry>
+    <entry>
+        <key>watermark_remove_popup_enabled</key>
+        <value>true</value>
     </entry>
     <entry>
         <key>download_reward_enabled</key>
@@ -378,6 +487,18 @@
         <value>220</value>
     </entry>
     <entry>
+        <key>onboarding_1_interstitial</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>onboarding_2_interstitial</key>
+        <value>1</value>
+    </entry>
+    <entry>
+        <key>onboarding_3_interstitial</key>
+        <value>1</value>
+    </entry>
+    <entry>
         <key>onboarding</key>
         <value>{
   "is_interstitial_enabled": true,
@@ -402,7 +523,7 @@
     "show_native_ad": true,
     "height": 220,
     "ad_type": "medium",
-    "next_interstitial": false
+    "next_interstitial": true
   }
 }</value>
     </entry>

@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions;
 import com.bumptech.glide.request.RequestListener;
@@ -64,17 +65,19 @@ public class Leaflet_PopularPosterAdapter extends RecyclerView.Adapter<Leaflet_P
         Leaflet_PopularPoster poster = posterList.get(position);
 
         if (!TextUtils.isEmpty(poster.getImageUrl())) {
-            // API image available: start shimmer skeleton until image arrives
             if (holder.posterPlaceholder != null) holder.posterPlaceholder.setVisibility(View.GONE);
+            if (holder.posterImage != null) holder.posterImage.setVisibility(View.VISIBLE);
             if (holder.posterShimmer != null) {
                 holder.posterShimmer.setVisibility(View.VISIBLE);
                 holder.posterShimmer.startShimmer();
             }
-            holder.posterImage.setVisibility(View.INVISIBLE);
 
             Glide.with(context)
                     .load(poster.getImageUrl())
+                    .priority(com.bumptech.glide.Priority.HIGH)
                     .transition(DrawableTransitionOptions.withCrossFade(250))
+                    .diskCacheStrategy(DiskCacheStrategy.ALL)
+                    .skipMemoryCache(false)
                     .centerCrop()
                     .listener(new RequestListener<Drawable>() {
                         @Override
@@ -95,7 +98,9 @@ public class Leaflet_PopularPosterAdapter extends RecyclerView.Adapter<Leaflet_P
                                 holder.posterShimmer.stopShimmer();
                                 holder.posterShimmer.setVisibility(View.GONE);
                             }
-                            holder.posterImage.setVisibility(View.VISIBLE);
+                            if (holder.posterImage != null) {
+                                holder.posterImage.setVisibility(View.VISIBLE);
+                            }
                             return false;
                         }
                     })
@@ -106,7 +111,9 @@ public class Leaflet_PopularPosterAdapter extends RecyclerView.Adapter<Leaflet_P
                 holder.posterShimmer.stopShimmer();
                 holder.posterShimmer.setVisibility(View.GONE);
             }
-            holder.posterImage.setVisibility(View.GONE);
+            if (holder.posterImage != null) {
+                holder.posterImage.setVisibility(View.GONE);
+            }
             if (holder.posterPlaceholder != null) {
                 holder.posterPlaceholder.setVisibility(View.VISIBLE);
             }

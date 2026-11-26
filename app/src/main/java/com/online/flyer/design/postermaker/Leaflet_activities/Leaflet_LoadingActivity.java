@@ -505,8 +505,9 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
         // Show container with shimmer while waiting for native ad
         setNativeAdContainerVisible(true);
 
+        final String finalAdUnitId = adUnitId;
         try {
-            AdLoader.Builder builder = new AdLoader.Builder(this, adUnitId);
+            AdLoader.Builder builder = new AdLoader.Builder(this, finalAdUnitId);
 
             builder.forNativeAd(nativeAd -> {
                 if (isFinishing() || isDestroyed()) {
@@ -518,6 +519,11 @@ public class Leaflet_LoadingActivity extends AppCompatActivity {
                     loadedNativeAd.destroy();
                 }
                 loadedNativeAd = nativeAd;
+                nativeAd.setOnPaidEventListener(adValue -> {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logAdRevenue(
+                            Leaflet_LoadingActivity.this, adValue, finalAdUnitId, "native"
+                    );
+                });
 
                 NativeAdView adView = (NativeAdView) LayoutInflater.from(this).inflate(R.layout.layout_loading_native_ad, null);
                 populateNativeAd(nativeAd, adView);

@@ -77,7 +77,7 @@
                             android:layout_centerVertical="true"
                             android:padding="@dimen/_5sdp"
                             android:src="@drawable/leaflet_ic_unlock"
-                            app:tint="@color/selected" />
+                            app:tint="#9CA3AF" />
 
                     </RelativeLayout>
 

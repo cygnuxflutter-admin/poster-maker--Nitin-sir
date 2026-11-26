@@ -7,11 +7,12 @@ public class PreviewItem implements Serializable {
     private String title;
     private String subtitle;
     private String imageUrl;
-    private String ratio; // e.g. "1:1", "4:5", "9:16", "16:9"
+    private String ratio; // e.g. "3:4", "4:5", "9:16", "16:9", "1:1"
     private int catId;
     private int postId;
     private boolean isPremium;
     private boolean isPreviewUnlocked = false;
+    private boolean isEditUnlocked = false;
 
     public PreviewItem() {
     }
@@ -33,7 +34,11 @@ public class PreviewItem implements Serializable {
         String id = String.valueOf(img.getPost_id());
         String title = catName != null && !catName.isEmpty() ? catName : "Poster Design";
         String subtitle = "Template #" + img.getPost_id();
-        return new PreviewItem(id, title, subtitle, img.getPost_thumb(), img.getRatio(), img.getCat_id(), img.getPost_id(), isPremium);
+        String r = img.getRatio();
+        if (r == null || r.trim().isEmpty() || "null".equalsIgnoreCase(r)) {
+            r = "3:4"; // Default standard flyer portrait proportion
+        }
+        return new PreviewItem(id, title, subtitle, img.getPost_thumb(), r, img.getCat_id(), img.getPost_id(), isPremium);
     }
 
     public String getId() {
@@ -69,7 +74,7 @@ public class PreviewItem implements Serializable {
     }
 
     public String getRatio() {
-        return ratio != null ? ratio : "1:1";
+        return ratio != null ? ratio : "";
     }
 
     public void setRatio(String ratio) {
@@ -106,5 +111,13 @@ public class PreviewItem implements Serializable {
 
     public void setPreviewUnlocked(boolean previewUnlocked) {
         this.isPreviewUnlocked = previewUnlocked;
+    }
+
+    public boolean isEditUnlocked() {
+        return isEditUnlocked;
+    }
+
+    public void setEditUnlocked(boolean editUnlocked) {
+        this.isEditUnlocked = editUnlocked;
     }
 }

@@ -39,8 +39,10 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.online.flyer.design.postermaker.Leaflet_MyApplication;
 import com.online.flyer.design.postermaker.Leaflet_adapter.Leaflet_HeroBannerAdapter;
+import com.online.flyer.design.postermaker.Leaflet_adapter.Leaflet_HomeCategoryAdapter;
 import com.online.flyer.design.postermaker.Leaflet_adapter.Leaflet_PopularPosterAdapter;
 import com.online.flyer.design.postermaker.Leaflet_models.Leaflet_HeroBanner;
+import com.online.flyer.design.postermaker.Leaflet_models.Leaflet_HomeCategory;
 import com.online.flyer.design.postermaker.Leaflet_models.Leaflet_PopularPoster;
 import com.online.flyer.design.postermaker.R;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_MaterialDialogUtils;
@@ -96,6 +98,12 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             "Sale & Offers \uD83D\uDD25",
             "Social Media Posts \uD83D\uDCF1"
     };
+
+    // Home Browse by Category (Backend-driven with fallback defaults)
+    private RecyclerView homeCategoriesRv;
+    private Leaflet_HomeCategoryAdapter homeCategoryAdapter;
+    private final List<Leaflet_HomeCategory> homeCategoryList = new ArrayList<>();
+    private static final String KEY_CACHE_HOME_CATEGORIES = "home_categories_cache_json";
 
     // Popular Posters
     private RecyclerView popularPostersRv;
@@ -281,65 +289,9 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             }
         });
 
-        // Category click listener
-        android.view.View.OnClickListener catClickListener = v -> {
-            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick()) return;
-            String catName = "";
-            int id = v.getId();
-            if (id == R.id.cat_festival) catName = "Festival";
-            else if (id == R.id.cat_wedding) catName = "Wedding";
-            else if (id == R.id.cat_sale) catName = "Sale";
-            else if (id == R.id.cat_business) catName = "Business";
-            else if (id == R.id.cat_birthday) catName = "Birthday";
-            else if (id == R.id.cat_food) catName = "Food";
-            else if (id == R.id.cat_education) catName = "Education";
-            else if (id == R.id.cat_event) catName = "Party";
-
-            String finalCatName = catName;
-            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logCategorySelected(this, finalCatName, "", "home_category");
-            Leaflet_MyApplication.showInterstitialAd(this, () -> {
-                Intent intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
-                intent.putExtra("category_name", finalCatName);
-                startActivity(intent);
-            });
-        };
-
-        int[] catIds = {
-            R.id.cat_festival, R.id.cat_wedding, R.id.cat_sale,
-            R.id.cat_business, R.id.cat_birthday, R.id.cat_food,
-            R.id.cat_education, R.id.cat_event
-        };
-
-        for (int catId : catIds) {
-            View catView = findViewById(catId);
-            if (catView != null) {
-                catView.setOnClickListener(catClickListener);
-                applyTouchBounceEffect(catView);
-            }
-        }
-
-        // More & See All click listener
-        android.view.View.OnClickListener moreClickListener = v -> {
-            if (com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick()) return;
-            Leaflet_MyApplication.showInterstitialAd(this, () -> {
-                Intent intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
-                intent.putExtra("show_all_categories", true);
-                startActivity(intent);
-            });
-        };
-
-        // Note: category_see_all removed in favor of modern cat_more tile in scrollview
-
-        View catMoreView = findViewById(R.id.cat_more);
-        if (catMoreView != null) {
-            catMoreView.setOnClickListener(moreClickListener);
-            applyTouchBounceEffect(catMoreView);
-        }
-
-        // Trigger entrance animations for categories
+        // Setup Browse by Category (Backend-driven with Default Fallback), Hero Banner, Popular Posters
+        setupHomeCategories();
         animateCategoryEntrance();
-
-        // Setup Hero Banner and Popular Posters
         setupHeroBanner();
         setupPopularPosters();
     }
@@ -375,33 +327,243 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
     }
 
     private void animateCategoryEntrance() {
-        LinearLayout categoryContainer = findViewById(R.id.category_container);
-        if (categoryContainer == null) return;
+        if (homeCategoriesRv == null) return;
+        homeCategoriesRv.setAlpha(0f);
+        homeCategoriesRv.setTranslationX(40f);
+        homeCategoriesRv.animate()
+                .alpha(1f)
+                .translationX(0f)
+                .setDuration(350)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
+                .start();
+    }
 
-        for (int i = 0; i < categoryContainer.getChildCount(); i++) {
-            View child = categoryContainer.getChildAt(i);
-            child.setAlpha(0f);
-            child.setTranslationX(60f);
-            child.animate()
-                    .alpha(1f)
-                    .translationX(0f)
-                    .setDuration(350)
-                    .setStartDelay(i * 35L)
-                    .setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f))
-                    .start();
+    // ===================== BROWSE BY CATEGORY (BACKEND + FALLBACK) =====================
+    private void setupHomeCategories() {
+        homeCategoriesRv = findViewById(R.id.home_categories_rv);
+        if (homeCategoriesRv == null) return;
+
+        homeCategoriesRv.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
+        homeCategoryList.clear();
+        homeCategoryList.addAll(buildDefaultHomeCategories());
+
+        homeCategoryAdapter = new Leaflet_HomeCategoryAdapter(this, homeCategoryList);
+        homeCategoryAdapter.setOnCategoryClickListener((category, position) -> handleHomeCategoryClick(category));
+        homeCategoriesRv.setAdapter(homeCategoryAdapter);
+
+        loadHomeCategoriesFromApi();
+    }
+
+    private List<Leaflet_HomeCategory> buildDefaultHomeCategories() {
+        List<Leaflet_HomeCategory> defaults = new ArrayList<>();
+        defaults.add(new Leaflet_HomeCategory("1", "Festival", "", "", "", "template_category", "", "Festival", "", R.drawable.bg_cat_tile_festival, R.drawable.ic_cat_diya_festival, false));
+        defaults.add(new Leaflet_HomeCategory("2", "Wedding", "", "", "", "template_category", "", "Wedding", "", R.drawable.bg_cat_tile_wedding, R.drawable.ic_cat_rings_wedding, false));
+        defaults.add(new Leaflet_HomeCategory("3", "Sale", "", "", "", "template_category", "", "Sale", "", R.drawable.bg_cat_tile_sale, R.drawable.ic_cat_tag_sale, false));
+        defaults.add(new Leaflet_HomeCategory("4", "Business", "", "", "", "template_category", "", "Business", "", R.drawable.bg_cat_tile_business, R.drawable.ic_cat_bag_business, false));
+        defaults.add(new Leaflet_HomeCategory("5", "Birthday", "", "", "", "template_category", "", "Birthday", "", R.drawable.bg_cat_tile_birthday, R.drawable.ic_cat_cake_birthday, false));
+        defaults.add(new Leaflet_HomeCategory("6", "Food", "", "", "", "template_category", "", "Food", "", R.drawable.bg_cat_tile_food, R.drawable.ic_cat_burger_food, false));
+        defaults.add(new Leaflet_HomeCategory("7", "Education", "", "", "", "template_category", "", "Education", "", R.drawable.bg_cat_tile_education, R.drawable.ic_cat_cap_education, false));
+        defaults.add(new Leaflet_HomeCategory("8", "Party", "", "", "", "template_category", "", "Party", "", R.drawable.bg_cat_tile_event, R.drawable.ic_cat_party_event, false));
+        defaults.add(createMoreHomeCategoryTile());
+        return defaults;
+    }
+
+    private Leaflet_HomeCategory createMoreHomeCategoryTile() {
+        return new Leaflet_HomeCategory("more", "More", "", "", "", "all_templates", "", "", "", R.drawable.bg_cat_tile_more, R.drawable.ic_cat_more_grid, true);
+    }
+
+    private void loadHomeCategoriesFromApi() {
+        String cachedJson = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance()
+                .getCache(this, KEY_CACHE_HOME_CATEGORIES);
+        if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+            parseAndDisplayHomeCategories(cachedJson);
+        }
+        fetchHomeCategoriesFromApi();
+    }
+
+    private void parseAndDisplayHomeCategories(String jsonString) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            if (!jsonObject.has("data")) return;
+            JSONArray dataArray = jsonObject.optJSONArray("data");
+            if (dataArray == null || dataArray.length() == 0) return;
+
+            List<Leaflet_HomeCategory> parsed = new ArrayList<>();
+            boolean hasMoreTile = false;
+            for (int i = 0; i < dataArray.length(); i++) {
+                JSONObject obj = dataArray.optJSONObject(i);
+                if (obj == null) continue;
+                if (obj.has("is_active") && obj.optInt("is_active", 1) == 0) continue;
+
+                String id = obj.optString("id", String.valueOf(i + 1));
+                String name = obj.optString("name", obj.optString("cat_name", "")).trim();
+                if (name.isEmpty()) continue;
+
+                String iconUrl = obj.optString("icon_url", "").trim();
+                String bgColor = obj.optString("bg_color", "").trim();
+                String borderColor = obj.optString("border_color", "").trim();
+                String actionType = obj.optString("action_type", "template_category").trim();
+                String catId = obj.optString("cat_id", "").trim();
+                String catName = obj.optString("cat_name", name).trim();
+                String actionUrl = obj.optString("action_url", "").trim();
+
+                boolean isMore = "all_templates".equalsIgnoreCase(actionType) && "more".equalsIgnoreCase(name);
+                if (isMore) hasMoreTile = true;
+
+                int localBg = resolveDefaultBgRes(name);
+                int localIcon = resolveDefaultIconRes(name);
+
+                parsed.add(new Leaflet_HomeCategory(id, name, iconUrl, bgColor, borderColor,
+                        actionType, catId, catName, actionUrl, localBg, localIcon, isMore));
+            }
+
+            if (parsed.isEmpty()) return;
+            if (!hasMoreTile) {
+                parsed.add(createMoreHomeCategoryTile());
+            }
+
+            if (homeCategoryAdapter != null) {
+                homeCategoryAdapter.updateData(parsed);
+            }
+            for (Leaflet_HomeCategory cat : parsed) {
+                if (cat.getIconUrl() != null && !cat.getIconUrl().isEmpty()) {
+                    try {
+                        com.bumptech.glide.Glide.with(getApplicationContext())
+                                .load(cat.getIconUrl())
+                                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                                .preload();
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.e("HomeCategories", "Error parsing home categories: " + e.getMessage());
+        }
+    }
+
+    private void fetchHomeCategoriesFromApi() {
+        String requestUrl = "https://cygnux.in/postermaker/api/v1/poster/home_categories";
+        String key = preferenceClass.getDataType("field_0");
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, requestUrl, response -> {
+            try {
+                if (response != null && response.contains("\"data\"")) {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance()
+                            .saveCache(this, KEY_CACHE_HOME_CATEGORIES, response);
+                    parseAndDisplayHomeCategories(response);
+                }
+            } catch (Exception e) {
+                android.util.Log.e("HomeCategories", "Parse exception: " + e.getMessage());
+            }
+        }, error -> android.util.Log.d("HomeCategories", "Using default/cached categories (" + error.getMessage() + ")")) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> postMap = new HashMap<>();
+                postMap.put("device", "1");
+                if (key != null) postMap.put("key", key);
+                postMap.put("app_id", "2");
+                return postMap;
+            }
+        };
+        stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(20000, 1, com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+        Volley.newRequestQueue(this).add(stringRequest);
+    }
+
+    private void handleHomeCategoryClick(Leaflet_HomeCategory category) {
+        if (category == null || com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_ClickUtils.isFastDoubleClick()) {
+            return;
         }
 
-        // Gentle pulse on "More" after entrance finishes
-        View catMore = findViewById(R.id.cat_more);
-        if (catMore != null) {
-            new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                catMore.animate()
-                        .scaleX(1.08f)
-                        .scaleY(1.08f)
-                        .setDuration(220)
-                        .withEndAction(() -> catMore.animate().scaleX(1.0f).scaleY(1.0f).setDuration(220).start())
-                        .start();
-            }, 550);
+        if (category.isMoreTile()) {
+            Leaflet_MyApplication.showInterstitialAd(this, () -> {
+                Intent intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
+                intent.putExtra("show_all_categories", true);
+                startActivity(intent);
+            });
+            return;
+        }
+
+        String actionType = category.getActionType() != null ? category.getActionType().trim().toLowerCase() : "template_category";
+        String catId = category.getCatId() != null ? category.getCatId().trim() : "";
+        String catName = (category.getCatName() != null && !category.getCatName().trim().isEmpty())
+                ? category.getCatName().trim()
+                : (category.getName() != null ? category.getName().trim() : "");
+        String actionUrl = category.getActionUrl() != null ? category.getActionUrl().trim() : "";
+
+        // Support hero-style "category/<id>" actionUrl fallback
+        if (catId.isEmpty() && actionUrl.startsWith("category/")) {
+            catId = actionUrl.replace("category/", "").trim();
+        }
+
+        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_AnalyticsUtils.logCategorySelected(
+                this, catName, catId, "home_category");
+
+        final String finalCatId = catId;
+        final String finalCatName = catName;
+
+        if ("url".equals(actionType) || actionUrl.startsWith("http://") || actionUrl.startsWith("https://")) {
+            if (!actionUrl.isEmpty()) {
+                try {
+                    com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_AppOpenManager.setExternalIntentActive(true);
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(actionUrl)));
+                } catch (Exception ignored) {}
+            }
+            return;
+        }
+
+        Leaflet_MyApplication.showInterstitialAd(this, () -> {
+            Intent intent;
+            if ("background_category".equals(actionType) || "all_backgrounds".equals(actionType)) {
+                intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_BackgroundSelectionActivity.class);
+                if ("all_backgrounds".equals(actionType)) {
+                    intent.putExtra("show_all_categories", true);
+                } else {
+                    if (!finalCatId.isEmpty()) intent.putExtra("category_id", finalCatId);
+                    if (!finalCatName.isEmpty()) intent.putExtra("category_name", finalCatName);
+                }
+            } else if ("create_custom".equals(actionType)) {
+                intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_CreateCustomActivity.class);
+            } else if ("my_creations".equals(actionType)) {
+                intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_MyCreationActivity.class);
+            } else if ("all_templates".equals(actionType)) {
+                intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
+                intent.putExtra("show_all_categories", true);
+            } else {
+                intent = new Intent(Leaflet_PosterMainActivity.this, Leaflet_TemplateSelectionActivity.class);
+                if (!finalCatId.isEmpty()) intent.putExtra("category_id", finalCatId);
+                if (!finalCatName.isEmpty()) intent.putExtra("category_name", finalCatName);
+            }
+            startActivity(intent);
+        });
+    }
+
+    private int resolveDefaultBgRes(String name) {
+        if (name == null) return R.drawable.bg_cat_tile_festival;
+        switch (name.trim().toLowerCase()) {
+            case "wedding": return R.drawable.bg_cat_tile_wedding;
+            case "sale": return R.drawable.bg_cat_tile_sale;
+            case "business": return R.drawable.bg_cat_tile_business;
+            case "birthday": return R.drawable.bg_cat_tile_birthday;
+            case "food": return R.drawable.bg_cat_tile_food;
+            case "education": return R.drawable.bg_cat_tile_education;
+            case "party":
+            case "event": return R.drawable.bg_cat_tile_event;
+            case "more": return R.drawable.bg_cat_tile_more;
+            default: return R.drawable.bg_cat_tile_festival;
+        }
+    }
+
+    private int resolveDefaultIconRes(String name) {
+        if (name == null) return R.drawable.ic_cat_diya_festival;
+        switch (name.trim().toLowerCase()) {
+            case "wedding": return R.drawable.ic_cat_rings_wedding;
+            case "sale": return R.drawable.ic_cat_tag_sale;
+            case "business": return R.drawable.ic_cat_bag_business;
+            case "birthday": return R.drawable.ic_cat_cake_birthday;
+            case "food": return R.drawable.ic_cat_burger_food;
+            case "education": return R.drawable.ic_cat_cap_education;
+            case "party":
+            case "event": return R.drawable.ic_cat_party_event;
+            case "more": return R.drawable.ic_cat_more_grid;
+            default: return R.drawable.ic_cat_diya_festival;
         }
     }
 
@@ -451,10 +613,13 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
 
         // Set starting position to middle of the fake infinite list
         if (heroBannerAdapter.getRealCount() > 0) {
-            heroBannerViewPager.setCurrentItem(heroBannerAdapter.getStartPosition(), false);
-            // Setup dot indicators
-            setupBannerIndicators(heroBannerAdapter.getRealCount());
-            updateBannerIndicator(heroBannerAdapter.getStartPosition() % heroBannerAdapter.getRealCount());
+            heroBannerViewPager.post(() -> {
+                if (heroBannerViewPager != null && heroBannerAdapter != null && heroBannerAdapter.getRealCount() > 0) {
+                    heroBannerViewPager.setCurrentItem(heroBannerAdapter.getStartPosition(), false);
+                    setupBannerIndicators(heroBannerAdapter.getRealCount());
+                    updateBannerIndicator(heroBannerAdapter.getStartPosition() % heroBannerAdapter.getRealCount());
+                }
+            });
         }
 
         // Page change callback for indicators
@@ -553,7 +718,11 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             JSONObject jsonObject = new JSONObject(jsonString);
             if (jsonObject.has("data")) {
                 JSONArray dataArray = jsonObject.getJSONArray("data");
-                if (dataArray.length() == 0) return;
+                if (dataArray.length() == 0) {
+                    com.facebook.shimmer.ShimmerFrameLayout shimmer = findViewById(R.id.hero_banner_shimmer);
+                    if (shimmer != null) shimmer.stopShimmer();
+                    return;
+                }
                 heroBannerList.clear();
                 for (int i = 0; i < dataArray.length(); i++) {
                     JSONObject bannerObj = dataArray.getJSONObject(i);
@@ -564,9 +733,25 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
                 if (heroBannerAdapter != null) {
                     heroBannerAdapter.updateData(heroBannerList);
                     if (heroBannerAdapter.getRealCount() > 0) {
-                        heroBannerViewPager.setCurrentItem(heroBannerAdapter.getStartPosition(), false);
-                        setupBannerIndicators(heroBannerAdapter.getRealCount());
-                        updateBannerIndicator(heroBannerAdapter.getStartPosition() % heroBannerAdapter.getRealCount());
+                        heroBannerViewPager.post(() -> {
+                            if (heroBannerViewPager != null && heroBannerAdapter != null && heroBannerAdapter.getRealCount() > 0) {
+                                heroBannerViewPager.setCurrentItem(heroBannerAdapter.getStartPosition(), false);
+                                setupBannerIndicators(heroBannerAdapter.getRealCount());
+                                updateBannerIndicator(heroBannerAdapter.getStartPosition() % heroBannerAdapter.getRealCount());
+                            }
+                        });
+                    }
+                }
+
+                // Preload hero banner images into Glide disk cache
+                for (Leaflet_HeroBanner banner : heroBannerList) {
+                    if (banner.getImageUrl() != null && !banner.getImageUrl().trim().isEmpty()) {
+                        try {
+                            com.bumptech.glide.Glide.with(getApplicationContext())
+                                    .load(banner.getImageUrl())
+                                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                                    .preload();
+                        } catch (Exception ignored) {}
                     }
                 }
                 com.facebook.shimmer.ShimmerFrameLayout shimmer = findViewById(R.id.hero_banner_shimmer);
@@ -601,6 +786,10 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             }
         }, error -> {
             android.util.Log.e("HeroBanner", "Error in hero banner API: " + error.getMessage());
+            com.facebook.shimmer.ShimmerFrameLayout shimmer = findViewById(R.id.hero_banner_shimmer);
+            if (shimmer != null) {
+                shimmer.stopShimmer();
+            }
         }) {
             @Override
             protected Map<String, String> getParams() {
@@ -611,6 +800,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
                 return postMap;
             }
         };
+        stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(20000, 2, com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         Volley.newRequestQueue(this).add(stringRequest);
     }
 
@@ -683,9 +873,12 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
     }
 
     // ===================== POPULAR POSTERS SETUP =====================
+    private static final String KEY_CACHE_POPULAR_POSTERS = "popular_posters_cache_json";
+
     private void setupPopularPosters() {
         popularPostersRv = findViewById(R.id.popular_posters_rv);
         com.facebook.shimmer.ShimmerFrameLayout popShimmer = findViewById(R.id.popular_shimmer);
+
         if (popShimmer != null) {
             popShimmer.startShimmer();
             popShimmer.setVisibility(View.VISIBLE);
@@ -698,12 +891,11 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false);
         popularPostersRv.setLayoutManager(layoutManager);
 
-        // TODO: Replace with API call to fetch popular posters from admin panel
-        // Call API to fetch popular posters from admin panel
-        loadPopularPostersFromApi();
-
         popularPosterAdapter = new Leaflet_PopularPosterAdapter(this, popularPosterList);
         popularPostersRv.setAdapter(popularPosterAdapter);
+
+        // Call API to fetch popular posters from admin panel (with cache-first architecture)
+        loadPopularPostersFromApi();
 
         // Poster click listener
         popularPosterAdapter.setOnPosterClickListener((poster, position) -> {
@@ -736,6 +928,67 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
     }
 
     private void loadPopularPostersFromApi() {
+        String cachedJson = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().getCache(this, KEY_CACHE_POPULAR_POSTERS);
+        if (cachedJson != null && !cachedJson.trim().isEmpty()) {
+            android.util.Log.d("PopularPoster", "Loading popular posters instantly from cache!");
+            parseAndDisplayPopularPosters(cachedJson, true);
+            fetchPopularPostersFromApi(true);
+        } else {
+            android.util.Log.d("PopularPoster", "No cached popular posters, fetching from API...");
+            fetchPopularPostersFromApi(false);
+        }
+    }
+
+    private void parseAndDisplayPopularPosters(String jsonString, boolean fromCache) {
+        try {
+            JSONObject jsonObject = new JSONObject(jsonString);
+            if (jsonObject.has("data")) {
+                JSONArray dataArray = jsonObject.getJSONArray("data");
+                if (dataArray.length() == 0) {
+                    com.facebook.shimmer.ShimmerFrameLayout popShimmer = findViewById(R.id.popular_shimmer);
+                    if (popShimmer != null) popShimmer.stopShimmer();
+                    return;
+                }
+                popularPosterList.clear();
+                for (int i = 0; i < dataArray.length(); i++) {
+                    JSONObject posterObj = dataArray.getJSONObject(i);
+                    String bannerImage = posterObj.optString("banner_image", "");
+                    String catName = posterObj.optString("cat_name", "");
+                    String catId = posterObj.optString("cat_id", "");
+                    popularPosterList.add(new Leaflet_PopularPoster(catId, "", catName, bannerImage));
+                }
+                if (popularPosterAdapter != null) {
+                    popularPosterAdapter.updateData(popularPosterList);
+                }
+
+                // Preload popular poster images into Glide disk cache
+                for (Leaflet_PopularPoster poster : popularPosterList) {
+                    if (poster.getImageUrl() != null && !poster.getImageUrl().trim().isEmpty()) {
+                        try {
+                            com.bumptech.glide.Glide.with(getApplicationContext())
+                                    .load(poster.getImageUrl())
+                                    .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.ALL)
+                                    .preload();
+                        } catch (Exception ignored) {}
+                    }
+                }
+
+                com.facebook.shimmer.ShimmerFrameLayout popShimmer = findViewById(R.id.popular_shimmer);
+                android.view.View popRv = findViewById(R.id.popular_posters_rv);
+                if (popShimmer != null) {
+                    popShimmer.stopShimmer();
+                    popShimmer.setVisibility(android.view.View.GONE);
+                }
+                if (popRv != null) {
+                    popRv.setVisibility(android.view.View.VISIBLE);
+                }
+            }
+        } catch (Exception e) {
+            android.util.Log.e("PopularPoster", "Error parsing popular posters: " + e.getMessage());
+        }
+    }
+
+    private void fetchPopularPostersFromApi(boolean isSilentRefresh) {
         String requestUrl = "https://cygnux.in/postermaker/api/v1/poster/trending";
         String key = preferenceClass.getDataType("field_0");
         android.util.Log.d("CygnuxAPI", "--> URL: " + requestUrl + " | Params: device=1, app_id=2, key=" + key);
@@ -743,33 +996,9 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
         StringRequest stringRequest = new StringRequest(Request.Method.POST, requestUrl, response -> {
             try {
                 android.util.Log.d("CygnuxAPI", "<-- Popular Posters Response: " + response);
-                JSONObject jsonObject = new JSONObject(response);
-                if (jsonObject.has("data")) {
-                    JSONArray dataArray = jsonObject.getJSONArray("data");
-                    popularPosterList.clear();
-                    for (int i = 0; i < dataArray.length(); i++) {
-                        JSONObject posterObj = dataArray.getJSONObject(i);
-                        String bannerImage = posterObj.optString("banner_image", "");
-                        String catName = posterObj.optString("cat_name", "");
-                        String catId = posterObj.optString("cat_id", "");
-                        
-                        // name is left empty, category is catName, id is catId
-                        popularPosterList.add(new Leaflet_PopularPoster(catId, "", catName, bannerImage));
-                    }
-                    if (popularPosterAdapter != null) {
-                        popularPosterAdapter.updateData(popularPosterList);
-                    }
-                    com.facebook.shimmer.ShimmerFrameLayout popShimmer = findViewById(R.id.popular_shimmer);
-                    android.view.View popRv = findViewById(R.id.popular_posters_rv);
-                    if (popShimmer != null) {
-                        popShimmer.stopShimmer();
-                        popShimmer.setVisibility(android.view.View.GONE);
-                    }
-                    if (popRv != null) {
-                        popRv.setVisibility(android.view.View.VISIBLE);
-                    }
-                } else {
-                    android.util.Log.e("CygnuxAPI", "<-- No data field in popular posters response");
+                if (response != null && response.contains("\"data\"")) {
+                    com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().saveCache(this, KEY_CACHE_POPULAR_POSTERS, response);
+                    parseAndDisplayPopularPosters(response, isSilentRefresh);
                 }
             } catch (Exception e) {
                 android.util.Log.e("CygnuxAPI", "<-- Popular Posters Exception: " + e.getMessage());
@@ -793,6 +1022,7 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
                 return postMap;
             }
         };
+        stringRequest.setRetryPolicy(new com.android.volley.DefaultRetryPolicy(20000, 2, com.android.volley.DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
         Volley.newRequestQueue(this).add(stringRequest);
     }
 
@@ -853,6 +1083,10 @@ public class Leaflet_PosterMainActivity extends AppCompatActivity {
             });
         }
         startAutoScroll();
+        com.facebook.shimmer.ShimmerFrameLayout popShimmer = findViewById(R.id.popular_shimmer);
+        if (popShimmer != null && popShimmer.getVisibility() == View.VISIBLE) {
+            popShimmer.startShimmer();
+        }
         updateNotificationBadge();
         if (searchHintHandler != null && searchHintRunnable != null) {
             searchHintHandler.removeCallbacks(searchHintRunnable);

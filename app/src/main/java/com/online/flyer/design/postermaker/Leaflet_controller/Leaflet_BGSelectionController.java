@@ -79,15 +79,24 @@ public class Leaflet_BGSelectionController {
     }
 
     public void loadBgImages() {
-        showSkeleton();
+        ArrayList<Leaflet_BgModel> memList = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().getMemoryBackgroundsCache();
+        if (memList != null && !memList.isEmpty()) {
+            Log.d("BGController", "Loading backgrounds INSTANTLY from memory cache (0ms)!");
+            setPagerAdapter(memList);
+            getBgThumb(preferenceClass.getDataType("field_0"), true);
+            return;
+        }
+
         String cachedJson = com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().getCache(activity, com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.KEY_BACKGROUNDS);
         if (cachedJson != null && !cachedJson.trim().isEmpty()) {
             Log.d("BGController", "Loading backgrounds from cache...");
+            com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().warmupBackgroundsImages(activity, cachedJson, preferenceClass);
             parseAndDisplayBgJson(cachedJson, true);
 
             // Silent background refresh
             getBgThumb(preferenceClass.getDataType("field_0"), true);
         } else {
+            showSkeleton();
             Log.d("BGController", "No backgrounds cache found, fetching from API...");
             getBgThumb(preferenceClass.getDataType("field_0"), false);
         }
@@ -174,6 +183,7 @@ public class Leaflet_BGSelectionController {
                 new Leaflet_GetBgData(preferenceClass, jsonArray, new Leaflet_GetBgData.OnGetCatDataListener() {
                     @Override
                     public void onGetDataComplete(ArrayList<Leaflet_BgModel> posterDataLists) {
+                        com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_DataCacheManager.getInstance().setMemoryBackgroundsCache(posterDataLists);
                         setPagerAdapter(posterDataLists);
                     }
 
@@ -208,19 +218,24 @@ public class Leaflet_BGSelectionController {
         }
 
         int currentItem = viewPager.getCurrentItem();
+        int targetIndex = -1;
+        if (activity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) {
+            targetIndex = ((com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) activity)
+                    .findTargetCategoryIndex(posterDataLists);
+        }
 
         ArrayList<Leaflet_BgModel> tabList = new ArrayList<>();
-        int maxItems = Math.min(6, posterDataLists.size());
+        int maxItems = Math.min(posterDataLists.size(), Math.max(6, targetIndex >= 0 ? targetIndex + 1 : 6));
         for (int i = 0; i < maxItems; i++) {
             tabList.add(posterDataLists.get(i));
         }
 
+        int initialIndex = (targetIndex >= 0 && targetIndex < tabList.size())
+                ? targetIndex
+                : (currentItem > 0 && currentItem < tabList.size() ? currentItem : 0);
+
         viewPager.setAdapter(new Leaflet_BackgroundPagerAdapter(supportFragmentManager, tabList));
-        if (currentItem > 0 && currentItem < tabList.size()) {
-            viewPager.setCurrentItem(currentItem, false);
-        } else {
-            viewPager.setCurrentItem(0, false);
-        }
+        viewPager.setCurrentItem(initialIndex, false);
         tabs.setViewPager(viewPager);
 
         if (activity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) {

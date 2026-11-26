@@ -167,7 +167,8 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
             throw new IllegalStateException("ViewPager does not have adapter instance.");
         }
 
-        pager.setOnPageChangeListener(pageListener);
+        pager.removeOnPageChangeListener(pageListener);
+        pager.addOnPageChangeListener(pageListener);
 
         notifyDataSetChanged();
     }
@@ -210,11 +211,29 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
                 }
 
                 currentPosition = pager.getCurrentItem();
-                scrollToChild(currentPosition, 0);
+                ensureTabVisible(currentPosition, false);
                 updateSelectedTab(currentPosition);
             }
         });
 
+    }
+
+    /**
+     * Appends a single newly lazy-loaded category tab right before the "+ More" button
+     * without tearing down existing tab views or resetting scroll position.
+     */
+    public void appendTabBeforeMore(String title) {
+        if (pager == null || pager.getAdapter() == null || title == null) return;
+        int insertIndex = tabCount;
+        // Remove the trailing "+ More" view if present
+        if (tabsContainer.getChildCount() > tabCount) {
+            tabsContainer.removeViewAt(tabsContainer.getChildCount() - 1);
+        }
+        addTextTab(insertIndex, title);
+        tabCount = pager.getAdapter().getCount();
+        addTextTab(tabCount, "+ More");
+        updateTabStyles();
+        updateSelectedTab(pager.getCurrentItem());
     }
 
     private void updateSelectedTab(int position) {
@@ -255,7 +274,8 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
                         ((com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) getContext()).openAllCategories();
                     }
                 } else {
-                    pager.setCurrentItem(position);
+                    boolean smooth = Math.abs(position - pager.getCurrentItem()) <= 1;
+                    pager.setCurrentItem(position, smooth);
                 }
             }
         });
@@ -316,6 +336,42 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
             }
         }
 
+    }
+
+    private void ensureTabVisible(int position, boolean smooth) {
+        if (tabCount == 0 || position < 0 || position >= tabsContainer.getChildCount()) {
+            return;
+        }
+        View child = tabsContainer.getChildAt(position);
+        if (child == null) return;
+
+        int viewportWidth = getWidth();
+        if (viewportWidth <= 0) {
+            scrollToChild(position, 0);
+            return;
+        }
+
+        int currentScrollX = getScrollX();
+        int edgePadding = scrollOffset;
+        int childLeft = child.getLeft();
+        int childRight = child.getRight();
+
+        int targetScrollX = currentScrollX;
+        if (childLeft - edgePadding < currentScrollX) {
+            targetScrollX = Math.max(0, childLeft - edgePadding);
+        } else if (childRight + edgePadding > currentScrollX + viewportWidth) {
+            int maxScroll = Math.max(0, tabsContainer.getWidth() - viewportWidth);
+            targetScrollX = Math.min(maxScroll, childRight + edgePadding - viewportWidth);
+        }
+
+        if (targetScrollX != currentScrollX) {
+            lastScrollX = targetScrollX;
+            if (smooth) {
+                smoothScrollTo(targetScrollX, 0);
+            } else {
+                scrollTo(targetScrollX, 0);
+            }
+        }
     }
 
     private void scrollToChild(int position, int offset) {
@@ -396,8 +452,6 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
             currentPosition = position;
             currentPositionOffset = positionOffset;
 
-            scrollToChild(position, (int) (positionOffset * tabsContainer.getChildAt(position).getWidth()));
-
             invalidate();
 
             if (delegatePageListener != null) {
@@ -408,7 +462,7 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
         @Override
         public void onPageScrollStateChanged(int state) {
             if (state == ViewPager.SCROLL_STATE_IDLE) {
-                scrollToChild(pager.getCurrentItem(), 0);
+                ensureTabVisible(pager.getCurrentItem(), true);
             }
 
             if (delegatePageListener != null) {
@@ -419,6 +473,7 @@ public class Leaflet_PagerSlidingTabStrip extends HorizontalScrollView {
         @Override
         public void onPageSelected(int position) {
             updateSelectedTab(position);
+            ensureTabVisible(position, true);
             if (delegatePageListener != null) {
                 delegatePageListener.onPageSelected(position);
             }

@@ -18,6 +18,7 @@ import com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_NativeAdUti
 import com.online.flyer.design.postermaker.Leaflet_model.Leaflet_BgImage;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_FavoritesManager;
 import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_PreferenceClass;
+import com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_LockAnimationHelper;
 
 import java.util.ArrayList;
 
@@ -104,6 +105,16 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
                 }
                 return;
             }
+            if (adHolder.isAdLoaded) {
+                adHolder.itemView.setVisibility(View.VISIBLE);
+                adHolder.native_banner_ad_container.setVisibility(View.VISIBLE);
+                return;
+            }
+            if (adHolder.isAdLoading) {
+                return;
+            }
+            adHolder.isAdLoading = true;
+
             adHolder.itemView.setVisibility(View.VISIBLE);
             adHolder.native_banner_ad_container.setVisibility(View.VISIBLE);
             String adId = preferenceClass.getGridNativeAdId("backgrounds");
@@ -112,11 +123,14 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
             nativeAdUtil.fillAdmobNativeAd(adHolder.native_banner_ad_container, adId, showShimmerOnFail, new Leaflet_NativeAdUtil.OnNativeAdListener() {
                 @Override
                 public void onAdLoaded() {
+                    adHolder.isAdLoading = false;
+                    adHolder.isAdLoaded = true;
                     adHolder.itemView.setVisibility(View.VISIBLE);
                 }
 
                 @Override
                 public void onAdFailed() {
+                    adHolder.isAdLoading = false;
                     if (!showShimmerOnFail) {
                         adHolder.itemView.setVisibility(View.GONE);
                         if (adHolder.itemView.getLayoutParams() != null) {
@@ -166,22 +180,31 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
             isPremium = false;
             bgImage.setPremium(false);
         }
-        boolean isLockFeatureEnabled = preferenceClass.isPremiumPosterLockEnabled();
+        final String bgUnlockKey = (bgImage.getImage_url() != null && !bgImage.getImage_url().trim().isEmpty())
+                ? bgImage.getImage_url().trim()
+                : (bgImage.getThumb_url() != null && !bgImage.getThumb_url().trim().isEmpty()
+                    ? bgImage.getThumb_url().trim()
+                    : String.valueOf(bgImage.getId()));
+        boolean isLockFeatureEnabled = preferenceClass.isPremiumLockEnabled("backgrounds");
         boolean isBlurEnabled = preferenceClass.isPremiumPosterBlurEnabled();
-        boolean showLockVisuals = isPremium && isLockFeatureEnabled;
+        boolean isAlreadyUnlocked = isPremium && preferenceClass.isBackgroundUnlocked(bgUnlockKey);
+        boolean effectiveLocked = isPremium && !isAlreadyUnlocked;
+        boolean showLockVisuals = effectiveLocked && isLockFeatureEnabled;
 
         if (showLockVisuals) {
             bgHolder.iv_lock.setVisibility(View.VISIBLE);
             if (bgHolder.fl_center_lock != null) {
-                bgHolder.fl_center_lock.setVisibility(isBlurEnabled ? View.VISIBLE : View.GONE);
+                bgHolder.fl_center_lock.setVisibility(View.VISIBLE);
+                Leaflet_LockAnimationHelper.startLockAnimation(bgHolder.fl_center_lock, bgHolder.iv_center_lock);
             }
             if (bgHolder.view_blur_overlay != null) {
                 bgHolder.view_blur_overlay.setVisibility(isBlurEnabled ? View.VISIBLE : View.GONE);
             }
         } else {
-            bgHolder.iv_lock.setVisibility(isPremium ? View.VISIBLE : View.GONE);
+            bgHolder.iv_lock.setVisibility(effectiveLocked ? View.VISIBLE : View.GONE);
             if (bgHolder.fl_center_lock != null) {
                 bgHolder.fl_center_lock.setVisibility(View.GONE);
+                Leaflet_LockAnimationHelper.stopLockAnimation(bgHolder.fl_center_lock, bgHolder.iv_center_lock);
             }
             if (bgHolder.view_blur_overlay != null) {
                 bgHolder.view_blur_overlay.setVisibility(View.GONE);
@@ -190,16 +213,24 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
 
         bgHolder.content_layout.setVisibility(View.VISIBLE);
         if (showLockVisuals && isBlurEnabled) {
+            float blurRadius = preferenceClass.getPremiumPosterBlurRadius();
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                bgHolder.iv_image.setRenderEffect(android.graphics.RenderEffect.createBlurEffect(25f, 25f, android.graphics.Shader.TileMode.CLAMP));
+                bgHolder.iv_image.setRenderEffect(android.graphics.RenderEffect.createBlurEffect(blurRadius, blurRadius, android.graphics.Shader.TileMode.CLAMP));
+                Glide.with(activity)
+                        .load(bgImage.getThumb_url())
+                        .transform(new com.bumptech.glide.load.resource.bitmap.CenterCrop())
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .skipMemoryCache(false)
+                        .into(bgHolder.iv_image);
+            } else {
+                int r = Math.max(1, Math.min(10, Math.round(blurRadius)));
+                Glide.with(activity)
+                        .load(bgImage.getThumb_url())
+                        .transform(new com.bumptech.glide.load.resource.bitmap.CenterCrop(), new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_BlurTransformation(r, 1))
+                        .diskCacheStrategy(DiskCacheStrategy.ALL)
+                        .skipMemoryCache(false)
+                        .into(bgHolder.iv_image);
             }
-            Glide.with(activity)
-                    .load(bgImage.getThumb_url())
-                    .transform(new com.bumptech.glide.load.resource.bitmap.CenterCrop(), new com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_BlurTransformation(15, 3))
-                    .thumbnail(0.1f)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .skipMemoryCache(false)
-                    .into(bgHolder.iv_image);
         } else {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 bgHolder.iv_image.setRenderEffect(null);
@@ -243,31 +274,52 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
             intent.putExtra(com.online.flyer.design.postermaker.Leaflet_activities.ItemPreviewActivity.EXTRA_INITIAL_POSITION, clickPos);
             intent.putExtra(com.online.flyer.design.postermaker.Leaflet_activities.ItemPreviewActivity.EXTRA_CATEGORY_NAME, categoryName);
             intent.putExtra("target_bg_id", bgImage.getId());
+            if (activity instanceof com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) {
+                String bgMode = ((com.online.flyer.design.postermaker.Leaflet_activities.Leaflet_BackgroundSelectionActivity) activity).getMode();
+                if (bgMode != null) {
+                    intent.putExtra("mode", bgMode);
+                }
+            } else if (activity != null && activity.getIntent() != null) {
+                String mode = activity.getIntent().getStringExtra("mode");
+                if (mode != null) {
+                    intent.putExtra("mode", mode);
+                }
+            }
 
             boolean isPrem = bgImage.isPremium();
+            boolean unlockedNow = isPrem && preferenceClass.isBackgroundUnlocked(bgUnlockKey);
             intent.putExtra("target_is_premium", isPrem);
-            boolean lockEnabled = preferenceClass.isPremiumPosterLockEnabled();
+            if (unlockedNow) {
+                intent.putExtra("is_unlocked_by_reward", true);
+            }
+            boolean lockEnabled = preferenceClass.isPremiumLockEnabled("backgrounds");
             boolean showPopup = preferenceClass.isProOpenPopupEnabled("backgrounds");
 
-            if (isPrem && lockEnabled && showPopup) {
+            if (isPrem && !unlockedNow && lockEnabled && showPopup) {
                 com.online.flyer.design.postermaker.Leaflet_utils.Leaflet_MaterialDialogUtils.getInstance().rewardDialog(
                         activity,
-                        "Use Background(One Time)",
-                        "Use premium background by watching Ads",
+                        "Watch to Unlock Preview",
+                        "Watch a short video ad to unlock & view preview",
+                        "backgrounds",
                         dialog -> {
                             if (dialog != null && dialog.isShowing()) dialog.dismiss();
-                            String adType = preferenceClass.getPremiumPosterAdType();
+                            String adType = preferenceClass.getPremiumPosterAdType("backgrounds");
                             if ("Reward".equalsIgnoreCase(adType)) {
-                                com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_RewardVideoManager.showRewardVideoAd(activity, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
+                                String rewardId = preferenceClass.getPremiumPosterRewardAdId("backgrounds");
+                                com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_RewardVideoManager.showRewardVideoAd(activity, rewardId, new com.online.flyer.design.postermaker.Leaflet_adManager.Leaflet_InterstitialAdManager.OnRewardAdLoadInterface() {
                                     @Override
                                     public void onAdClose() {
+                                        preferenceClass.saveBackgroundUnlockTime(bgUnlockKey);
                                         intent.putExtra("is_unlocked_by_reward", true);
+                                        notifyDataSetChanged();
                                         activity.startActivityForResult(intent, 2001);
                                     }
                                 });
                             } else {
                                 com.online.flyer.design.postermaker.Leaflet_MyApplication.showUnlockInterstitialAd(activity, () -> {
+                                    preferenceClass.saveBackgroundUnlockTime(bgUnlockKey);
                                     intent.putExtra("is_unlocked_by_reward", true);
+                                    notifyDataSetChanged();
                                     activity.startActivityForResult(intent, 2001);
                                 });
                             }
@@ -295,6 +347,15 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
     }
 
     @Override
+    public void onViewRecycled(@NonNull RecyclerView.ViewHolder holder) {
+        super.onViewRecycled(holder);
+        if (holder instanceof BgViewHolder) {
+            BgViewHolder bHolder = (BgViewHolder) holder;
+            Leaflet_LockAnimationHelper.stopLockAnimation(bHolder.fl_center_lock, bHolder.iv_center_lock);
+        }
+    }
+
+    @Override
     public int getItemCount() {
         return bgImages.size();
     }
@@ -305,6 +366,8 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
 
     public static class AdViewHolder extends RecyclerView.ViewHolder {
         public final RelativeLayout native_banner_ad_container;
+        public boolean isAdLoaded = false;
+        public boolean isAdLoading = false;
 
         public AdViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -318,6 +381,7 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
         public final View iv_lock;
         public final ImageView iv_like;
         public final View fl_center_lock;
+        public final ImageView iv_center_lock;
         public final View view_blur_overlay;
 
         public BgViewHolder(@NonNull View itemView) {
@@ -327,6 +391,7 @@ public class Leaflet_BackgroundChildAdapter extends RecyclerView.Adapter<Recycle
             iv_like = itemView.findViewById(R.id.iv_like);
             content_layout = itemView.findViewById(R.id.content_layout);
             fl_center_lock = itemView.findViewById(R.id.fl_center_lock);
+            iv_center_lock = itemView.findViewById(R.id.iv_center_lock);
             view_blur_overlay = itemView.findViewById(R.id.view_blur_overlay);
         }
     }
